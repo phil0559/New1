@@ -640,6 +640,8 @@
     <color name="background_material_dark">@color/material_grey_850</color>
     <color name="background_material_light">@color/material_grey_50</color>
     <color name="banner_beige">#E7C9A5</color>
+    <color name="banner_beige_light">#F3DBC0</color>
+    <color name="banner_outline">#80B08A60</color>
     <color name="bright_foreground_disabled_material_dark">#80ffffff</color>
     <color name="bright_foreground_disabled_material_light">#80000000</color>
     <color name="bright_foreground_inverse_material_dark">@color/bright_foreground_material_light</color>

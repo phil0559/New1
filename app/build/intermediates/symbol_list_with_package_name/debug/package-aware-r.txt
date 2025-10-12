@@ -1356,6 +1356,8 @@ color background_floating_material_light
 color background_material_dark
 color background_material_light
 color banner_beige
+color banner_beige_light
+color banner_outline
 color bright_foreground_disabled_material_dark
 color bright_foreground_disabled_material_light
 color bright_foreground_inverse_material_dark

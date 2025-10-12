@@ -1,9 +1,5 @@
 [
     {
-        "merged": "com.example.new1.app-merged_res-31:/drawable_ic_menu.xml.flat",
-        "source": "com.example.new1.app-main-33:/drawable/ic_menu.xml"
-    },
-    {
         "merged": "com.example.new1.app-merged_res-31:/layout_activity_main.xml.flat",
         "source": "com.example.new1.app-main-33:/layout/activity_main.xml"
     },
@@ -12,19 +8,27 @@
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\layout\\activity_main.xml"
     },
     {
-        "merged": "com.example.new1.app-merged_res-31:/drawable_bg_flag_container.xml.flat",
-        "source": "com.example.new1.app-main-33:/drawable/bg_flag_container.xml"
+        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-merged_res-31:\\drawable_ic_search.xml.flat",
+        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\drawable\\ic_search.xml"
     },
     {
-        "merged": "com.example.new1.app-merged_res-31:/drawable_ic_search.xml.flat",
-        "source": "com.example.new1.app-main-33:/drawable/ic_search.xml"
+        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-merged_res-31:\\drawable_ic_menu.xml.flat",
+        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\drawable\\ic_menu.xml"
     },
     {
         "merged": "com.example.new1.app-merged_res-31:/drawable_bg_menu_banner.xml.flat",
         "source": "com.example.new1.app-main-33:/drawable/bg_menu_banner.xml"
     },
     {
-        "merged": "com.example.new1.app-merged_res-31:/drawable_bg_flag_shape.xml.flat",
-        "source": "com.example.new1.app-main-33:/drawable/bg_flag_shape.xml"
+        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-merged_res-31:\\drawable_bg_flag_container.xml.flat",
+        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\drawable\\bg_flag_container.xml"
+    },
+    {
+        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-merged_res-31:\\drawable_bg_flag_shape.xml.flat",
+        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\drawable\\bg_flag_shape.xml"
+    },
+    {
+        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-merged_res-31:\\drawable_bg_menu_banner.xml.flat",
+        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\drawable\\bg_menu_banner.xml"
     }
 ]

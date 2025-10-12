@@ -2,6 +2,8 @@ R_DEF: Internal format may change without notice
 local
 color background_beige
 color banner_beige
+color banner_beige_light
+color banner_outline
 color flag_blue
 color flag_red
 color flag_stroke
