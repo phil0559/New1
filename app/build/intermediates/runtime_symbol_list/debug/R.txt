@@ -3005,6 +3005,7 @@ int drawable ic_call_decline 0x7f07008b
 int drawable ic_call_decline_low 0x7f07008c
 int drawable ic_clear_black_24 0x7f07008d
 int drawable ic_clock_black_24dp 0x7f07008e
+int drawable ic_flag_france 0x7f0700e8
 int drawable ic_keyboard_black_24dp 0x7f07008f
 int drawable ic_m3_chip_check 0x7f070090
 int drawable ic_m3_chip_checked_circle 0x7f070091

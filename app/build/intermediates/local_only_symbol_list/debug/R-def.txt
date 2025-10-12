@@ -16,6 +16,7 @@ color text_dark
 drawable bg_flag_container
 drawable bg_flag_shape
 drawable bg_menu_banner
+drawable ic_flag_france
 drawable ic_menu
 drawable ic_search
 id menu_banner

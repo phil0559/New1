@@ -71,37 +71,18 @@
             <FrameLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="@string/content_description_flag"
                 android:background="@drawable/bg_flag_container"
+                android:contentDescription="@string/content_description_flag"
                 android:padding="4dp">
 
-                <LinearLayout
+                <ImageView
                     android:layout_width="36dp"
                     android:layout_height="24dp"
                     android:background="@drawable/bg_flag_shape"
-                    android:orientation="horizontal"
-                    android:padding="2dp">
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:background="@color/flag_blue" />
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_marginStart="1dp"
-                        android:layout_marginEnd="1dp"
-                        android:layout_weight="1"
-                        android:background="@color/flag_white" />
-
-                    <View
-                        android:layout_width="0dp"
-                        android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:background="@color/flag_red" />
-                </LinearLayout>
+                    android:clipToOutline="true"
+                    android:contentDescription="@string/content_description_flag"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_flag_france" />
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
