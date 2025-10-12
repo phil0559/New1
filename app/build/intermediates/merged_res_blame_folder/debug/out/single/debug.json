@@ -8,6 +8,10 @@
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\layout\\activity_main.xml"
     },
     {
+        "merged": "com.example.new1.app-merged_res-31:/drawable_ic_flag_france.xml.flat",
+        "source": "com.example.new1.app-main-33:/drawable/ic_flag_france.xml"
+    },
+    {
         "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-merged_res-31:\\drawable_ic_search.xml.flat",
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.2\\com.example.new1.app-main-33:\\drawable\\ic_search.xml"
     },
