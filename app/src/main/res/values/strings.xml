@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">New1</string>
+    <string name="hello_world">Bonjour le monde</string>
+    <string name="say_hello_button">Dire bonjour</string>
+    <string name="toast_bonjour">Bonjour Philippe</string>
 </resources>

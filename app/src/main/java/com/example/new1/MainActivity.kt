@@ -13,7 +13,7 @@ class MainActivity : AppCompatActivity() {
 
         val bonjourButton: Button = findViewById(R.id.button_bonjour)
         bonjourButton.setOnClickListener {
-            Toast.makeText(this, "Bonjour Philippe", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.toast_bonjour), Toast.LENGTH_SHORT).show()
         }
     }
 }
