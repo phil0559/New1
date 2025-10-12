@@ -1,0 +1,13 @@
+R_DEF: Internal format may change without notice
+local
+color purple_500
+color purple_700
+color teal_200
+id button_bonjour
+id text_hello_world
+layout activity_main
+string app_name
+string hello_world
+string say_hello_button
+string toast_bonjour
+style Theme.New1
