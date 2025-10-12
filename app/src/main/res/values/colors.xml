@@ -5,6 +5,8 @@
     <color name="teal_200">#03DAC5</color>
     <color name="background_beige">#F5F0EB</color>
     <color name="banner_beige">#E7C9A5</color>
+    <color name="banner_beige_light">#F3DBC0</color>
+    <color name="banner_outline">#80B08A60</color>
     <color name="icon_brown">#4C3A2A</color>
     <color name="text_dark">#3B2A1C</color>
     <color name="flag_blue">#0055A4</color>
