@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">New1</string>
+    <string name="menu_title">Hauptmenü</string>
+    <string name="content_description_menu">Hauptmenü öffnen</string>
+    <string name="content_description_search">Suchen</string>
+    <string name="content_description_flag">Sprachauswahl öffnen</string>
+    <string name="content_description_back">Zurück</string>
+    <string name="language_french">Französisch</string>
+    <string name="language_english">Englisch (Vereinigtes Königreich)</string>
+    <string name="language_german">Deutsch</string>
+    <string name="language_spanish">Spanisch</string>
+    <string name="establishment_title">Einrichtung</string>
+    <string name="establishment_placeholder">Inhalt der Einrichtung festzulegen</string>
+    <string name="button_move">Bewegung</string>
+    <string name="button_import_export">Import/Export</string>
+    <string name="button_quit">Beenden</string>
+</resources>

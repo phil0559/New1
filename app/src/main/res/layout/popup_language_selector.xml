@@ -16,30 +16,46 @@
         android:orientation="vertical">
 
         <ImageView
+            android:id="@+id/flag_fr"
             android:layout_width="32dp"
             android:layout_height="24dp"
             android:layout_marginBottom="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/language_french"
+            android:focusable="true"
+            android:padding="4dp"
             android:src="@drawable/ic_flag_france" />
 
         <ImageView
+            android:id="@+id/flag_en"
             android:layout_width="32dp"
             android:layout_height="24dp"
             android:layout_marginBottom="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/language_english"
+            android:focusable="true"
+            android:padding="4dp"
             android:src="@drawable/ic_flag_united_kingdom" />
 
         <ImageView
+            android:id="@+id/flag_de"
             android:layout_width="32dp"
             android:layout_height="24dp"
             android:layout_marginBottom="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/language_german"
+            android:focusable="true"
+            android:padding="4dp"
             android:src="@drawable/ic_flag_germany" />
 
         <ImageView
+            android:id="@+id/flag_es"
             android:layout_width="32dp"
             android:layout_height="24dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/language_spanish"
+            android:focusable="true"
+            android:padding="4dp"
             android:src="@drawable/ic_flag_spain" />
     </LinearLayout>
 </ScrollView>
