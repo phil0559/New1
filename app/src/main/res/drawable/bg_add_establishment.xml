@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:angle="0"
+        android:endColor="@color/banner_beige"
+        android:startColor="@color/banner_beige_light" />
+    <size
+        android:width="52dp"
+        android:height="52dp" />
+    <stroke
+        android:width="1dp"
+        android:color="@color/banner_outline" />
+</shape>
