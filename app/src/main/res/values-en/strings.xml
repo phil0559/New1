@@ -12,6 +12,7 @@
     <string name="language_spanish">Spanish</string>
     <string name="establishment_title">Establishment</string>
     <string name="establishment_placeholder">Establishment content to be defined</string>
+    <string name="content_description_add_establishment">Add a new item</string>
     <string name="button_move">Movement</string>
     <string name="button_import_export">Import/Export</string>
     <string name="button_quit">Quit</string>
