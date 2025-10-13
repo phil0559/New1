@@ -1,95 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_beige"
+    android:orientation="vertical"
     android:padding="24dp">
 
     <LinearLayout
-        android:id="@+id/establishment_banner"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="0dp"
-        android:background="@drawable/bg_menu_banner"
-        android:elevation="8dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingTop="14dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="14dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_percent="1.0">
+        android:orientation="horizontal">
 
         <ImageView
             android:id="@+id/button_back"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_flag_container"
             android:contentDescription="@string/content_description_back"
-            android:padding="4dp"
+            android:padding="8dp"
             android:src="@drawable/ic_arrow_back"
             android:tint="@color/icon_brown" />
 
         <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="@string/establishment_title"
-            android:textAlignment="center"
-            android:textColor="@color/text_dark"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/content_description_search"
-            android:padding="4dp"
-            android:src="@drawable/ic_search"
-            android:tint="@color/icon_brown" />
+            android:layout_marginStart="16dp"
+            android:text="@string/establishment_title"
+            android:textColor="@color/text_dark"
+            android:textSize="20sp"
+            android:textStyle="bold" />
     </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="24dp" />
 
     <TextView
         android:id="@+id/text_placeholder"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:gravity="center"
+        android:padding="24dp"
         android:text="@string/establishment_empty_state"
         android:textColor="@color/text_dark"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/establishment_banner" />
+        android:textSize="16sp" />
 
-    <androidx.recyclerview.widget.RecyclerView
+    <ListView
         android:id="@+id/list_establishments"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="24dp"
-        android:clipToPadding="false"
-        android:paddingBottom="88dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/establishment_banner" />
+        android:layout_weight="1"
+        android:divider="@color/banner_outline"
+        android:dividerHeight="1dp"
+        android:listSelector="@android:color/transparent"
+        android:visibility="gone" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_establishment"
-        android:layout_width="wrap_content"
+    <Button
+        android:id="@+id/button_add_establishment"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        android:contentDescription="@string/content_description_add_establishment"
-        app:backgroundTint="@color/banner_beige"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/ic_add"
-        app:tint="@android:color/black" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
-
+        android:layout_marginTop="24dp"
+        android:background="@drawable/bg_primary_button"
+        android:paddingTop="14dp"
+        android:paddingBottom="14dp"
+        android:text="@string/dialog_add_establishment_title"
+        android:textAllCaps="false"
+        android:textColor="@android:color/white"
+        android:textSize="16sp" />
+</LinearLayout>
