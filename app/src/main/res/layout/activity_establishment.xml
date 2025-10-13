@@ -1,84 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_beige"
-    android:orientation="vertical"
     android:padding="24dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <ImageView
-            android:id="@+id/button_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="@drawable/bg_flag_container"
-            android:contentDescription="@string/content_description_back"
-            android:padding="8dp"
-            android:src="@drawable/ic_arrow_back"
-            android:tint="@color/icon_brown" />
-
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:text="@string/establishment_title"
-            android:textColor="@color/text_dark"
-            android:textSize="20sp"
-            android:textStyle="bold" />
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="24dp" />
-
-    <TextView
-        android:id="@+id/text_placeholder"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:padding="24dp"
-        android:text="@string/establishment_empty_state"
-        android:textColor="@color/text_dark"
-        android:textSize="16sp" />
-
-    <ListView
-        android:id="@+id/list_establishments"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:divider="@color/banner_outline"
-        android:dividerHeight="1dp"
-        android:listSelector="@android:color/transparent"
-        android:visibility="gone" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:gravity="end">
-
-        <FrameLayout
-            android:id="@+id/button_add_establishment"
-            android:layout_width="52dp"
-            android:layout_height="52dp"
-            android:background="@drawable/bg_flag_container"
-            android:clickable="true"
-            android:contentDescription="@string/content_description_add_establishment"
-            android:focusable="true"
-            android:foreground="?android:attr/selectableItemBackgroundBorderless"
-            android:padding="12dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
             <ImageView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:scaleType="centerInside"
-                android:src="@drawable/ic_add"
+                android:id="@+id/button_back"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_flag_container"
+                android:contentDescription="@string/content_description_back"
+                android:padding="8dp"
+                android:src="@drawable/ic_arrow_back"
                 android:tint="@color/icon_brown" />
-        </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="@string/establishment_title"
+                android:textColor="@color/text_dark"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
+
+        <TextView
+            android:id="@+id/text_placeholder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:padding="24dp"
+            android:text="@string/establishment_empty_state"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp" />
+
+        <ListView
+            android:id="@+id/list_establishments"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@color/banner_outline"
+            android:dividerHeight="1dp"
+            android:listSelector="@android:color/transparent"
+            android:visibility="gone" />
     </LinearLayout>
-</LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/button_add_establishment"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:background="@drawable/bg_add_establishment"
+        android:clickable="true"
+        android:contentDescription="@string/content_description_add_establishment"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackgroundBorderless"
+        android:padding="12dp">
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_add"
+            android:tint="@color/icon_brown" />
+    </FrameLayout>
+</FrameLayout>
