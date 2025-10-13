@@ -14,4 +14,5 @@
     <string name="language_spanish">Espagnol</string>
     <string name="establishment_title">Établissement</string>
     <string name="establishment_placeholder">Contenu établissement à définir</string>
+    <string name="footer_philippe">Philippe</string>
 </resources>
