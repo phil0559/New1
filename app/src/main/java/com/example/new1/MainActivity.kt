@@ -1,5 +1,6 @@
 package com.example.new1
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -18,6 +19,11 @@ class MainActivity : AppCompatActivity() {
 
         val flagContainer: View = findViewById(R.id.flag_container)
         flagContainer.setOnClickListener { toggleLanguagePopup(it) }
+
+        val establishmentButton: View = findViewById(R.id.button_establishment)
+        establishmentButton.setOnClickListener {
+            startActivity(Intent(this, EstablishmentActivity::class.java))
+        }
     }
 
     override fun onDestroy() {
