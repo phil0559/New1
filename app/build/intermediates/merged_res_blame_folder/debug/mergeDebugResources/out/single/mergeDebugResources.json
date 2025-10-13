@@ -4,8 +4,8 @@
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\ic_menu.xml"
     },
     {
-        "merged": "com.example.new1.app-debug-31:/drawable_bg_flag_container.xml.flat",
-        "source": "com.example.new1.app-main-33:/drawable/bg_flag_container.xml"
+        "merged": "com.example.new1.app-debug-31:/layout_popup_language_selector.xml.flat",
+        "source": "com.example.new1.app-main-33:/layout/popup_language_selector.xml"
     },
     {
         "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-debug-31:\\layout_activity_main.xml.flat",
@@ -16,10 +16,6 @@
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\bg_menu_banner.xml"
     },
     {
-        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-debug-31:\\drawable_ic_flag_france.xml.flat",
-        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\ic_flag_france.xml"
-    },
-    {
         "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-debug-31:\\drawable_bg_flag_container.xml.flat",
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\bg_flag_container.xml"
     },
@@ -28,7 +24,31 @@
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\bg_flag_shape.xml"
     },
     {
+        "merged": "com.example.new1.app-debug-31:/drawable_ic_flag_united_kingdom.xml.flat",
+        "source": "com.example.new1.app-main-33:/drawable/ic_flag_united_kingdom.xml"
+    },
+    {
+        "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-debug-31:\\drawable_ic_flag_france.xml.flat",
+        "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\ic_flag_france.xml"
+    },
+    {
+        "merged": "com.example.new1.app-debug-31:/layout_activity_main.xml.flat",
+        "source": "com.example.new1.app-main-33:/layout/activity_main.xml"
+    },
+    {
+        "merged": "com.example.new1.app-debug-31:/drawable_ic_flag_spain.xml.flat",
+        "source": "com.example.new1.app-main-33:/drawable/ic_flag_spain.xml"
+    },
+    {
         "merged": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-debug-31:\\drawable_ic_search.xml.flat",
         "source": "C:\\Users\\Philippe\\.gradle\\daemon\\8.13\\com.example.new1.app-main-33:\\drawable\\ic_search.xml"
+    },
+    {
+        "merged": "com.example.new1.app-debug-31:/drawable_ic_flag_germany.xml.flat",
+        "source": "com.example.new1.app-main-33:/drawable/ic_flag_germany.xml"
+    },
+    {
+        "merged": "com.example.new1.app-debug-31:/drawable_bg_language_popup.xml.flat",
+        "source": "com.example.new1.app-main-33:/drawable/bg_language_popup.xml"
     }
 ]

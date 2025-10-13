@@ -2982,6 +2982,7 @@ int drawable avd_hide_password 0x7f070077
 int drawable avd_show_password 0x7f070078
 int drawable bg_flag_container 0x7f070079
 int drawable bg_flag_shape 0x7f07007a
+int drawable bg_language_popup 0x7f0700e9
 int drawable bg_menu_banner 0x7f07007b
 int drawable btn_checkbox_checked_mtrl 0x7f07007c
 int drawable btn_checkbox_checked_to_unchecked_mtrl_animation 0x7f07007d
@@ -3006,6 +3007,9 @@ int drawable ic_call_decline_low 0x7f07008f
 int drawable ic_clear_black_24 0x7f070090
 int drawable ic_clock_black_24dp 0x7f070091
 int drawable ic_flag_france 0x7f070092
+int drawable ic_flag_germany 0x7f0700ea
+int drawable ic_flag_spain 0x7f0700eb
+int drawable ic_flag_united_kingdom 0x7f0700ec
 int drawable ic_keyboard_black_24dp 0x7f070093
 int drawable ic_m3_chip_check 0x7f070094
 int drawable ic_m3_chip_checked_circle 0x7f070095
@@ -3285,6 +3289,7 @@ int id fitStart 0x7f0800bd
 int id fitToContents 0x7f0800be
 int id fitXY 0x7f0800bf
 int id fixed 0x7f0800c0
+int id flag_container 0x7f0801f1
 int id flip 0x7f0800c1
 int id floating 0x7f0800c2
 int id forever 0x7f0800c3
@@ -3779,6 +3784,7 @@ int layout notification_template_custom_big 0x7f0b0064
 int layout notification_template_icon_group 0x7f0b0065
 int layout notification_template_part_chronometer 0x7f0b0066
 int layout notification_template_part_time 0x7f0b0067
+int layout popup_language_selector 0x7f0b006c
 int layout select_dialog_item_material 0x7f0b0068
 int layout select_dialog_multichoice_material 0x7f0b0069
 int layout select_dialog_singlechoice_material 0x7f0b006a
@@ -3843,6 +3849,10 @@ int string hello_world 0x7f0e0037
 int string hide_bottom_view_on_scroll_behavior 0x7f0e0038
 int string icon_content_description 0x7f0e0039
 int string item_view_role_description 0x7f0e003a
+int string language_english 0x7f0e00ae
+int string language_french 0x7f0e00af
+int string language_german 0x7f0e00b0
+int string language_spanish 0x7f0e00b1
 int string m3_exceed_max_badge_text_suffix 0x7f0e003b
 int string m3_ref_typeface_brand_medium 0x7f0e003c
 int string m3_ref_typeface_brand_regular 0x7f0e003d
