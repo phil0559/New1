@@ -10,7 +10,7 @@
         android:id="@+id/menu_banner"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="0dp"
         android:background="@drawable/bg_menu_banner"
         android:elevation="8dp"
         android:gravity="center_vertical"
