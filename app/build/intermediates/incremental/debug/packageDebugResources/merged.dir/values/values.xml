@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="background_beige">#F5F0EB</color>
+    <color name="banner_beige">#E7C9A5</color>
+    <color name="banner_beige_light">#F3DBC0</color>
+    <color name="banner_outline">#80B08A60</color>
+    <color name="button_blue">#4A53FF</color>
+    <color name="flag_blue">#0055A4</color>
+    <color name="flag_red">#EF4135</color>
+    <color name="flag_stroke">#33000000</color>
+    <color name="flag_white">#FFFFFFFF</color>
+    <color name="icon_brown">#4C3A2A</color>
+    <color name="purple_500">#6200EE</color>
+    <color name="purple_700">#3700B3</color>
+    <color name="teal_200">#03DAC5</color>
+    <color name="text_dark">#3B2A1C</color>
+    <string name="app_name">New1</string>
+    <string name="content_description_flag">Ouvrir le sélecteur de langue</string>
+    <string name="content_description_menu">Ouvrir le menu principal</string>
+    <string name="content_description_search">Rechercher</string>
+    <string name="hello_world">Bonjour le monde</string>
+    <string name="language_english">Anglais (Royaume-Uni)</string>
+    <string name="language_french">Français</string>
+    <string name="language_german">Allemand</string>
+    <string name="language_spanish">Espagnol</string>
+    <string name="menu_title">Menu principal</string>
+    <string name="say_hello_button">Dire bonjour</string>
+    <string name="toast_bonjour">Bonjour Philippe</string>
+    <style name="Theme.New1" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/purple_500</item>
+        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="colorSecondary">@color/teal_200</item>
+    </style>
+</resources>

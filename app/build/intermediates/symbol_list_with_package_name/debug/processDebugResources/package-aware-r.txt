@@ -1364,6 +1364,7 @@ color bright_foreground_inverse_material_dark
 color bright_foreground_inverse_material_light
 color bright_foreground_material_dark
 color bright_foreground_material_light
+color button_blue
 color button_material_dark
 color button_material_light
 color call_notification_answer_color
@@ -3155,6 +3156,7 @@ id action_bar_root
 id action_bar_spinner
 id action_bar_subtitle
 id action_bar_title
+id action_buttons_container
 id action_container
 id action_context_bar
 id action_divider
@@ -3196,6 +3198,10 @@ id bounceBoth
 id bounceEnd
 id bounceStart
 id buttonPanel
+id button_establishment
+id button_import_export
+id button_move
+id button_quit
 id cache_measures
 id callMeasure
 id cancel_button

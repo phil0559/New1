@@ -4,6 +4,7 @@ color background_beige
 color banner_beige
 color banner_beige_light
 color banner_outline
+color button_blue
 color flag_blue
 color flag_red
 color flag_stroke
@@ -23,6 +24,11 @@ drawable ic_flag_spain
 drawable ic_flag_united_kingdom
 drawable ic_menu
 drawable ic_search
+id action_buttons_container
+id button_establishment
+id button_import_export
+id button_move
+id button_quit
 id flag_container
 id menu_banner
 layout activity_main

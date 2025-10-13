@@ -4,6 +4,7 @@
     <color name="banner_beige">#E7C9A5</color>
     <color name="banner_beige_light">#F3DBC0</color>
     <color name="banner_outline">#80B08A60</color>
+    <color name="button_blue">#4A53FF</color>
     <color name="flag_blue">#0055A4</color>
     <color name="flag_red">#EF4135</color>
     <color name="flag_stroke">#33000000</color>
