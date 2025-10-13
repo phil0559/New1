@@ -13,4 +13,5 @@
     <color name="flag_white">#FFFFFFFF</color>
     <color name="flag_red">#EF4135</color>
     <color name="flag_stroke">#33000000</color>
+    <color name="button_blue">#4A53FF</color>
 </resources>
