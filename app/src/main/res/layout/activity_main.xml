@@ -157,4 +157,16 @@
             app:backgroundTint="@color/button_blue"
             app:cornerRadius="28dp" />
     </LinearLayout>
+    <TextView
+        android:id="@+id/footer_philippe"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:text="@string/footer_philippe"
+        android:textColor="@color/text_dark"
+        android:textSize="14sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
