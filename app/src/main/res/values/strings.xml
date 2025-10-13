@@ -7,5 +7,9 @@
     <string name="menu_title">Menu principal</string>
     <string name="content_description_menu">Ouvrir le menu principal</string>
     <string name="content_description_search">Rechercher</string>
-    <string name="content_description_flag">Changer de langue (français)</string>
+    <string name="content_description_flag">Ouvrir le sélecteur de langue</string>
+    <string name="language_french">Français</string>
+    <string name="language_english">Anglais (Royaume-Uni)</string>
+    <string name="language_german">Allemand</string>
+    <string name="language_spanish">Espagnol</string>
 </resources>
