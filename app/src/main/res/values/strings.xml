@@ -12,4 +12,6 @@
     <string name="language_english">Anglais (Royaume-Uni)</string>
     <string name="language_german">Allemand</string>
     <string name="language_spanish">Espagnol</string>
+    <string name="establishment_title">Établissement</string>
+    <string name="establishment_placeholder">Contenu établissement à définir</string>
 </resources>
