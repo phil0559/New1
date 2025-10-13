@@ -10,7 +10,7 @@
         android:id="@+id/establishment_banner"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="0dp"
         android:background="@drawable/bg_menu_banner"
         android:elevation="8dp"
         android:gravity="center_vertical"
@@ -24,22 +24,6 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent="1.0">
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="start|center_vertical"
-            android:orientation="horizontal"
-            android:paddingEnd="12dp">
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:contentDescription="@string/content_description_search"
-                android:padding="4dp"
-                android:src="@drawable/ic_search"
-                android:tint="@color/icon_brown" />
-        </LinearLayout>
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -49,6 +33,19 @@
             android:textColor="@color/text_dark"
             android:textSize="18sp"
             android:textStyle="bold" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/content_description_search"
+            android:padding="4dp"
+            android:src="@drawable/ic_search"
+            android:tint="@color/icon_brown" />
     </LinearLayout>
 
     <TextView
