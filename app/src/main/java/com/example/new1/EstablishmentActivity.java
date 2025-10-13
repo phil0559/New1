@@ -3,6 +3,7 @@ package com.example.new1;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,7 +16,14 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class EstablishmentActivity extends Activity {
+    private static final String PREFS_NAME = "establishments_prefs";
+    private static final String KEY_ESTABLISHMENTS = "establishments";
+
     private final List<Establishment> establishments = new ArrayList<>();
     private EstablishmentAdapter establishmentAdapter;
     private ListView establishmentList;
@@ -43,6 +51,7 @@ public class EstablishmentActivity extends Activity {
         View addButton = findViewById(R.id.button_add_establishment);
         addButton.setOnClickListener(view -> showAddEstablishmentDialog());
 
+        loadEstablishments();
         updateEmptyState();
     }
 
@@ -69,6 +78,7 @@ public class EstablishmentActivity extends Activity {
                     nameInput.setError(null);
                     establishments.add(new Establishment(name, comment));
                     establishmentAdapter.notifyDataSetChanged();
+                    saveEstablishments();
                     updateEmptyState();
                     dialog.dismiss();
                 }
@@ -76,6 +86,56 @@ public class EstablishmentActivity extends Activity {
         });
 
         dialog.show();
+    }
+
+    private void loadEstablishments() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String storedValue = preferences.getString(KEY_ESTABLISHMENTS, null);
+        establishments.clear();
+
+        if (storedValue == null || storedValue.isEmpty()) {
+            establishmentAdapter.notifyDataSetChanged();
+            return;
+        }
+
+        try {
+            JSONArray array = new JSONArray(storedValue);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject item = array.optJSONObject(i);
+                if (item == null) {
+                    continue;
+                }
+
+                String name = item.optString("name", "");
+                if (name.isEmpty()) {
+                    continue;
+                }
+
+                String comment = item.optString("comment", "");
+                establishments.add(new Establishment(name, comment));
+            }
+        } catch (JSONException ignored) {
+            // Données corrompues : on les ignore simplement.
+        }
+
+        establishmentAdapter.notifyDataSetChanged();
+    }
+
+    private void saveEstablishments() {
+        JSONArray array = new JSONArray();
+        for (Establishment establishment : establishments) {
+            JSONObject item = new JSONObject();
+            try {
+                item.put("name", establishment.getName());
+                item.put("comment", establishment.getComment());
+                array.put(item);
+            } catch (JSONException ignored) {
+                // En pratique cela ne devrait pas arriver car nous n'utilisons que des chaînes.
+            }
+        }
+
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        preferences.edit().putString(KEY_ESTABLISHMENTS, array.toString()).apply();
     }
 
     private void updateEmptyState() {
