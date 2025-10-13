@@ -1,0 +1,13 @@
+# Ignorer fichiers de build et caches
+.gradle/
+build/
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+local.properties
+*.iml
+.DS_Store
+/out/
