@@ -71,10 +71,10 @@
         android:layout_height="wrap_content"
         android:layout_margin="24dp"
         android:contentDescription="@string/content_description_add_establishment"
-        app:backgroundTint="@color/icon_brown"
+        app:backgroundTint="@color/banner_beige"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/ic_add"
-        app:tint="@android:color/white" />
+        app:tint="@android:color/black" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
