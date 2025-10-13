@@ -55,12 +55,26 @@
     </LinearLayout>
 
     <TextView
+        android:id="@+id/text_placeholder"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:text="@string/establishment_placeholder"
+        android:text="@string/establishment_empty_state"
         android:textColor="@color/text_dark"
         android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/establishment_banner" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/list_establishments"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="24dp"
+        android:clipToPadding="false"
+        android:paddingBottom="88dp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/establishment_banner" />
@@ -78,3 +92,4 @@
         app:tint="@android:color/black" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
