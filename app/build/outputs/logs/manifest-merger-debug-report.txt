@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-22:12
-INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-22:12
-INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-22:12
-INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-22:12
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-25:12
+INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-25:12
+INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-25:12
+INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:1-25:12
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Philippe\.gradle\caches\8.13\transforms\93f181bbf7233d5efbcff48a11b1c057\transformed\material-1.11.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\Philippe\.gradle\caches\8.13\transforms\efd0d6ed950aa5907bfc6fdcff90ba84\transformed\constraintlayout-2.1.4\AndroidManifest.xml:2:1-11:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\Philippe\.gradle\caches\8.13\transforms\e7756d066c65270ccec7d437e39344b1\transformed\appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
@@ -55,8 +55,8 @@ MERGED from [androidx.print:print:1.0.0] C:\Users\Philippe\.gradle\caches\8.13\t
 	xmlns:android
 		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:2:11-69
 application
-ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:5:5-20:19
-INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:5:5-20:19
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:5:5-23:19
+INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:5:5-23:19
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Philippe\.gradle\caches\8.13\transforms\93f181bbf7233d5efbcff48a11b1c057\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Philippe\.gradle\caches\8.13\transforms\93f181bbf7233d5efbcff48a11b1c057\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] C:\Users\Philippe\.gradle\caches\8.13\transforms\efd0d6ed950aa5907bfc6fdcff90ba84\transformed\constraintlayout-2.1.4\AndroidManifest.xml:9:5-20
@@ -87,22 +87,28 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Philippe\.gradle\c
 		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:6:9-35
 	android:theme
 		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:10:9-42
-activity#com.example.new1.MainActivity
-ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:11:9-19:20
+activity#com.example.new1.EstablishmentActivity
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:11:9-13:40
 	android:exported
-		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:13:13-36
+		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:13:13-37
 	android:name
-		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:12:13-41
+		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:12:13-50
+activity#com.example.new1.MainActivity
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:14:9-22:20
+	android:exported
+		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:16:13-36
+	android:name
+		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:15:13-41
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:14:13-18:29
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:17:13-21:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:15:17-69
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:18:17-69
 	android:name
-		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:15:25-66
+		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:18:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:17:17-77
+ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:20:17-77
 	android:name
-		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:17:27-74
+		ADDED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml:20:27-74
 uses-sdk
 INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Philippe\AndroidStudioProjects\New1\app\src\main\AndroidManifest.xml

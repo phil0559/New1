@@ -25,6 +25,9 @@
         android:testOnly="true"
         android:theme="@style/Theme.New1" >
         <activity
+            android:name="com.example.new1.EstablishmentActivity"
+            android:exported="false" />
+        <activity
             android:name="com.example.new1.MainActivity"
             android:exported="true" >
             <intent-filter>
