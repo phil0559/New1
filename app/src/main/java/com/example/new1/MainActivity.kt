@@ -32,6 +32,11 @@ class MainActivity : AppCompatActivity() {
         establishmentButton.setOnClickListener {
             startActivity(Intent(this, EstablishmentActivity::class.java))
         }
+
+        val quitButton: View = findViewById(R.id.button_quit)
+        quitButton.setOnClickListener {
+            finishAffinity()
+        }
     }
 
     override fun onDestroy() {
