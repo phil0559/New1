@@ -25,6 +25,7 @@
         app:layout_constraintWidth_percent="1.0">
 
         <ImageView
+            android:id="@+id/button_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
