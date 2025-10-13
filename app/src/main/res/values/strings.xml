@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">New1</string>
-    <string name="hello_world">Bonjour le monde</string>
-    <string name="say_hello_button">Dire bonjour</string>
-    <string name="toast_bonjour">Bonjour Philippe</string>
     <string name="menu_title">Menu principal</string>
     <string name="content_description_menu">Ouvrir le menu principal</string>
     <string name="content_description_search">Rechercher</string>
@@ -15,5 +12,7 @@
     <string name="language_spanish">Espagnol</string>
     <string name="establishment_title">Établissement</string>
     <string name="establishment_placeholder">Contenu établissement à définir</string>
-    <string name="footer_philippe">Philippe</string>
+    <string name="button_move">Déplacement</string>
+    <string name="button_import_export">Import/Export</string>
+    <string name="button_quit">Quitter</string>
 </resources>
