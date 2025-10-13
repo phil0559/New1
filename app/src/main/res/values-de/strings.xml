@@ -12,6 +12,7 @@
     <string name="language_spanish">Spanisch</string>
     <string name="establishment_title">Einrichtung</string>
     <string name="establishment_placeholder">Inhalt der Einrichtung festzulegen</string>
+    <string name="content_description_add_establishment">Neues Element hinzufügen</string>
     <string name="button_move">Bewegung</string>
     <string name="button_import_export">Import/Export</string>
     <string name="button_quit">Beenden</string>
