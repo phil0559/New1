@@ -40,7 +40,7 @@ public class EstablishmentActivity extends Activity {
         establishmentAdapter = new EstablishmentAdapter(this, establishments);
         establishmentList.setAdapter(establishmentAdapter);
 
-        Button addButton = findViewById(R.id.button_add_establishment);
+        View addButton = findViewById(R.id.button_add_establishment);
         addButton.setOnClickListener(view -> showAddEstablishmentDialog());
 
         updateEmptyState();
