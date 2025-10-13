@@ -1,0 +1,32 @@
+R_DEF: Internal format may change without notice
+local
+color background_beige
+color banner_beige
+color banner_beige_light
+color banner_outline
+color flag_blue
+color flag_red
+color flag_stroke
+color flag_white
+color icon_brown
+color purple_500
+color purple_700
+color teal_200
+color text_dark
+drawable bg_flag_container
+drawable bg_flag_shape
+drawable bg_menu_banner
+drawable ic_flag_france
+drawable ic_menu
+drawable ic_search
+id menu_banner
+layout activity_main
+string app_name
+string content_description_flag
+string content_description_menu
+string content_description_search
+string hello_world
+string menu_title
+string say_hello_button
+string toast_bonjour
+style Theme.New1
