@@ -1,8 +1,12 @@
 package com.example.new1;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +17,7 @@ import android.widget.PopupWindow;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
+    private static final int REQUEST_CAMERA_PERMISSION = 1001;
     private PopupWindow languagePopup;
     private ImageView flagIcon;
 
@@ -39,6 +44,8 @@ public class MainActivity extends Activity {
 
         View quitButton = findViewById(R.id.button_quit);
         quitButton.setOnClickListener(view -> finishAffinity());
+
+        requestCameraPermissionIfFirstLaunch();
     }
 
     @Override
@@ -123,5 +130,17 @@ public class MainActivity extends Activity {
             return R.drawable.ic_flag_spain;
         }
         return R.drawable.ic_flag_france;
+    }
+
+    private void requestCameraPermissionIfFirstLaunch() {
+        SharedPreferences preferences = getSharedPreferences("app_preferences", MODE_PRIVATE);
+        boolean alreadyRequested = preferences.getBoolean("camera_permission_requested", false);
+        if (!alreadyRequested) {
+            preferences.edit().putBoolean("camera_permission_requested", true).apply();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+            }
+        }
     }
 }
