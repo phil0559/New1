@@ -19,6 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -110,7 +111,17 @@ public class EstablishmentContentActivity extends Activity {
         roomList = findViewById(R.id.list_rooms);
         emptyPlaceholder = findViewById(R.id.text_rooms_placeholder);
 
-        roomAdapter = new RoomAdapter(this, rooms);
+        roomAdapter = new RoomAdapter(this, rooms, new RoomAdapter.OnRoomInteractionListener() {
+            @Override
+            public void onEditRoom(@NonNull Room room, int position) {
+                showRoomDialog(room, position);
+            }
+
+            @Override
+            public void onDeleteRoom(@NonNull Room room, int position) {
+                showDeleteRoomConfirmation(room, position);
+            }
+        });
         if (roomList != null) {
             roomList.setLayoutManager(new LinearLayoutManager(this));
             roomList.setAdapter(roomAdapter);
@@ -118,14 +129,14 @@ public class EstablishmentContentActivity extends Activity {
 
         View addButton = findViewById(R.id.button_add_content);
         if (addButton != null) {
-            addButton.setOnClickListener(view -> showAddRoomDialog());
+            addButton.setOnClickListener(view -> showRoomDialog(null, -1));
         }
 
         loadRooms();
         updateEmptyState();
     }
 
-    private void showAddRoomDialog() {
+    private void showRoomDialog(@Nullable Room roomToEdit, int position) {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_room, null);
         TextView titleView = dialogView.findViewById(R.id.text_dialog_title);
         TextView photoLabel = dialogView.findViewById(R.id.text_room_photos_label);
@@ -134,19 +145,28 @@ public class EstablishmentContentActivity extends Activity {
         EditText nameInput = dialogView.findViewById(R.id.input_room_name);
         EditText commentInput = dialogView.findViewById(R.id.input_room_comment);
 
-        if (titleView != null) {
-            titleView.setText(R.string.dialog_add_room_title);
-        }
-
-        if (photoLabel != null) {
-            photoLabel.setText(R.string.dialog_label_room_photos_default);
-        }
-
         FormState formState = new FormState();
         formState.photoLabel = photoLabel;
         formState.photoContainer = photoContainer;
         formState.addPhotoButton = addPhotoButton;
         currentFormState = formState;
+
+        boolean isEditing = roomToEdit != null && position >= 0 && position < rooms.size();
+
+        if (titleView != null) {
+            titleView.setText(isEditing ? R.string.dialog_edit_room_title : R.string.dialog_add_room_title);
+        }
+
+        if (isEditing) {
+            if (nameInput != null) {
+                nameInput.setText(roomToEdit.getName());
+                nameInput.setSelection(nameInput.getText().length());
+            }
+            if (commentInput != null) {
+                commentInput.setText(roomToEdit.getComment());
+            }
+            formState.photos.addAll(roomToEdit.getPhotos());
+        }
 
         if (addPhotoButton != null) {
             addPhotoButton.setOnClickListener(view -> {
@@ -191,8 +211,14 @@ public class EstablishmentContentActivity extends Activity {
                     return;
                 }
 
-                rooms.add(new Room(name, comment, new ArrayList<>(formState.photos)));
-                roomAdapter.notifyItemInserted(rooms.size() - 1);
+                Room updatedRoom = new Room(name, comment, new ArrayList<>(formState.photos));
+                if (isEditing) {
+                    rooms.set(position, updatedRoom);
+                    roomAdapter.notifyItemChanged(position);
+                } else {
+                    rooms.add(updatedRoom);
+                    roomAdapter.notifyItemInserted(rooms.size() - 1);
+                }
                 saveRooms();
                 updateEmptyState();
                 dialog.dismiss();
@@ -206,6 +232,29 @@ public class EstablishmentContentActivity extends Activity {
         });
 
         dialog.show();
+    }
+
+    private void showDeleteRoomConfirmation(@NonNull Room room, int position) {
+        if (position < 0 || position >= rooms.size()) {
+            return;
+        }
+
+        String name = room.getName();
+        if (name == null) {
+            name = "";
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_delete_room_title)
+                .setMessage(getString(R.string.dialog_delete_room_message, name))
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.dialog_delete_room_confirm, (dialog, which) -> {
+                    rooms.remove(position);
+                    roomAdapter.notifyItemRemoved(position);
+                    saveRooms();
+                    updateEmptyState();
+                })
+                .show();
     }
 
     private void loadRooms() {
@@ -300,6 +349,7 @@ public class EstablishmentContentActivity extends Activity {
         if (subtitleView == null) {
             return;
         }
+        subtitleView.setVisibility(View.VISIBLE);
         String name = getTrimmedEstablishmentName();
         if (name.isEmpty()) {
             subtitleView.setText(R.string.establishment_content_placeholder);
@@ -312,20 +362,8 @@ public class EstablishmentContentActivity extends Activity {
         if (subtitleView == null) {
             return;
         }
-        int count = rooms.size();
-        String name = getTrimmedEstablishmentName();
-        if (name.isEmpty()) {
-            subtitleView.setText(getResources().getQuantityString(
-                    R.plurals.establishment_content_rooms_count,
-                    count,
-                    count));
-        } else {
-            subtitleView.setText(getResources().getQuantityString(
-                    R.plurals.establishment_content_rooms_count_with_name,
-                    count,
-                    count,
-                    name));
-        }
+        subtitleView.setText("");
+        subtitleView.setVisibility(View.GONE);
     }
 
     private void refreshPhotoSection(FormState formState) {
