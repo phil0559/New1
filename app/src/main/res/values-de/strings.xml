@@ -53,6 +53,11 @@
     <string name="error_room_name_required">Der Name des Raums ist erforderlich</string>
     <string name="rooms_empty_state">Fügen Sie einen Raum hinzu, um zu beginnen</string>
     <string name="rooms_empty_state_with_name">Fügen Sie einen Raum für %1$s hinzu</string>
+    <string name="dialog_edit_room_title">Raum bearbeiten</string>
+    <string name="content_description_room_menu">Optionen für %1$s</string>
+    <string name="dialog_delete_room_title">Raum löschen</string>
+    <string name="dialog_delete_room_message">Möchten Sie den Raum %1$s löschen?</string>
+    <string name="dialog_delete_room_confirm">Löschen</string>
     <string name="button_move">Bewegung</string>
     <string name="button_import_export">Import/Export</string>
     <string name="button_quit">Beenden</string>

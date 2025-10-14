@@ -53,6 +53,11 @@
     <string name="error_room_name_required">El nombre de la habitación es obligatorio</string>
     <string name="rooms_empty_state">Agregue una habitación para comenzar</string>
     <string name="rooms_empty_state_with_name">Agregue una habitación para %1$s</string>
+    <string name="dialog_edit_room_title">Editar habitación</string>
+    <string name="content_description_room_menu">Opciones de %1$s</string>
+    <string name="dialog_delete_room_title">Eliminar habitación</string>
+    <string name="dialog_delete_room_message">¿Desea eliminar la habitación %1$s?</string>
+    <string name="dialog_delete_room_confirm">Eliminar</string>
     <string name="button_move">Movimiento</string>
     <string name="button_import_export">Importar/Exportar</string>
     <string name="button_quit">Salir</string>

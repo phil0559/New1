@@ -61,6 +61,11 @@
     <string name="error_room_name_required">Le nom de la pièce est obligatoire</string>
     <string name="rooms_empty_state">Ajoutez une pièce pour commencer</string>
     <string name="rooms_empty_state_with_name">Ajoutez une pièce pour %1$s</string>
+    <string name="dialog_edit_room_title">Modifier la pièce</string>
+    <string name="content_description_room_menu">Options de %1$s</string>
+    <string name="dialog_delete_room_title">Supprimer la pièce</string>
+    <string name="dialog_delete_room_message">Voulez-vous supprimer la pièce %1$s ?</string>
+    <string name="dialog_delete_room_confirm">Supprimer</string>
     <string name="button_move">Déplacement</string>
     <string name="button_import_export">Import/Export</string>
     <string name="button_quit">Quitter</string>
