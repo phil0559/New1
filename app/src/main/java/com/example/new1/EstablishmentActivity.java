@@ -3,21 +3,32 @@ package com.example.new1;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.provider.MediaStore;
+import android.util.Base64;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import java.io.ByteArrayOutputStream;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -26,11 +37,19 @@ import org.json.JSONObject;
 public class EstablishmentActivity extends Activity {
     private static final String PREFS_NAME = "establishments_prefs";
     private static final String KEY_ESTABLISHMENTS = "establishments";
+    private static final int REQUEST_TAKE_PHOTO = 1001;
 
     private final List<Establishment> establishments = new ArrayList<>();
     private EstablishmentAdapter establishmentAdapter;
     private RecyclerView establishmentList;
     private TextView emptyPlaceholder;
+    private FormState currentFormState;
+
+    private static class FormState {
+        TextView photoLabel;
+        LinearLayout photoContainer;
+        final List<String> photos = new ArrayList<>();
+    }
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -86,8 +105,19 @@ public class EstablishmentActivity extends Activity {
         TextView titleView = dialogView.findViewById(R.id.text_dialog_title);
         EditText nameInput = dialogView.findViewById(R.id.input_establishment_name);
         EditText commentInput = dialogView.findViewById(R.id.input_establishment_comment);
+        TextView photoLabel = dialogView.findViewById(R.id.text_establishment_photos_label);
+        View addPhotoButton = dialogView.findViewById(R.id.button_add_photo);
+        LinearLayout photoContainer = dialogView.findViewById(R.id.container_establishment_photos);
 
         boolean isEditMode = existingEstablishment != null && position >= 0;
+
+        FormState formState = new FormState();
+        formState.photoLabel = photoLabel;
+        formState.photoContainer = photoContainer;
+        if (existingEstablishment != null) {
+            formState.photos.addAll(existingEstablishment.getPhotos());
+        }
+        currentFormState = formState;
 
         if (titleView != null) {
             titleView.setText(isEditMode
@@ -101,6 +131,24 @@ public class EstablishmentActivity extends Activity {
             String comment = existingEstablishment.getComment();
             commentInput.setText(comment != null ? comment : "");
         }
+
+        if (addPhotoButton != null) {
+            addPhotoButton.setOnClickListener(view -> {
+                if (currentFormState == null) {
+                    return;
+                }
+                if (currentFormState.photos.size() >= 5) {
+                    Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (cameraIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(cameraIntent, REQUEST_TAKE_PHOTO);
+                }
+            });
+        }
+
+        refreshPhotoSection(formState);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setView(dialogView)
@@ -121,15 +169,20 @@ public class EstablishmentActivity extends Activity {
 
                 nameInput.setError(null);
 
+                if (currentFormState != null && currentFormState != formState) {
+                    dialog.dismiss();
+                    return;
+                }
+
                 if (isEditMode) {
                     if (position < 0 || position >= establishments.size()) {
                         dialog.dismiss();
                         return;
                     }
-                    establishments.set(position, new Establishment(name, comment));
+                    establishments.set(position, new Establishment(name, comment, new ArrayList<>(formState.photos)));
                     establishmentAdapter.notifyItemChanged(position);
                 } else {
-                    establishments.add(new Establishment(name, comment));
+                    establishments.add(new Establishment(name, comment, new ArrayList<>(formState.photos)));
                     establishmentAdapter.notifyItemInserted(establishments.size() - 1);
                 }
 
@@ -137,6 +190,12 @@ public class EstablishmentActivity extends Activity {
                 updateEmptyState();
                 dialog.dismiss();
             });
+        });
+
+        dialog.setOnDismissListener(d -> {
+            if (currentFormState == formState) {
+                currentFormState = null;
+            }
         });
 
         dialog.show();
@@ -184,7 +243,17 @@ public class EstablishmentActivity extends Activity {
                 }
 
                 String comment = item.optString("comment", "");
-                establishments.add(new Establishment(name, comment));
+                JSONArray photosArray = item.optJSONArray("photos");
+                List<String> photos = new ArrayList<>();
+                if (photosArray != null) {
+                    for (int j = 0; j < photosArray.length(); j++) {
+                        String photoValue = photosArray.optString(j, null);
+                        if (photoValue != null && !photoValue.isEmpty()) {
+                            photos.add(photoValue);
+                        }
+                    }
+                }
+                establishments.add(new Establishment(name, comment, photos));
             }
         } catch (JSONException ignored) {
             // Données corrompues : on les ignore simplement.
@@ -200,6 +269,11 @@ public class EstablishmentActivity extends Activity {
             try {
                 item.put("name", establishment.getName());
                 item.put("comment", establishment.getComment());
+                JSONArray photosArray = new JSONArray();
+                for (String photo : establishment.getPhotos()) {
+                    photosArray.put(photo);
+                }
+                item.put("photos", photosArray);
                 array.put(item);
             } catch (JSONException ignored) {
                 // En pratique cela ne devrait pas arriver car nous n'utilisons que des chaînes.
@@ -218,5 +292,166 @@ public class EstablishmentActivity extends Activity {
             emptyPlaceholder.setVisibility(View.GONE);
             establishmentList.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void refreshPhotoSection(FormState formState) {
+        if (formState.photoLabel != null) {
+            formState.photoLabel.setText(getString(R.string.dialog_label_establishment_photos_template,
+                    formState.photos.size()));
+        }
+
+        if (formState.photoContainer == null) {
+            return;
+        }
+
+        formState.photoContainer.removeAllViews();
+        if (formState.photos.isEmpty()) {
+            formState.photoContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        formState.photoContainer.setVisibility(View.VISIBLE);
+        int size = getResources().getDimensionPixelSize(R.dimen.dialog_photo_thumbnail_size);
+        int margin = getResources().getDimensionPixelSize(R.dimen.dialog_photo_thumbnail_spacing);
+
+        for (int i = 0; i < formState.photos.size(); i++) {
+            String photoData = formState.photos.get(i);
+            Bitmap bitmap = decodePhoto(photoData);
+            if (bitmap == null) {
+                continue;
+            }
+            ImageView thumbnail = new ImageView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(size, size);
+            if (i > 0) {
+                params.setMarginStart(margin);
+            }
+            thumbnail.setLayoutParams(params);
+            thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            thumbnail.setImageBitmap(bitmap);
+            final int index = i;
+            thumbnail.setOnClickListener(view -> showPhotoPreview(formState, index));
+            formState.photoContainer.addView(thumbnail);
+        }
+    }
+
+    private void showPhotoPreview(FormState formState, int startIndex) {
+        if (formState.photos.isEmpty()) {
+            return;
+        }
+
+        View previewView = LayoutInflater.from(this).inflate(R.layout.dialog_photo_preview, null);
+        ImageView previewImage = previewView.findViewById(R.id.image_photo_preview);
+        ImageButton previousButton = previewView.findViewById(R.id.button_previous_photo);
+        ImageButton nextButton = previewView.findViewById(R.id.button_next_photo);
+        ImageButton deleteButton = previewView.findViewById(R.id.button_delete_photo);
+
+        AlertDialog previewDialog = new AlertDialog.Builder(this)
+                .setView(previewView)
+                .create();
+
+        final int[] currentIndex = {Math.max(0, Math.min(startIndex, formState.photos.size() - 1))};
+
+        Runnable updateImage = new Runnable() {
+            @Override
+            public void run() {
+                if (formState.photos.isEmpty()) {
+                    previewDialog.dismiss();
+                    refreshPhotoSection(formState);
+                    return;
+                }
+                Bitmap bitmap = decodePhoto(formState.photos.get(currentIndex[0]));
+                if (bitmap != null) {
+                    previewImage.setImageBitmap(bitmap);
+                }
+                previousButton.setEnabled(formState.photos.size() > 1);
+                nextButton.setEnabled(formState.photos.size() > 1);
+            }
+        };
+
+        previousButton.setOnClickListener(view -> {
+            if (formState.photos.size() <= 1) {
+                return;
+            }
+            currentIndex[0] = (currentIndex[0] - 1 + formState.photos.size()) % formState.photos.size();
+            updateImage.run();
+        });
+
+        nextButton.setOnClickListener(view -> {
+            if (formState.photos.size() <= 1) {
+                return;
+            }
+            currentIndex[0] = (currentIndex[0] + 1) % formState.photos.size();
+            updateImage.run();
+        });
+
+        deleteButton.setOnClickListener(view -> {
+            if (formState.photos.isEmpty()) {
+                return;
+            }
+            formState.photos.remove(currentIndex[0]);
+            if (formState.photos.isEmpty()) {
+                previewDialog.dismiss();
+            } else {
+                currentIndex[0] = currentIndex[0] % formState.photos.size();
+                updateImage.run();
+            }
+            refreshPhotoSection(formState);
+        });
+
+        previewDialog.setOnDismissListener(dialog -> {
+            if (!isFinishing()) {
+                refreshPhotoSection(formState);
+            }
+        });
+
+        updateImage.run();
+        previewDialog.show();
+    }
+
+    @Nullable
+    private Bitmap decodePhoto(String data) {
+        try {
+            byte[] decoded = Base64.decode(data, Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    private String encodePhoto(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream);
+        byte[] bytes = outputStream.toByteArray();
+        return Base64.encodeToString(bytes, Base64.DEFAULT);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_TAKE_PHOTO || resultCode != RESULT_OK || currentFormState == null) {
+            return;
+        }
+
+        if (data == null || data.getExtras() == null) {
+            return;
+        }
+
+        Object value = data.getExtras().get("data");
+        if (!(value instanceof Bitmap)) {
+            return;
+        }
+
+        Bitmap bitmap = (Bitmap) value;
+        if (bitmap == null) {
+            return;
+        }
+
+        if (currentFormState.photos.size() >= 5) {
+            Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        currentFormState.photos.add(encodePhoto(bitmap));
+        refreshPhotoSection(currentFormState);
     }
 }

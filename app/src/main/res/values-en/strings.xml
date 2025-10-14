@@ -24,8 +24,14 @@
     <string name="dialog_edit_establishment_title">Edit establishment</string>
     <string name="dialog_label_establishment_name">Name of the establishment</string>
     <string name="dialog_label_establishment_comment">Comment (optional)</string>
-    <string name="dialog_label_establishment_photos">Establishment photos (0)</string>
-    <string name="dialog_action_add_photo">+ photo (Max 5)</string>
+    <string name="dialog_label_establishment_photos_default">Establishment photos (0)</string>
+    <string name="dialog_label_establishment_photos_template">Establishment photos (%1$d)</string>
+    <string name="dialog_action_add_photo">+ Photo</string>
+    <string name="dialog_error_max_photos_reached">You can take up to 5 photos.</string>
+    <string name="content_description_photo_preview">Photo preview</string>
+    <string name="content_description_previous_photo">Show previous photo</string>
+    <string name="content_description_next_photo">Show next photo</string>
+    <string name="content_description_delete_photo">Delete the displayed photo</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_confirm">Confirm</string>
     <string name="action_delete">Delete</string>

@@ -24,8 +24,14 @@
     <string name="dialog_edit_establishment_title">Einrichtung bearbeiten</string>
     <string name="dialog_label_establishment_name">Name der Einrichtung</string>
     <string name="dialog_label_establishment_comment">Kommentar (optional)</string>
-    <string name="dialog_label_establishment_photos">Fotos der Einrichtung (0)</string>
-    <string name="dialog_action_add_photo">+ Foto (max. 5)</string>
+    <string name="dialog_label_establishment_photos_default">Fotos der Einrichtung (0)</string>
+    <string name="dialog_label_establishment_photos_template">Fotos der Einrichtung (%1$d)</string>
+    <string name="dialog_action_add_photo">+ Foto</string>
+    <string name="dialog_error_max_photos_reached">Sie können bis zu 5 Fotos aufnehmen.</string>
+    <string name="content_description_photo_preview">Foto-Vorschau</string>
+    <string name="content_description_previous_photo">Vorheriges Foto anzeigen</string>
+    <string name="content_description_next_photo">Nächstes Foto anzeigen</string>
+    <string name="content_description_delete_photo">Angezeigtes Foto löschen</string>
     <string name="action_cancel">Abbrechen</string>
     <string name="action_confirm">Bestätigen</string>
     <string name="action_delete">Löschen</string>

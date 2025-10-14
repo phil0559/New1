@@ -48,19 +48,42 @@
         android:textColorHint="@color/icon_brown" />
 
     <TextView
+        android:id="@+id/text_establishment_photos_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="4dp"
-        android:text="@string/dialog_label_establishment_photos"
+        android:text="@string/dialog_label_establishment_photos_default"
         android:textColor="@color/text_dark"
         android:textSize="14sp" />
 
-    <TextView
+    <Button
+        android:id="@+id/button_add_photo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
         android:text="@string/dialog_action_add_photo"
+        android:textAllCaps="false"
         android:textColor="@color/icon_brown"
         android:textSize="14sp"
         android:textStyle="bold" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/container_establishment_photos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone" />
+    </HorizontalScrollView>
 </LinearLayout>
