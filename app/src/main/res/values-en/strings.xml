@@ -17,6 +17,14 @@
     <string name="establishment_content_title_with_name">Content for %1$s</string>
     <string name="establishment_content_placeholder">No content has been added yet.</string>
     <string name="establishment_content_placeholder_with_name">No content has been added for %1$s yet.</string>
+    <plurals name="establishment_content_rooms_count">
+        <item quantity="one">%1$d room added.</item>
+        <item quantity="other">%1$d rooms added.</item>
+    </plurals>
+    <plurals name="establishment_content_rooms_count_with_name">
+        <item quantity="one">%1$d room added for %2$s.</item>
+        <item quantity="other">%1$d rooms added for %2$s.</item>
+    </plurals>
     <string name="establishment_content_comment_label">Comment</string>
     <string name="establishment_content_comment_label_with_name">Comment for %1$s</string>
     <string name="establishment_content_comment_placeholder">No comment has been provided.</string>
@@ -42,6 +50,12 @@
     <string name="dialog_label_room_comment">Comment (optional)</string>
     <string name="dialog_label_room_photos_default">Room photos (0)</string>
     <string name="dialog_label_room_photos_template">Room photos (%1$d)</string>
+    <string name="room_content_title">Room content</string>
+    <string name="room_content_title_with_name">Content of '%1$s'</string>
+    <string name="room_content_placeholder">Add content to this room to get started.</string>
+    <string name="room_content_placeholder_with_establishment">Add content for %1$s.</string>
+    <string name="room_content_empty_state">Items in the room will appear here.</string>
+    <string name="content_description_add_room_content">Add content for the room</string>
     <string name="content_description_photo_preview">Photo preview</string>
     <string name="content_description_previous_photo">Show previous photo</string>
     <string name="content_description_next_photo">Show next photo</string>
