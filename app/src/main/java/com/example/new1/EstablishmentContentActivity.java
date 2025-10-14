@@ -113,6 +113,11 @@ public class EstablishmentContentActivity extends Activity {
 
         roomAdapter = new RoomAdapter(this, rooms, new RoomAdapter.OnRoomInteractionListener() {
             @Override
+            public void onOpenRoom(@NonNull Room room, int position) {
+                openRoomContent(room);
+            }
+
+            @Override
             public void onEditRoom(@NonNull Room room, int position) {
                 showRoomDialog(room, position);
             }
@@ -134,6 +139,11 @@ public class EstablishmentContentActivity extends Activity {
 
         loadRooms();
         updateEmptyState();
+    }
+
+    private void openRoomContent(@NonNull Room room) {
+        Intent intent = RoomContentActivity.createIntent(this, establishmentName, room);
+        startActivity(intent);
     }
 
     private void showRoomDialog(@Nullable Room roomToEdit, int position) {
