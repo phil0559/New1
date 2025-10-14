@@ -26,7 +26,7 @@
     <string name="dialog_label_establishment_comment">Comentario (opcional)</string>
     <string name="dialog_label_establishment_photos_default">Fotos del establecimiento (0)</string>
     <string name="dialog_label_establishment_photos_template">Fotos del establecimiento (%1$d)</string>
-    <string name="dialog_action_add_photo">+ Foto</string>
+    <string name="dialog_action_add_photo">+ Foto (máx. 5)</string>
     <string name="dialog_error_max_photos_reached">Puede tomar hasta 5 fotos.</string>
     <string name="content_description_photo_preview">Vista previa de la foto</string>
     <string name="content_description_previous_photo">Ver la foto anterior</string>

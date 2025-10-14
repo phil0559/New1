@@ -48,6 +48,7 @@ public class EstablishmentActivity extends Activity {
     private static class FormState {
         TextView photoLabel;
         LinearLayout photoContainer;
+        View addPhotoButton;
         final List<String> photos = new ArrayList<>();
     }
 
@@ -114,6 +115,7 @@ public class EstablishmentActivity extends Activity {
         FormState formState = new FormState();
         formState.photoLabel = photoLabel;
         formState.photoContainer = photoContainer;
+        formState.addPhotoButton = addPhotoButton;
         if (existingEstablishment != null) {
             formState.photos.addAll(existingEstablishment.getPhotos());
         }
@@ -298,6 +300,11 @@ public class EstablishmentActivity extends Activity {
         if (formState.photoLabel != null) {
             formState.photoLabel.setText(getString(R.string.dialog_label_establishment_photos_template,
                     formState.photos.size()));
+        }
+
+        if (formState.addPhotoButton != null) {
+            boolean canAddPhoto = formState.photos.size() < 5;
+            formState.addPhotoButton.setEnabled(canAddPhoto);
         }
 
         if (formState.photoContainer == null) {
