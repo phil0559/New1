@@ -33,13 +33,25 @@
                 android:tint="@color/icon_brown" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
                 android:layout_marginStart="16dp"
+                android:layout_weight="1"
                 android:text="@string/establishment_title"
                 android:textColor="@color/text_dark"
                 android:textSize="20sp"
                 android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/button_search"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_flag_container"
+                android:contentDescription="@string/content_description_search"
+                android:padding="8dp"
+                android:src="@drawable/ic_search"
+                android:tint="@color/icon_brown" />
         </LinearLayout>
 
         <View
