@@ -1,6 +1,8 @@
 package com.example.new1;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
@@ -12,7 +14,10 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import android.util.Base64;
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.core.widget.PopupWindowCompat;
 
@@ -56,6 +61,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         private final TextView nameView;
         private final TextView commentView;
         private final ImageView menuView;
+        private final ImageView photoView;
+        private final int defaultPaddingStart;
+        private final int defaultPaddingTop;
+        private final int defaultPaddingEnd;
+        private final int defaultPaddingBottom;
         private final OnEstablishmentMenuListener menuListener;
         private PopupWindow popupWindow;
         private Establishment currentItem;
@@ -65,8 +75,23 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             nameView = itemView.findViewById(R.id.text_establishment_name);
             commentView = itemView.findViewById(R.id.text_establishment_comment);
             menuView = itemView.findViewById(R.id.image_establishment_menu);
+            photoView = itemView.findViewById(R.id.image_establishment_photo);
+            defaultPaddingStart = photoView.getPaddingStart();
+            defaultPaddingTop = photoView.getPaddingTop();
+            defaultPaddingEnd = photoView.getPaddingEnd();
+            defaultPaddingBottom = photoView.getPaddingBottom();
             this.menuListener = menuListener;
             menuView.setOnClickListener(view -> togglePopup());
+            photoView.setOnClickListener(view -> {
+                if (menuListener == null || currentItem == null) {
+                    return;
+                }
+                int position = getBindingAdapterPosition();
+                if (position == RecyclerView.NO_POSITION) {
+                    return;
+                }
+                menuListener.onEditEstablishment(currentItem, position);
+            });
         }
 
         void bind(Establishment item) {
@@ -79,12 +104,51 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     R.string.content_description_establishment_menu,
                     item.getName()
             ));
+            photoView.setContentDescription(itemView.getContext().getString(
+                    R.string.content_description_establishment_photos,
+                    item.getName()
+            ));
+            updatePhotoThumbnail(item);
             String comment = item.getComment();
             if (comment == null || comment.isEmpty()) {
                 commentView.setVisibility(View.GONE);
             } else {
                 commentView.setVisibility(View.VISIBLE);
                 commentView.setText(comment);
+            }
+        }
+
+        private void updatePhotoThumbnail(Establishment item) {
+            List<String> photos = item.getPhotos();
+            if (photos.isEmpty()) {
+                resetToDefaultPhoto();
+                return;
+            }
+
+            Bitmap bitmap = decodePhoto(photos.get(0));
+            if (bitmap == null) {
+                resetToDefaultPhoto();
+                return;
+            }
+
+            photoView.setImageBitmap(bitmap);
+            photoView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            photoView.setPadding(0, 0, 0, 0);
+        }
+
+        private void resetToDefaultPhoto() {
+            photoView.setImageResource(R.drawable.ic_establishment_photos);
+            photoView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            photoView.setPadding(defaultPaddingStart, defaultPaddingTop, defaultPaddingEnd, defaultPaddingBottom);
+        }
+
+        @Nullable
+        private Bitmap decodePhoto(String encodedPhoto) {
+            try {
+                byte[] decoded = Base64.decode(encodedPhoto, Base64.DEFAULT);
+                return BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+            } catch (IllegalArgumentException exception) {
+                return null;
             }
         }
 
