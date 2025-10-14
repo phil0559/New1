@@ -20,17 +20,20 @@ import java.util.List;
 public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdapter.ViewHolder> {
     private final LayoutInflater inflater;
     private final List<Establishment> data;
+    private final OnEstablishmentMenuListener menuListener;
 
-    public EstablishmentAdapter(Context context, List<Establishment> data) {
+    public EstablishmentAdapter(Context context, List<Establishment> data,
+            OnEstablishmentMenuListener menuListener) {
         this.inflater = LayoutInflater.from(context);
         this.data = data;
+        this.menuListener = menuListener;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.item_establishment, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, menuListener);
     }
 
     @Override
@@ -43,17 +46,24 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         return data.size();
     }
 
+    interface OnEstablishmentMenuListener {
+        void onDeleteEstablishment(@NonNull Establishment establishment, int position);
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
         private final TextView commentView;
         private final ImageView menuView;
+        private final OnEstablishmentMenuListener menuListener;
         private PopupWindow popupWindow;
+        private Establishment currentItem;
 
-        ViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull View itemView, OnEstablishmentMenuListener menuListener) {
             super(itemView);
             nameView = itemView.findViewById(R.id.text_establishment_name);
             commentView = itemView.findViewById(R.id.text_establishment_comment);
             menuView = itemView.findViewById(R.id.image_establishment_menu);
+            this.menuListener = menuListener;
             menuView.setOnClickListener(view -> togglePopup());
         }
 
@@ -61,6 +71,7 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             if (popupWindow != null && popupWindow.isShowing()) {
                 popupWindow.dismiss();
             }
+            currentItem = item;
             nameView.setText(item.getName());
             menuView.setContentDescription(itemView.getContext().getString(
                     R.string.content_description_establishment_menu,
@@ -93,6 +104,23 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             popupWindow.setOutsideTouchable(true);
             popupWindow.setOnDismissListener(() -> popupWindow = null);
+
+            View deleteButton = popupContent.findViewById(R.id.button_popup_delete);
+            if (deleteButton != null) {
+                deleteButton.setOnClickListener(view -> {
+                    if (popupWindow != null) {
+                        popupWindow.dismiss();
+                    }
+                    if (menuListener == null || currentItem == null) {
+                        return;
+                    }
+                    int position = getBindingAdapterPosition();
+                    if (position == RecyclerView.NO_POSITION) {
+                        return;
+                    }
+                    menuListener.onDeleteEstablishment(currentItem, position);
+                });
+            }
 
             int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
             PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, verticalOffset, Gravity.END);

@@ -47,7 +47,8 @@ public class EstablishmentActivity extends Activity {
         establishmentList = findViewById(R.id.list_establishments);
         emptyPlaceholder = findViewById(R.id.text_placeholder);
 
-        establishmentAdapter = new EstablishmentAdapter(this, establishments);
+        establishmentAdapter = new EstablishmentAdapter(this, establishments,
+                (establishment, position) -> showDeleteConfirmation(establishment, position));
         establishmentList.setLayoutManager(new LinearLayoutManager(this));
         establishmentList.setAdapter(establishmentAdapter);
 
@@ -80,7 +81,7 @@ public class EstablishmentActivity extends Activity {
                 } else {
                     nameInput.setError(null);
                     establishments.add(new Establishment(name, comment));
-                    establishmentAdapter.notifyDataSetChanged();
+                    establishmentAdapter.notifyItemInserted(establishments.size() - 1);
                     saveEstablishments();
                     updateEmptyState();
                     dialog.dismiss();
@@ -89,6 +90,24 @@ public class EstablishmentActivity extends Activity {
         });
 
         dialog.show();
+    }
+
+    private void showDeleteConfirmation(Establishment establishment, int position) {
+        if (position < 0 || position >= establishments.size()) {
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.dialog_delete_establishment_title)
+            .setMessage(getString(R.string.dialog_delete_establishment_message, establishment.getName()))
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_delete, (dialog, which) -> {
+                establishments.remove(position);
+                establishmentAdapter.notifyItemRemoved(position);
+                saveEstablishments();
+                updateEmptyState();
+            })
+            .show();
     }
 
     private void loadEstablishments() {
