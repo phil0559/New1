@@ -47,7 +47,7 @@ public class EstablishmentActivity extends Activity {
         establishmentList = findViewById(R.id.list_establishments);
         emptyPlaceholder = findViewById(R.id.text_placeholder);
 
-        establishmentAdapter = new EstablishmentAdapter(this, establishments);
+        establishmentAdapter = new EstablishmentAdapter(this, establishments, this::confirmDeletion);
         establishmentList.setLayoutManager(new LinearLayoutManager(this));
         establishmentList.setAdapter(establishmentAdapter);
 
@@ -149,5 +149,25 @@ public class EstablishmentActivity extends Activity {
             emptyPlaceholder.setVisibility(View.GONE);
             establishmentList.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void confirmDeletion(int position) {
+        if (position < 0 || position >= establishments.size()) {
+            return;
+        }
+
+        Establishment establishment = establishments.get(position);
+        new AlertDialog.Builder(this)
+            .setTitle(R.string.popup_establishment_delete)
+            .setMessage(getString(R.string.popup_establishment_delete_confirmation, establishment.getName()))
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.action_confirm, (dialog, which) -> {
+                establishments.remove(position);
+                establishmentAdapter.notifyItemRemoved(position);
+                establishmentAdapter.notifyItemRangeChanged(position, establishments.size() - position);
+                saveEstablishments();
+                updateEmptyState();
+            })
+            .show();
     }
 }
