@@ -2,6 +2,7 @@ package com.example.new1;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -141,7 +142,24 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             }
 
             int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
-            PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, verticalOffset, Gravity.END);
+            popupContent.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int popupHeight = popupContent.getMeasuredHeight();
+
+            Rect displayFrame = new Rect();
+            menuView.getWindowVisibleDisplayFrame(displayFrame);
+            int[] location = new int[2];
+            menuView.getLocationOnScreen(location);
+            int anchorBottom = location[1] + menuView.getHeight();
+            int spaceBelow = displayFrame.bottom - anchorBottom;
+            int spaceAbove = location[1] - displayFrame.top;
+
+            int yOffset = verticalOffset;
+            if (spaceBelow < popupHeight + verticalOffset && spaceAbove >= popupHeight + verticalOffset) {
+                yOffset = -(menuView.getHeight() + popupHeight + verticalOffset);
+            }
+
+            PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, yOffset, Gravity.END);
         }
     }
 }
