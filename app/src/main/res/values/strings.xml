@@ -17,6 +17,14 @@
     <string name="establishment_content_title_with_name">Pièces de %1$s</string>
     <string name="establishment_content_placeholder">Aucun contenu n’a encore été ajouté.</string>
     <string name="establishment_content_placeholder_with_name">Aucun contenu n’a encore été ajouté pour %1$s.</string>
+    <plurals name="establishment_content_rooms_count">
+        <item quantity="one">%1$d pièce ajoutée.</item>
+        <item quantity="other">%1$d pièces ajoutées.</item>
+    </plurals>
+    <plurals name="establishment_content_rooms_count_with_name">
+        <item quantity="one">%1$d pièce ajoutée pour %2$s.</item>
+        <item quantity="other">%1$d pièces ajoutées pour %2$s.</item>
+    </plurals>
     <string name="establishment_content_comment_label">Commentaire</string>
     <string name="establishment_content_comment_label_with_name">Commentaire pour %1$s</string>
     <string name="establishment_content_comment_placeholder">Aucun commentaire n’a été saisi.</string>
