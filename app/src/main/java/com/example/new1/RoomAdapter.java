@@ -53,6 +53,8 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
     }
 
     interface OnRoomInteractionListener {
+        void onOpenRoom(@NonNull Room room, int position);
+
         void onEditRoom(@NonNull Room room, int position);
 
         void onDeleteRoom(@NonNull Room room, int position);
@@ -85,7 +87,8 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             defaultPaddingEnd = photoView.getPaddingEnd();
             defaultPaddingBottom = photoView.getPaddingBottom();
             this.interactionListener = interactionListener;
-            photoView.setOnClickListener(view -> notifyEdit());
+            photoView.setOnClickListener(view -> notifyOpen());
+            itemView.setOnClickListener(view -> notifyOpen());
             if (menuView != null) {
                 menuView.setOnClickListener(view -> togglePopup());
             }
@@ -228,6 +231,17 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
                 return;
             }
             interactionListener.onEditRoom(currentRoom, position);
+        }
+
+        private void notifyOpen() {
+            if (interactionListener == null || currentRoom == null) {
+                return;
+            }
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            interactionListener.onOpenRoom(currentRoom, position);
         }
 
         private void notifyDelete() {

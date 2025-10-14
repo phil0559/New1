@@ -11,6 +11,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.New1">
         <activity
+            android:name=".RoomContentActivity"
+            android:exported="false" />
+        <activity
             android:name=".EstablishmentContentActivity"
             android:exported="false" />
         <activity
