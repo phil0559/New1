@@ -10,8 +10,10 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +28,7 @@ public class EstablishmentActivity extends Activity {
 
     private final List<Establishment> establishments = new ArrayList<>();
     private EstablishmentAdapter establishmentAdapter;
-    private ListView establishmentList;
+    private RecyclerView establishmentList;
     private TextView emptyPlaceholder;
 
     @Override
@@ -46,6 +48,7 @@ public class EstablishmentActivity extends Activity {
         emptyPlaceholder = findViewById(R.id.text_placeholder);
 
         establishmentAdapter = new EstablishmentAdapter(this, establishments);
+        establishmentList.setLayoutManager(new LinearLayoutManager(this));
         establishmentList.setAdapter(establishmentAdapter);
 
         View addButton = findViewById(R.id.button_add_establishment);

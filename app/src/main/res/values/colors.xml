@@ -9,6 +9,7 @@
     <color name="banner_outline">#80B08A60</color>
     <color name="icon_brown">#4C3A2A</color>
     <color name="text_dark">#3B2A1C</color>
+    <color name="establishment_item_background">#DCE8D1</color>
     <color name="flag_blue">#0055A4</color>
     <color name="flag_white">#FFFFFFFF</color>
     <color name="flag_red">#EF4135</color>

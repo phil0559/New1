@@ -4,31 +4,50 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class EstablishmentAdapter extends ArrayAdapter<Establishment> {
+public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdapter.ViewHolder> {
     private final LayoutInflater inflater;
+    private final List<Establishment> data;
 
     public EstablishmentAdapter(Context context, List<Establishment> data) {
-        super(context, R.layout.item_establishment, data);
         this.inflater = LayoutInflater.from(context);
+        this.data = data;
+    }
+
+    @NonNull
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = inflater.inflate(R.layout.item_establishment, parent, false);
+        return new ViewHolder(view);
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        View view = convertView;
-        if (view == null) {
-            view = inflater.inflate(R.layout.item_establishment, parent, false);
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        holder.bind(data.get(position));
+    }
+
+    @Override
+    public int getItemCount() {
+        return data.size();
+    }
+
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        private final TextView nameView;
+        private final TextView commentView;
+
+        ViewHolder(@NonNull View itemView) {
+            super(itemView);
+            nameView = itemView.findViewById(R.id.text_establishment_name);
+            commentView = itemView.findViewById(R.id.text_establishment_comment);
         }
 
-        TextView nameView = view.findViewById(R.id.text_establishment_name);
-        TextView commentView = view.findViewById(R.id.text_establishment_comment);
-
-        Establishment item = getItem(position);
-        if (item != null) {
+        void bind(Establishment item) {
             nameView.setText(item.getName());
             String comment = item.getComment();
             if (comment == null || comment.isEmpty()) {
@@ -38,7 +57,5 @@ public class EstablishmentAdapter extends ArrayAdapter<Establishment> {
                 commentView.setText(comment);
             }
         }
-
-        return view;
     }
 }
