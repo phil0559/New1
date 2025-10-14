@@ -25,7 +25,7 @@
             android:id="@+id/button_previous_photo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/content_description_previous_photo"
             android:padding="8dp"
             android:src="@android:drawable/ic_media_previous" />
@@ -36,7 +36,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/content_description_delete_photo"
             android:padding="8dp"
             android:src="@android:drawable/ic_menu_delete" />
@@ -45,7 +45,7 @@
             android:id="@+id/button_next_photo"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/content_description_next_photo"
             android:padding="8dp"
             android:src="@android:drawable/ic_media_next" />
