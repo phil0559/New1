@@ -69,7 +69,12 @@ public class EstablishmentActivity extends Activity {
         emptyPlaceholder = findViewById(R.id.text_placeholder);
 
         establishmentAdapter = new EstablishmentAdapter(this, establishments,
-                new EstablishmentAdapter.OnEstablishmentMenuListener() {
+                new EstablishmentAdapter.OnEstablishmentInteractionListener() {
+                    @Override
+                    public void onOpenEstablishment(Establishment establishment, int position) {
+                        openEstablishmentContent(establishment);
+                    }
+
                     @Override
                     public void onEditEstablishment(Establishment establishment, int position) {
                         showEditEstablishmentDialog(establishment, position);
@@ -92,6 +97,13 @@ public class EstablishmentActivity extends Activity {
 
     private void showAddEstablishmentDialog() {
         showEstablishmentFormDialog(null, -1);
+    }
+
+    private void openEstablishmentContent(@Nullable Establishment establishment) {
+        if (establishment == null) {
+            return;
+        }
+        startActivity(EstablishmentContentActivity.createIntent(this, establishment));
     }
 
     private void showEditEstablishmentDialog(Establishment establishment, int position) {
