@@ -14,8 +14,12 @@
     <string name="establishment_empty_state">Fügen Sie eine Einrichtung hinzu, um zu beginnen</string>
     <string name="content_description_add_establishment">Neues Element hinzufügen</string>
     <string name="establishment_content_title">Inhalt der Einrichtung</string>
+    <string name="establishment_content_title_with_name">Inhalt für %1$s</string>
     <string name="establishment_content_placeholder">Es wurden noch keine Inhalte hinzugefügt.</string>
     <string name="establishment_content_placeholder_with_name">Für %1$s wurden noch keine Inhalte hinzugefügt.</string>
+    <string name="establishment_content_comment_label">Kommentar</string>
+    <string name="establishment_content_comment_label_with_name">Kommentar für %1$s</string>
+    <string name="establishment_content_comment_placeholder">Es wurde kein Kommentar hinterlassen.</string>
     <string name="content_description_add_content">Inhalt für die Einrichtung hinzufügen</string>
     <string name="feature_coming_soon">Funktion folgt in Kürze</string>
     <string name="content_description_establishment_photos">Fotos von %1$s</string>
@@ -33,6 +37,11 @@
     <string name="dialog_label_establishment_photos_template">Fotos der Einrichtung (%1$d)</string>
     <string name="dialog_action_add_photo">+ Foto (max. 5)</string>
     <string name="dialog_error_max_photos_reached">Sie können bis zu 5 Fotos aufnehmen.</string>
+    <string name="dialog_add_room_title">Raum hinzufügen</string>
+    <string name="dialog_label_room_name">Name des Raums</string>
+    <string name="dialog_label_room_comment">Kommentar (optional)</string>
+    <string name="dialog_label_room_photos_default">Raumfotos (0)</string>
+    <string name="dialog_label_room_photos_template">Raumfotos (%1$d)</string>
     <string name="content_description_photo_preview">Foto-Vorschau</string>
     <string name="content_description_previous_photo">Vorheriges Foto anzeigen</string>
     <string name="content_description_next_photo">Nächstes Foto anzeigen</string>
@@ -41,6 +50,9 @@
     <string name="action_confirm">Bestätigen</string>
     <string name="action_delete">Löschen</string>
     <string name="error_establishment_name_required">Der Name der Einrichtung ist erforderlich</string>
+    <string name="error_room_name_required">Der Name des Raums ist erforderlich</string>
+    <string name="rooms_empty_state">Fügen Sie einen Raum hinzu, um zu beginnen</string>
+    <string name="rooms_empty_state_with_name">Fügen Sie einen Raum für %1$s hinzu</string>
     <string name="button_move">Bewegung</string>
     <string name="button_import_export">Import/Export</string>
     <string name="button_quit">Beenden</string>

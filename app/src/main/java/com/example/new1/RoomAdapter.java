@@ -46,6 +46,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
         private final ImageView photoView;
+        private final TextView commentView;
         private final int defaultPaddingStart;
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
@@ -55,6 +56,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             super(itemView);
             nameView = itemView.findViewById(R.id.text_room_name);
             photoView = itemView.findViewById(R.id.image_room_photo);
+            commentView = itemView.findViewById(R.id.text_room_comment);
             defaultPaddingStart = photoView.getPaddingStart();
             defaultPaddingTop = photoView.getPaddingTop();
             defaultPaddingEnd = photoView.getPaddingEnd();
@@ -63,7 +65,21 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
 
         void bind(Room room) {
             nameView.setText(room.getName());
+            updateComment(room.getComment());
             updatePhoto(room);
+        }
+
+        private void updateComment(String comment) {
+            if (commentView == null) {
+                return;
+            }
+            if (comment == null || comment.trim().isEmpty()) {
+                commentView.setVisibility(View.GONE);
+                commentView.setText("");
+            } else {
+                commentView.setText(comment);
+                commentView.setVisibility(View.VISIBLE);
+            }
         }
 
         private void updatePhoto(Room room) {

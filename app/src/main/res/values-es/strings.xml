@@ -14,8 +14,12 @@
     <string name="establishment_empty_state">Agregue un establecimiento para comenzar</string>
     <string name="content_description_add_establishment">Agregar un nuevo elemento</string>
     <string name="establishment_content_title">Contenido del establecimiento</string>
+    <string name="establishment_content_title_with_name">Contenido de %1$s</string>
     <string name="establishment_content_placeholder">Aún no se ha añadido contenido.</string>
     <string name="establishment_content_placeholder_with_name">Todavía no se ha añadido contenido para %1$s.</string>
+    <string name="establishment_content_comment_label">Comentario</string>
+    <string name="establishment_content_comment_label_with_name">Comentario para %1$s</string>
+    <string name="establishment_content_comment_placeholder">No se ha proporcionado ningún comentario.</string>
     <string name="content_description_add_content">Agregar contenido para el establecimiento</string>
     <string name="feature_coming_soon">Función disponible próximamente</string>
     <string name="content_description_establishment_photos">Fotos de %1$s</string>
@@ -33,6 +37,11 @@
     <string name="dialog_label_establishment_photos_template">Fotos del establecimiento (%1$d)</string>
     <string name="dialog_action_add_photo">+ Foto (máx. 5)</string>
     <string name="dialog_error_max_photos_reached">Puede tomar hasta 5 fotos.</string>
+    <string name="dialog_add_room_title">Agregar una habitación</string>
+    <string name="dialog_label_room_name">Nombre de la habitación</string>
+    <string name="dialog_label_room_comment">Comentario (opcional)</string>
+    <string name="dialog_label_room_photos_default">Fotos de la habitación (0)</string>
+    <string name="dialog_label_room_photos_template">Fotos de la habitación (%1$d)</string>
     <string name="content_description_photo_preview">Vista previa de la foto</string>
     <string name="content_description_previous_photo">Ver la foto anterior</string>
     <string name="content_description_next_photo">Ver la foto siguiente</string>
@@ -41,6 +50,9 @@
     <string name="action_confirm">Confirmar</string>
     <string name="action_delete">Eliminar</string>
     <string name="error_establishment_name_required">El nombre del establecimiento es obligatorio</string>
+    <string name="error_room_name_required">El nombre de la habitación es obligatorio</string>
+    <string name="rooms_empty_state">Agregue una habitación para comenzar</string>
+    <string name="rooms_empty_state_with_name">Agregue una habitación para %1$s</string>
     <string name="button_move">Movimiento</string>
     <string name="button_import_export">Importar/Exportar</string>
     <string name="button_quit">Salir</string>

@@ -12,6 +12,7 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -136,7 +137,8 @@ public class EstablishmentContentActivity extends Activity {
         TextView photoLabel = dialogView.findViewById(R.id.text_room_photos_label);
         View addPhotoButton = dialogView.findViewById(R.id.button_add_photo);
         LinearLayout photoContainer = dialogView.findViewById(R.id.container_room_photos);
-        android.widget.EditText nameInput = dialogView.findViewById(R.id.input_room_name);
+        EditText nameInput = dialogView.findViewById(R.id.input_room_name);
+        EditText commentInput = dialogView.findViewById(R.id.input_room_comment);
 
         if (titleView != null) {
             titleView.setText(R.string.dialog_add_room_title);
@@ -180,6 +182,9 @@ public class EstablishmentContentActivity extends Activity {
             Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(view -> {
                 String name = nameInput.getText() != null ? nameInput.getText().toString().trim() : "";
+                String comment = commentInput.getText() != null
+                        ? commentInput.getText().toString().trim()
+                        : "";
                 if (name.isEmpty()) {
                     nameInput.setError(getString(R.string.error_room_name_required));
                     return;
@@ -192,7 +197,7 @@ public class EstablishmentContentActivity extends Activity {
                     return;
                 }
 
-                rooms.add(new Room(name, new ArrayList<>(formState.photos)));
+                rooms.add(new Room(name, comment, new ArrayList<>(formState.photos)));
                 roomAdapter.notifyItemInserted(rooms.size() - 1);
                 saveRooms();
                 updateEmptyState();
@@ -232,6 +237,7 @@ public class EstablishmentContentActivity extends Activity {
                     continue;
                 }
 
+                String comment = item.optString("comment", "");
                 List<String> photos = new ArrayList<>();
                 JSONArray photosArray = item.optJSONArray("photos");
                 if (photosArray != null) {
@@ -242,7 +248,7 @@ public class EstablishmentContentActivity extends Activity {
                         }
                     }
                 }
-                rooms.add(new Room(name, photos));
+                rooms.add(new Room(name, comment, photos));
             }
         } catch (JSONException ignored) {
         }
@@ -256,6 +262,7 @@ public class EstablishmentContentActivity extends Activity {
             JSONObject item = new JSONObject();
             try {
                 item.put("name", room.getName());
+                item.put("comment", room.getComment());
                 JSONArray photosArray = new JSONArray();
                 for (String photo : room.getPhotos()) {
                     photosArray.put(photo);

@@ -32,6 +32,20 @@
         android:textColor="@color/text_dark"
         android:textColorHint="@color/icon_brown" />
 
+    <EditText
+        android:id="@+id/input_room_comment"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:background="@android:color/transparent"
+        android:gravity="top|start"
+        android:hint="@string/dialog_label_room_comment"
+        android:inputType="textCapSentences|textMultiLine"
+        android:minLines="2"
+        android:padding="12dp"
+        android:textColor="@color/text_dark"
+        android:textColorHint="@color/icon_brown" />
+
     <TextView
         android:id="@+id/text_room_photos_label"
         android:layout_width="wrap_content"
