@@ -63,7 +63,7 @@
     <string name="rooms_empty_state_with_name">Ajoutez une pièce pour %1$s</string>
     <string name="dialog_edit_room_title">Modifier la pièce</string>
     <string name="room_content_title">Contenu de la pièce</string>
-    <string name="room_content_title_with_name">Contenu de '%1$s'</string>
+    <string name="room_content_title_with_name">Contenu de %1$s</string>
     <string name="room_content_placeholder">Ajoutez du contenu dans cette pièce pour commencer.</string>
     <string name="room_content_placeholder_with_establishment">Ajoutez du contenu pour %1$s.</string>
     <string name="room_content_empty_state">Les éléments de la pièce apparaîtront ici.</string>
