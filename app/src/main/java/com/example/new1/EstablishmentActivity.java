@@ -12,6 +12,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -48,7 +49,17 @@ public class EstablishmentActivity extends Activity {
         emptyPlaceholder = findViewById(R.id.text_placeholder);
 
         establishmentAdapter = new EstablishmentAdapter(this, establishments,
-                (establishment, position) -> showDeleteConfirmation(establishment, position));
+                new EstablishmentAdapter.OnEstablishmentMenuListener() {
+                    @Override
+                    public void onEditEstablishment(Establishment establishment, int position) {
+                        showEditEstablishmentDialog(establishment, position);
+                    }
+
+                    @Override
+                    public void onDeleteEstablishment(Establishment establishment, int position) {
+                        showDeleteConfirmation(establishment, position);
+                    }
+                });
         establishmentList.setLayoutManager(new LinearLayoutManager(this));
         establishmentList.setAdapter(establishmentAdapter);
 
@@ -60,9 +71,36 @@ public class EstablishmentActivity extends Activity {
     }
 
     private void showAddEstablishmentDialog() {
+        showEstablishmentFormDialog(null, -1);
+    }
+
+    private void showEditEstablishmentDialog(Establishment establishment, int position) {
+        if (establishment == null || position < 0 || position >= establishments.size()) {
+            return;
+        }
+        showEstablishmentFormDialog(establishment, position);
+    }
+
+    private void showEstablishmentFormDialog(@Nullable Establishment existingEstablishment, int position) {
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_establishment, null);
+        TextView titleView = dialogView.findViewById(R.id.text_dialog_title);
         EditText nameInput = dialogView.findViewById(R.id.input_establishment_name);
         EditText commentInput = dialogView.findViewById(R.id.input_establishment_comment);
+
+        boolean isEditMode = existingEstablishment != null && position >= 0;
+
+        if (titleView != null) {
+            titleView.setText(isEditMode
+                    ? getString(R.string.dialog_edit_establishment_title)
+                    : getString(R.string.dialog_add_establishment_title));
+        }
+
+        if (isEditMode) {
+            nameInput.setText(existingEstablishment.getName());
+            nameInput.setSelection(nameInput.getText() != null ? nameInput.getText().length() : 0);
+            String comment = existingEstablishment.getComment();
+            commentInput.setText(comment != null ? comment : "");
+        }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
             .setView(dialogView)
@@ -78,14 +116,26 @@ public class EstablishmentActivity extends Activity {
 
                 if (name.isEmpty()) {
                     nameInput.setError(getString(R.string.error_establishment_name_required));
+                    return;
+                }
+
+                nameInput.setError(null);
+
+                if (isEditMode) {
+                    if (position < 0 || position >= establishments.size()) {
+                        dialog.dismiss();
+                        return;
+                    }
+                    establishments.set(position, new Establishment(name, comment));
+                    establishmentAdapter.notifyItemChanged(position);
                 } else {
-                    nameInput.setError(null);
                     establishments.add(new Establishment(name, comment));
                     establishmentAdapter.notifyItemInserted(establishments.size() - 1);
-                    saveEstablishments();
-                    updateEmptyState();
-                    dialog.dismiss();
                 }
+
+                saveEstablishments();
+                updateEmptyState();
+                dialog.dismiss();
             });
         });
 
