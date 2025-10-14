@@ -13,6 +13,11 @@
     <string name="establishment_title">Establecimiento</string>
     <string name="establishment_empty_state">Agregue un establecimiento para comenzar</string>
     <string name="content_description_add_establishment">Agregar un nuevo elemento</string>
+    <string name="establishment_content_title">Contenido del establecimiento</string>
+    <string name="establishment_content_placeholder">Aún no se ha añadido contenido.</string>
+    <string name="establishment_content_placeholder_with_name">Todavía no se ha añadido contenido para %1$s.</string>
+    <string name="content_description_add_content">Agregar contenido para el establecimiento</string>
+    <string name="feature_coming_soon">Función disponible próximamente</string>
     <string name="content_description_establishment_photos">Fotos de %1$s</string>
     <string name="content_description_establishment_menu">Opciones de %1$s</string>
     <string name="popup_establishment_title">Establecimiento</string>
