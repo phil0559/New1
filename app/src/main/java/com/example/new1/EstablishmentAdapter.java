@@ -1,7 +1,6 @@
 package com.example.new1;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -27,20 +26,20 @@ import java.util.List;
 public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdapter.ViewHolder> {
     private final LayoutInflater inflater;
     private final List<Establishment> data;
-    private final OnEstablishmentMenuListener menuListener;
+    private final OnEstablishmentInteractionListener interactionListener;
 
     public EstablishmentAdapter(Context context, List<Establishment> data,
-            OnEstablishmentMenuListener menuListener) {
+            OnEstablishmentInteractionListener interactionListener) {
         this.inflater = LayoutInflater.from(context);
         this.data = data;
-        this.menuListener = menuListener;
+        this.interactionListener = interactionListener;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.item_establishment, parent, false);
-        return new ViewHolder(view, menuListener);
+        return new ViewHolder(view, interactionListener);
     }
 
     @Override
@@ -53,7 +52,8 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         return data.size();
     }
 
-    interface OnEstablishmentMenuListener {
+    interface OnEstablishmentInteractionListener {
+        void onOpenEstablishment(@NonNull Establishment establishment, int position);
         void onEditEstablishment(@NonNull Establishment establishment, int position);
         void onDeleteEstablishment(@NonNull Establishment establishment, int position);
     }
@@ -67,11 +67,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
         private final int defaultPaddingBottom;
-        private final OnEstablishmentMenuListener menuListener;
+        private final OnEstablishmentInteractionListener interactionListener;
         private PopupWindow popupWindow;
         private Establishment currentItem;
 
-        ViewHolder(@NonNull View itemView, OnEstablishmentMenuListener menuListener) {
+        ViewHolder(@NonNull View itemView, OnEstablishmentInteractionListener interactionListener) {
             super(itemView);
             nameView = itemView.findViewById(R.id.text_establishment_name);
             commentView = itemView.findViewById(R.id.text_establishment_comment);
@@ -81,17 +81,17 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             defaultPaddingTop = photoView.getPaddingTop();
             defaultPaddingEnd = photoView.getPaddingEnd();
             defaultPaddingBottom = photoView.getPaddingBottom();
-            this.menuListener = menuListener;
+            this.interactionListener = interactionListener;
             menuView.setOnClickListener(view -> togglePopup());
             photoView.setOnClickListener(view -> {
-                if (menuListener == null || currentItem == null) {
+                if (interactionListener == null || currentItem == null) {
                     return;
                 }
                 int position = getBindingAdapterPosition();
                 if (position == RecyclerView.NO_POSITION) {
                     return;
                 }
-                menuListener.onEditEstablishment(currentItem, position);
+                interactionListener.onEditEstablishment(currentItem, position);
             });
             itemView.setOnClickListener(this::openContent);
         }
@@ -179,14 +179,14 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     if (popupWindow != null) {
                         popupWindow.dismiss();
                     }
-                    if (menuListener == null || currentItem == null) {
+                    if (interactionListener == null || currentItem == null) {
                         return;
                     }
                     int position = getBindingAdapterPosition();
                     if (position == RecyclerView.NO_POSITION) {
                         return;
                     }
-                    menuListener.onEditEstablishment(currentItem, position);
+                    interactionListener.onEditEstablishment(currentItem, position);
                 });
             }
 
@@ -196,14 +196,14 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     if (popupWindow != null) {
                         popupWindow.dismiss();
                     }
-                    if (menuListener == null || currentItem == null) {
+                    if (interactionListener == null || currentItem == null) {
                         return;
                     }
                     int position = getBindingAdapterPosition();
                     if (position == RecyclerView.NO_POSITION) {
                         return;
                     }
-                    menuListener.onDeleteEstablishment(currentItem, position);
+                    interactionListener.onDeleteEstablishment(currentItem, position);
                 });
             }
 
@@ -229,13 +229,14 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         }
 
         private void openContent(View view) {
-            if (currentItem == null) {
+            if (currentItem == null || interactionListener == null) {
                 return;
             }
-            Context context = view.getContext();
-            Intent intent = new Intent(context, EstablishmentContentActivity.class);
-            intent.putExtra(EstablishmentContentActivity.EXTRA_ESTABLISHMENT_NAME, currentItem.getName());
-            context.startActivity(intent);
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            interactionListener.onOpenEstablishment(currentItem, position);
         }
     }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="establishment_content_photo_count">
+        <item quantity="one">%d photo enregistrée.</item>
+        <item quantity="other">%d photos enregistrées.</item>
+    </plurals>
+</resources>

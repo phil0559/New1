@@ -16,6 +16,9 @@
     <string name="establishment_content_title">Contenu de l’établissement</string>
     <string name="establishment_content_placeholder">Aucun contenu n’a encore été ajouté.</string>
     <string name="establishment_content_placeholder_with_name">Aucun contenu n’a encore été ajouté pour %1$s.</string>
+    <string name="establishment_content_comment_label">Commentaire</string>
+    <string name="establishment_content_comment_label_with_name">Commentaire pour %1$s</string>
+    <string name="establishment_content_comment_placeholder">Aucun commentaire n’a été saisi.</string>
     <string name="content_description_add_content">Ajouter un contenu pour l’établissement</string>
     <string name="feature_coming_soon">Fonctionnalité à venir</string>
     <string name="content_description_establishment_photos">Photos de %1$s</string>
