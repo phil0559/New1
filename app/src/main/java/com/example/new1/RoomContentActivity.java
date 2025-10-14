@@ -96,9 +96,11 @@ public class RoomContentActivity extends Activity {
         }
         String trimmedEstablishment = establishmentName != null ? establishmentName.trim() : "";
         if (trimmedEstablishment.isEmpty()) {
+            subtitleView.setVisibility(View.VISIBLE);
             subtitleView.setText(R.string.room_content_placeholder);
         } else {
-            subtitleView.setText(getString(R.string.room_content_placeholder_with_establishment, trimmedEstablishment));
+            subtitleView.setText("");
+            subtitleView.setVisibility(View.GONE);
         }
     }
 }
