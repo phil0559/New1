@@ -47,6 +47,7 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
     }
 
     interface OnEstablishmentMenuListener {
+        void onEditEstablishment(@NonNull Establishment establishment, int position);
         void onDeleteEstablishment(@NonNull Establishment establishment, int position);
     }
 
@@ -104,6 +105,23 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             popupWindow.setOutsideTouchable(true);
             popupWindow.setOnDismissListener(() -> popupWindow = null);
+
+            View editButton = popupContent.findViewById(R.id.button_popup_edit);
+            if (editButton != null) {
+                editButton.setOnClickListener(view -> {
+                    if (popupWindow != null) {
+                        popupWindow.dismiss();
+                    }
+                    if (menuListener == null || currentItem == null) {
+                        return;
+                    }
+                    int position = getBindingAdapterPosition();
+                    if (position == RecyclerView.NO_POSITION) {
+                        return;
+                    }
+                    menuListener.onEditEstablishment(currentItem, position);
+                });
+            }
 
             View deleteButton = popupContent.findViewById(R.id.button_popup_delete);
             if (deleteButton != null) {

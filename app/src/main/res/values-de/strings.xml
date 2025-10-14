@@ -21,6 +21,7 @@
     <string name="dialog_delete_establishment_title">Einrichtung löschen</string>
     <string name="dialog_delete_establishment_message">Möchten Sie die Einrichtung %1$s löschen?</string>
     <string name="dialog_add_establishment_title">Einrichtung hinzufügen</string>
+    <string name="dialog_edit_establishment_title">Einrichtung bearbeiten</string>
     <string name="dialog_label_establishment_name">Name der Einrichtung</string>
     <string name="dialog_label_establishment_comment">Kommentar (optional)</string>
     <string name="dialog_label_establishment_photos">Fotos der Einrichtung (0)</string>

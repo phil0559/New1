@@ -21,6 +21,7 @@
     <string name="dialog_delete_establishment_title">Supprimer l’établissement</string>
     <string name="dialog_delete_establishment_message">Voulez-vous supprimer l’établissement %1$s ?</string>
     <string name="dialog_add_establishment_title">Ajouter un établissement</string>
+    <string name="dialog_edit_establishment_title">Modifier l’établissement</string>
     <string name="dialog_label_establishment_name">Nom de l’établissement</string>
     <string name="dialog_label_establishment_comment">Commentaire (facultatif)</string>
     <string name="dialog_label_establishment_photos">Photos de l’établissement (0)</string>
