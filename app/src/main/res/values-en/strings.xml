@@ -51,7 +51,7 @@
     <string name="dialog_label_room_photos_default">Room photos (0)</string>
     <string name="dialog_label_room_photos_template">Room photos (%1$d)</string>
     <string name="room_content_title">Room content</string>
-    <string name="room_content_title_with_name">Content of '%1$s'</string>
+    <string name="room_content_title_with_name">Content of %1$s</string>
     <string name="room_content_placeholder">Add content to this room to get started.</string>
     <string name="room_content_placeholder_with_establishment">Add content for %1$s.</string>
     <string name="room_content_empty_state">Items in the room will appear here.</string>
