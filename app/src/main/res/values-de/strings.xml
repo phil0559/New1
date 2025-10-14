@@ -15,6 +15,11 @@
     <string name="content_description_add_establishment">Neues Element hinzufügen</string>
     <string name="content_description_establishment_photos">Fotos von %1$s</string>
     <string name="content_description_establishment_menu">Optionen für %1$s</string>
+    <string name="popup_establishment_title">Einrichtung</string>
+    <string name="popup_establishment_edit">Bearbeiten</string>
+    <string name="popup_establishment_delete">Löschen</string>
+    <string name="dialog_delete_establishment_title">Einrichtung löschen</string>
+    <string name="dialog_delete_establishment_message">Möchten Sie die Einrichtung %1$s löschen?</string>
     <string name="dialog_add_establishment_title">Einrichtung hinzufügen</string>
     <string name="dialog_label_establishment_name">Name der Einrichtung</string>
     <string name="dialog_label_establishment_comment">Kommentar (optional)</string>
@@ -22,6 +27,7 @@
     <string name="dialog_action_add_photo">+ Foto (max. 5)</string>
     <string name="action_cancel">Abbrechen</string>
     <string name="action_confirm">Bestätigen</string>
+    <string name="action_delete">Löschen</string>
     <string name="error_establishment_name_required">Der Name der Einrichtung ist erforderlich</string>
     <string name="button_move">Bewegung</string>
     <string name="button_import_export">Import/Export</string>

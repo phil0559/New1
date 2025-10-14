@@ -15,6 +15,11 @@
     <string name="content_description_add_establishment">Add a new item</string>
     <string name="content_description_establishment_photos">Photos of %1$s</string>
     <string name="content_description_establishment_menu">Options for %1$s</string>
+    <string name="popup_establishment_title">Establishment</string>
+    <string name="popup_establishment_edit">Edit</string>
+    <string name="popup_establishment_delete">Delete</string>
+    <string name="dialog_delete_establishment_title">Delete establishment</string>
+    <string name="dialog_delete_establishment_message">Do you want to delete the establishment %1$s?</string>
     <string name="dialog_add_establishment_title">Add an establishment</string>
     <string name="dialog_label_establishment_name">Name of the establishment</string>
     <string name="dialog_label_establishment_comment">Comment (optional)</string>
@@ -22,6 +27,7 @@
     <string name="dialog_action_add_photo">+ photo (Max 5)</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_confirm">Confirm</string>
+    <string name="action_delete">Delete</string>
     <string name="error_establishment_name_required">The establishment name is required</string>
     <string name="button_move">Movement</string>
     <string name="button_import_export">Import/Export</string>
