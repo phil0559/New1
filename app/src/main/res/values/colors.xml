@@ -16,5 +16,6 @@
     <color name="flag_stroke">#33000000</color>
     <color name="button_blue">#4A53FF</color>
     <color name="popup_dark_green">#1B4332</color>
+    <color name="popup_purple">#D7B6F2</color>
     <color name="popup_delete_red">#D32F2F</color>
 </resources>
