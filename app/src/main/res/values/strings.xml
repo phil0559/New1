@@ -71,10 +71,10 @@
     <string name="content_description_room_menu">Options de %1$s</string>
     <string name="dialog_room_content_item_placeholder">- Élément</string>
     <string name="dialog_add_room_content_title">Ajouter un élément</string>
-    <string name="dialog_label_room_content_name">Nom de l'élément</string>
+    <string name="dialog_label_room_content_name">Nom de l’élément</string>
     <string name="dialog_label_room_content_comment">Commentaire</string>
-    <string name="dialog_label_room_content_photos_default">Photos de l'élément (0)</string>
-    <string name="dialog_label_room_content_photos_template">Photos de l'élément (%1$d)</string>
+    <string name="dialog_label_room_content_photos_default">Photos de l’élément (0)</string>
+    <string name="dialog_label_room_content_photos_template">Photos de l’élément (%1$d)</string>
     <string name="dialog_button_barcode">Code barre</string>
     <string name="dialog_label_barcode_placeholder">Aucun code</string>
     <string name="dialog_label_type">Type</string>
@@ -107,7 +107,7 @@
     <string name="dialog_custom_field_label_1">Champ 1</string>
     <string name="dialog_custom_field_label_2">Champ 2</string>
     <string name="dialog_custom_field_value_hint">Saisissez une valeur</string>
-    <string name="error_room_content_name_required">Le nom de l'élément est obligatoire</string>
+    <string name="error_room_content_name_required">Le nom de l’élément est obligatoire</string>
     <string name="dialog_delete_room_title">Supprimer la pièce</string>
     <string name="dialog_delete_room_message">Voulez-vous supprimer la pièce %1$s ?</string>
     <string name="dialog_delete_room_confirm">Supprimer</string>
