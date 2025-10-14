@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -97,7 +98,7 @@ public class EstablishmentContentActivity extends Activity {
             ));
         }
 
-        ImageView addButton = findViewById(R.id.button_add_content);
+        View addButton = findViewById(R.id.button_add_content);
         if (addButton != null) {
             addButton.setOnClickListener(view ->
                     Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
