@@ -85,6 +85,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             defaultPaddingEnd = photoView.getPaddingEnd();
             defaultPaddingBottom = photoView.getPaddingBottom();
             this.interactionListener = interactionListener;
+            photoView.setOnClickListener(view -> notifyEdit());
             if (menuView != null) {
                 menuView.setOnClickListener(view -> togglePopup());
             }
