@@ -1,15 +1,20 @@
 package com.example.new1;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
+
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 
 public class RoomContentActivity extends Activity {
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
@@ -72,8 +77,7 @@ public class RoomContentActivity extends Activity {
 
         View addButton = findViewById(R.id.button_add_room_content);
         if (addButton != null) {
-            addButton.setOnClickListener(view ->
-                    Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+            addButton.setOnClickListener(view -> showAddRoomContentDialog());
         }
     }
 
@@ -101,6 +105,21 @@ public class RoomContentActivity extends Activity {
         } else {
             subtitleView.setText("");
             subtitleView.setVisibility(View.GONE);
+        }
+    }
+
+    private void showAddRoomContentDialog() {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_room_content_add, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
         }
     }
 }

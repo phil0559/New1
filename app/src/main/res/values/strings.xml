@@ -69,6 +69,7 @@
     <string name="room_content_empty_state">Les éléments de la pièce apparaîtront ici.</string>
     <string name="content_description_add_room_content">Ajouter un contenu pour la pièce</string>
     <string name="content_description_room_menu">Options de %1$s</string>
+    <string name="dialog_room_content_item_placeholder">- Élément</string>
     <string name="dialog_delete_room_title">Supprimer la pièce</string>
     <string name="dialog_delete_room_message">Voulez-vous supprimer la pièce %1$s ?</string>
     <string name="dialog_delete_room_confirm">Supprimer</string>
