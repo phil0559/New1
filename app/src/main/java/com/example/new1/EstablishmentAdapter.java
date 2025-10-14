@@ -1,6 +1,7 @@
 package com.example.new1;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -92,6 +93,7 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                 }
                 menuListener.onEditEstablishment(currentItem, position);
             });
+            itemView.setOnClickListener(this::openContent);
         }
 
         void bind(Establishment item) {
@@ -224,6 +226,16 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             }
 
             PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, yOffset, Gravity.END);
+        }
+
+        private void openContent(View view) {
+            if (currentItem == null) {
+                return;
+            }
+            Context context = view.getContext();
+            Intent intent = new Intent(context, EstablishmentContentActivity.class);
+            intent.putExtra(EstablishmentContentActivity.EXTRA_ESTABLISHMENT_NAME, currentItem.getName());
+            context.startActivity(intent);
         }
     }
 }

@@ -13,6 +13,11 @@
     <string name="establishment_title">Einrichtung</string>
     <string name="establishment_empty_state">Fügen Sie eine Einrichtung hinzu, um zu beginnen</string>
     <string name="content_description_add_establishment">Neues Element hinzufügen</string>
+    <string name="establishment_content_title">Inhalt der Einrichtung</string>
+    <string name="establishment_content_placeholder">Es wurden noch keine Inhalte hinzugefügt.</string>
+    <string name="establishment_content_placeholder_with_name">Für %1$s wurden noch keine Inhalte hinzugefügt.</string>
+    <string name="content_description_add_content">Inhalt für die Einrichtung hinzufügen</string>
+    <string name="feature_coming_soon">Funktion folgt in Kürze</string>
     <string name="content_description_establishment_photos">Fotos von %1$s</string>
     <string name="content_description_establishment_menu">Optionen für %1$s</string>
     <string name="popup_establishment_title">Einrichtung</string>
