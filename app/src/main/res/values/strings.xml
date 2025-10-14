@@ -18,6 +18,7 @@
     <string name="popup_establishment_title">Établissement</string>
     <string name="popup_establishment_edit">Modifier</string>
     <string name="popup_establishment_delete">Supprimer</string>
+    <string name="popup_establishment_delete_confirmation">Voulez-vous vraiment supprimer %1$s ? Cette action est définitive.</string>
     <string name="dialog_add_establishment_title">Ajouter un établissement</string>
     <string name="dialog_label_establishment_name">Nom de l\'établissement</string>
     <string name="dialog_label_establishment_comment">Commentaire (facultatif)</string>

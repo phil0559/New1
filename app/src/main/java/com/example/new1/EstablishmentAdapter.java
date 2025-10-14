@@ -20,10 +20,13 @@ import java.util.List;
 public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdapter.ViewHolder> {
     private final LayoutInflater inflater;
     private final List<Establishment> data;
+    private final OnEstablishmentActionListener actionListener;
 
-    public EstablishmentAdapter(Context context, List<Establishment> data) {
+    public EstablishmentAdapter(Context context, List<Establishment> data,
+                                OnEstablishmentActionListener actionListener) {
         this.inflater = LayoutInflater.from(context);
         this.data = data;
+        this.actionListener = actionListener;
     }
 
     @NonNull
@@ -43,7 +46,7 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         return data.size();
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
         private final TextView commentView;
         private final ImageView menuView;
@@ -94,8 +97,25 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             popupWindow.setOutsideTouchable(true);
             popupWindow.setOnDismissListener(() -> popupWindow = null);
 
+            View deleteAction = popupContent.findViewById(R.id.action_delete_establishment);
+            deleteAction.setOnClickListener(view -> {
+                if (actionListener != null) {
+                    int position = getBindingAdapterPosition();
+                    if (position != RecyclerView.NO_POSITION) {
+                        actionListener.onDeleteRequested(position);
+                    }
+                }
+                if (popupWindow != null && popupWindow.isShowing()) {
+                    popupWindow.dismiss();
+                }
+            });
+
             int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
             PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, verticalOffset, Gravity.END);
         }
+    }
+
+    interface OnEstablishmentActionListener {
+        void onDeleteRequested(int position);
     }
 }

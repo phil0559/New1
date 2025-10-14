@@ -41,8 +41,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:id="@+id/action_delete_establishment"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingVertical="4dp"
+        android:paddingHorizontal="4dp">
 
         <ImageView
             android:layout_width="20dp"
