@@ -14,6 +14,7 @@
     <string name="establishment_empty_state">Ajoutez un établissement pour commencer</string>
     <string name="content_description_add_establishment">Ajouter un nouvel élément</string>
     <string name="establishment_content_title">Contenu de l’établissement</string>
+    <string name="establishment_content_title_with_name">Contenu de %1$s</string>
     <string name="establishment_content_placeholder">Aucun contenu n’a encore été ajouté.</string>
     <string name="establishment_content_placeholder_with_name">Aucun contenu n’a encore été ajouté pour %1$s.</string>
     <string name="establishment_content_comment_label">Commentaire</string>
