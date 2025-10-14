@@ -44,6 +44,7 @@ public class EstablishmentContentActivity extends Activity {
     private RoomAdapter roomAdapter;
     private RecyclerView roomList;
     private TextView emptyPlaceholder;
+    private TextView subtitleView;
     private FormState currentFormState;
     private String establishmentName;
 
@@ -103,15 +104,8 @@ public class EstablishmentContentActivity extends Activity {
             }
         }
 
-        TextView subtitleView = findViewById(R.id.text_establishment_subtitle);
-        if (subtitleView != null) {
-            if (establishmentName == null || establishmentName.trim().isEmpty()) {
-                subtitleView.setText(R.string.establishment_content_placeholder);
-            } else {
-                subtitleView.setText(getString(R.string.establishment_content_placeholder_with_name,
-                        establishmentName));
-            }
-        }
+        subtitleView = findViewById(R.id.text_establishment_subtitle);
+        applyEmptySubtitle();
 
         roomList = findViewById(R.id.list_rooms);
         emptyPlaceholder = findViewById(R.id.text_rooms_placeholder);
@@ -282,7 +276,7 @@ public class EstablishmentContentActivity extends Activity {
             return;
         }
         if (rooms.isEmpty()) {
-            String name = establishmentName != null ? establishmentName.trim() : "";
+            String name = getTrimmedEstablishmentName();
             if (name.isEmpty()) {
                 emptyPlaceholder.setText(R.string.rooms_empty_state);
             } else {
@@ -290,9 +284,47 @@ public class EstablishmentContentActivity extends Activity {
             }
             emptyPlaceholder.setVisibility(View.VISIBLE);
             roomList.setVisibility(View.GONE);
+            applyEmptySubtitle();
         } else {
             emptyPlaceholder.setVisibility(View.GONE);
             roomList.setVisibility(View.VISIBLE);
+            applyRoomsSubtitle();
+        }
+    }
+
+    private String getTrimmedEstablishmentName() {
+        return establishmentName != null ? establishmentName.trim() : "";
+    }
+
+    private void applyEmptySubtitle() {
+        if (subtitleView == null) {
+            return;
+        }
+        String name = getTrimmedEstablishmentName();
+        if (name.isEmpty()) {
+            subtitleView.setText(R.string.establishment_content_placeholder);
+        } else {
+            subtitleView.setText(getString(R.string.establishment_content_placeholder_with_name, name));
+        }
+    }
+
+    private void applyRoomsSubtitle() {
+        if (subtitleView == null) {
+            return;
+        }
+        int count = rooms.size();
+        String name = getTrimmedEstablishmentName();
+        if (name.isEmpty()) {
+            subtitleView.setText(getResources().getQuantityString(
+                    R.plurals.establishment_content_rooms_count,
+                    count,
+                    count));
+        } else {
+            subtitleView.setText(getResources().getQuantityString(
+                    R.plurals.establishment_content_rooms_count_with_name,
+                    count,
+                    count,
+                    name));
         }
     }
 
