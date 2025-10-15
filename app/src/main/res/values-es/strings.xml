@@ -95,6 +95,7 @@
     <string name="dialog_custom_field_label_1">Campo 1</string>
     <string name="dialog_custom_field_label_2">Campo 2</string>
     <string name="dialog_custom_field_value_hint">Introduce un valor</string>
+    <string name="dialog_content_description_edit_custom_field_label">Editar el nombre del campo personalizado</string>
     <string name="error_room_content_name_required">El nombre del elemento es obligatorio</string>
     <string name="content_description_previous_photo">Ver la foto anterior</string>
     <string name="content_description_next_photo">Ver la foto siguiente</string>
