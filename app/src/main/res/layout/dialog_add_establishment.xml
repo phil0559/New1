@@ -26,7 +26,6 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
         android:hint="@string/dialog_label_establishment_name"
-        app:expandedHintEnabled="false"
         app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
         <com.google.android.material.textfield.TextInputEditText
@@ -45,7 +44,6 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:hint="@string/dialog_label_establishment_comment"
-        app:expandedHintEnabled="false"
         app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
         <com.google.android.material.textfield.TextInputEditText
