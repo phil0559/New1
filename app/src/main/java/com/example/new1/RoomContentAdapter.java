@@ -151,10 +151,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         builder.append('\u2022').append(' ');
         int labelStart = builder.length();
         builder.append(labelPart);
-        builder.append(" : ");
         int labelEnd = builder.length();
         applyLabelStyle(builder, labelStart, labelEnd);
         if (!valuePart.isEmpty()) {
+            builder.append('\n');
             builder.append(valuePart);
         }
         return builder;
