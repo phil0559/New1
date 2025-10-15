@@ -45,11 +45,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         applyBannerColor(holder.bannerContainer, item.getType());
 
         String comment = item.getComment();
-        if (comment == null || comment.trim().isEmpty()) {
-            holder.commentView.setVisibility(View.GONE);
-        } else {
+        boolean hasComment = comment != null && !comment.trim().isEmpty();
+        if (hasComment) {
             holder.commentView.setVisibility(View.VISIBLE);
             holder.commentView.setText(comment);
+        } else {
+            holder.commentView.setVisibility(View.GONE);
+            holder.commentView.setText(null);
         }
 
         List<String> metadataLines = new ArrayList<>();
@@ -61,12 +63,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (barcode != null && !barcode.trim().isEmpty()) {
             metadataLines.add(context.getString(R.string.room_content_metadata_barcode, barcode));
         }
-        if (metadataLines.isEmpty()) {
-            holder.metadataView.setVisibility(View.GONE);
-        } else {
+        boolean hasMetadata = !metadataLines.isEmpty();
+        if (hasMetadata) {
             holder.metadataView.setVisibility(View.VISIBLE);
             holder.metadataView.setText(TextUtils.join("\n", metadataLines));
+        } else {
+            holder.metadataView.setVisibility(View.GONE);
+            holder.metadataView.setText(null);
         }
+
+        holder.detailsContainer.setVisibility(hasComment || hasMetadata ? View.VISIBLE : View.GONE);
     }
 
     @Override
@@ -115,6 +121,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         final View bannerContainer;
+        final View detailsContainer;
         final TextView nameView;
         final TextView commentView;
         final TextView metadataView;
@@ -122,6 +129,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         ViewHolder(@NonNull View itemView) {
             super(itemView);
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
+            detailsContainer = itemView.findViewById(R.id.container_room_content_details);
             nameView = itemView.findViewById(R.id.text_room_content_name);
             commentView = itemView.findViewById(R.id.text_room_content_comment);
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
