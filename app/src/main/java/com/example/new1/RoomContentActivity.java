@@ -16,6 +16,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import android.graphics.Color;
@@ -146,7 +147,6 @@ public class RoomContentActivity extends Activity {
         ImageButton deleteCustomTypeButton = dialogView.findViewById(R.id.button_delete_custom_type);
         Button selectCategoryButton = dialogView.findViewById(R.id.button_select_category);
         ImageButton openCategoryListButton = dialogView.findViewById(R.id.button_open_category_list);
-        Button createCustomCategoryButton = dialogView.findViewById(R.id.button_create_custom_category);
         ImageButton editCustomCategoryButton = dialogView.findViewById(R.id.button_edit_custom_category);
         ImageButton deleteCustomCategoryButton = dialogView.findViewById(R.id.button_delete_custom_category);
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
@@ -217,7 +217,7 @@ public class RoomContentActivity extends Activity {
         List<String> categoryOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_category_options)));
         final String[] selectedCategoryHolder = new String[1];
-        selectedCategoryHolder[0] = !categoryOptions.isEmpty() ? categoryOptions.get(0) : null;
+        selectedCategoryHolder[0] = null;
 
         final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
         if (categorySpinner != null) {
@@ -226,8 +226,11 @@ public class RoomContentActivity extends Activity {
                     categoryOptions);
             categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             categorySpinner.setAdapter(categoryAdapter);
-            if (!categoryOptions.isEmpty()) {
-                categorySpinner.setSelection(0);
+            if (!categoryOptions.isEmpty() && selectedCategoryHolder[0] != null) {
+                int selectedIndex = categoryOptions.indexOf(selectedCategoryHolder[0]);
+                if (selectedIndex >= 0) {
+                    categorySpinner.setSelection(selectedIndex);
+                }
             }
             categoryAdapterHolder[0] = categoryAdapter;
         }
@@ -260,21 +263,28 @@ public class RoomContentActivity extends Activity {
                             }
 
                             @Override
-                            public void onEditType(String type) {
-                                if (editCustomTypeButton != null) {
-                                    editCustomTypeButton.performClick();
-                                } else {
-                                    comingSoonListener.onClick(sheetView);
-                                }
+                            public void onEditType(String type, int position) {
+                                showEditTypeDialog(typeOptions,
+                                        adapterHolder[0],
+                                        position,
+                                        type,
+                                        selectTypeButton,
+                                        selectedTypeHolder,
+                                        bookFields,
+                                        trackFields,
+                                        trackTitle);
                             }
 
                             @Override
-                            public void onDeleteType(String type) {
-                                if (deleteCustomTypeButton != null) {
-                                    deleteCustomTypeButton.performClick();
-                                } else {
-                                    comingSoonListener.onClick(sheetView);
-                                }
+                            public void onDeleteType(String type, int position) {
+                                showDeleteTypeConfirmation(typeOptions,
+                                        adapterHolder[0],
+                                        position,
+                                        selectTypeButton,
+                                        selectedTypeHolder,
+                                        bookFields,
+                                        trackFields,
+                                        trackTitle);
                             }
                         });
                 adapter.setSelectedType(selectedTypeHolder[0]);
@@ -334,21 +344,26 @@ public class RoomContentActivity extends Activity {
                             }
 
                             @Override
-                            public void onEditCategory(String category) {
-                                if (editCustomCategoryButton != null) {
-                                    editCustomCategoryButton.performClick();
-                                } else {
-                                    comingSoonListener.onClick(sheetView);
-                                }
+                            public void onEditCategory(String category, int position) {
+                                showEditCategoryDialog(categoryOptions,
+                                        adapterHolder[0],
+                                        categoryAdapterHolder[0],
+                                        position,
+                                        category,
+                                        selectCategoryButton,
+                                        selectedCategoryHolder,
+                                        categorySpinner);
                             }
 
                             @Override
-                            public void onDeleteCategory(String category) {
-                                if (deleteCustomCategoryButton != null) {
-                                    deleteCustomCategoryButton.performClick();
-                                } else {
-                                    comingSoonListener.onClick(sheetView);
-                                }
+                            public void onDeleteCategory(String category, int position) {
+                                showDeleteCategoryConfirmation(categoryOptions,
+                                        adapterHolder[0],
+                                        categoryAdapterHolder[0],
+                                        position,
+                                        selectCategoryButton,
+                                        selectedCategoryHolder,
+                                        categorySpinner);
                             }
                         });
                 adapter.setSelectedCategory(selectedCategoryHolder[0]);
@@ -376,10 +391,6 @@ public class RoomContentActivity extends Activity {
             openCategoryListButton.setOnClickListener(categoryDialogLauncher);
         }
 
-        if (createCustomCategoryButton != null) {
-            createCustomCategoryButton.setOnClickListener(comingSoonListener);
-        }
-
         if (editCustomCategoryButton != null) {
             editCustomCategoryButton.setOnClickListener(comingSoonListener);
         }
@@ -393,6 +404,264 @@ public class RoomContentActivity extends Activity {
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
         }
+    }
+
+    private void showEditCategoryDialog(List<String> categoryOptions,
+                                        @Nullable CategorySelectorAdapter adapter,
+                                        @Nullable ArrayAdapter<String> spinnerAdapter,
+                                        int position,
+                                        @NonNull String currentLabel,
+                                        @Nullable Button selectCategoryButton,
+                                        @NonNull String[] selectedCategoryHolder,
+                                        @Nullable Spinner categorySpinner) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_category, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        TextView titleView = dialogView.findViewById(R.id.text_add_category_title);
+        EditText categoryNameInput = dialogView.findViewById(R.id.input_new_category_name);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+
+        if (titleView != null) {
+            titleView.setText(R.string.dialog_edit_category_title);
+        }
+
+        if (categoryNameInput != null) {
+            categoryNameInput.setText(currentLabel);
+            categoryNameInput.setSelection(currentLabel.length());
+        }
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                if (categoryNameInput == null) {
+                    dialog.dismiss();
+                    return;
+                }
+                CharSequence nameValue = categoryNameInput.getText();
+                String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
+                if (trimmedName.isEmpty()) {
+                    categoryNameInput.setError(getString(R.string.error_category_name_required));
+                    categoryNameInput.requestFocus();
+                    return;
+                }
+                categoryOptions.set(position, trimmedName);
+                if (adapter != null) {
+                    adapter.updateCategory(position, trimmedName);
+                }
+                if (spinnerAdapter != null) {
+                    spinnerAdapter.notifyDataSetChanged();
+                }
+                if (selectedCategoryHolder[0] != null
+                        && selectedCategoryHolder[0].equals(currentLabel)) {
+                    selectedCategoryHolder[0] = trimmedName;
+                    if (adapter != null) {
+                        adapter.setSelectedCategory(trimmedName);
+                    }
+                    updateSelectionButtonText(selectCategoryButton, trimmedName,
+                            R.string.dialog_button_choose_category);
+                    if (categorySpinner != null) {
+                        int index = categoryOptions.indexOf(trimmedName);
+                        if (index >= 0) {
+                            categorySpinner.setSelection(index);
+                        }
+                    }
+                }
+                dialog.dismiss();
+            });
+        }
+
+        if (categoryNameInput != null) {
+            categoryNameInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    categoryNameInput.setError(null);
+                }
+            });
+        }
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+    }
+
+    private void showDeleteCategoryConfirmation(List<String> categoryOptions,
+                                                @Nullable CategorySelectorAdapter adapter,
+                                                @Nullable ArrayAdapter<String> spinnerAdapter,
+                                                int position,
+                                                @Nullable Button selectCategoryButton,
+                                                @NonNull String[] selectedCategoryHolder,
+                                                @Nullable Spinner categorySpinner) {
+        if (position < 0 || position >= categoryOptions.size()) {
+            return;
+        }
+        String categoryLabel = categoryOptions.get(position);
+        new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.dialog_delete_category_message, categoryLabel))
+                .setNegativeButton(R.string.action_cancel, (dialog, which) -> dialog.dismiss())
+                .setPositiveButton(R.string.action_delete, (dialog, which) -> {
+                    String removed = categoryOptions.remove(position);
+                    if (adapter != null) {
+                        adapter.removeCategory(position);
+                    }
+                    if (spinnerAdapter != null) {
+                        spinnerAdapter.notifyDataSetChanged();
+                    }
+                    boolean removedSelected = selectedCategoryHolder[0] != null
+                            && selectedCategoryHolder[0].equals(removed);
+                    if (removedSelected) {
+                        selectedCategoryHolder[0] = null;
+                        if (adapter != null) {
+                            adapter.setSelectedCategory(null);
+                        }
+                        updateSelectionButtonText(selectCategoryButton, null,
+                                R.string.dialog_button_choose_category);
+                    } else if (selectedCategoryHolder[0] != null && spinnerAdapter != null
+                            && categorySpinner != null) {
+                        int newIndex = categoryOptions.indexOf(selectedCategoryHolder[0]);
+                        if (newIndex >= 0) {
+                            categorySpinner.setSelection(newIndex);
+                        }
+                    }
+                })
+                .create()
+                .show();
+    }
+
+    private void showEditTypeDialog(List<String> typeOptions,
+                                    @Nullable TypeSelectorAdapter adapter,
+                                    int position,
+                                    @NonNull String currentLabel,
+                                    @Nullable Button selectTypeButton,
+                                    @NonNull String[] selectedTypeHolder,
+                                    @Nullable View bookFields,
+                                    @Nullable View trackFields,
+                                    @Nullable TextView trackTitle) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_type, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        TextView titleView = dialogView.findViewById(R.id.text_add_type_title);
+        EditText typeNameInput = dialogView.findViewById(R.id.input_new_type_name);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+
+        if (titleView != null) {
+            titleView.setText(R.string.dialog_edit_type_title);
+        }
+
+        if (typeNameInput != null) {
+            typeNameInput.setText(currentLabel);
+            typeNameInput.setSelection(currentLabel.length());
+        }
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                if (typeNameInput == null) {
+                    dialog.dismiss();
+                    return;
+                }
+                CharSequence nameValue = typeNameInput.getText();
+                String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
+                if (trimmedName.isEmpty()) {
+                    typeNameInput.setError(getString(R.string.error_type_name_required));
+                    typeNameInput.requestFocus();
+                    return;
+                }
+                typeOptions.set(position, trimmedName);
+                if (adapter != null) {
+                    adapter.updateType(position, trimmedName);
+                }
+                if (selectedTypeHolder[0] != null
+                        && selectedTypeHolder[0].equals(currentLabel)) {
+                    selectedTypeHolder[0] = trimmedName;
+                    if (adapter != null) {
+                        adapter.setSelectedType(trimmedName);
+                    }
+                    updateSelectionButtonText(selectTypeButton, trimmedName,
+                            R.string.dialog_button_choose_type);
+                    updateTypeSpecificFields(bookFields, trackFields, trackTitle, trimmedName);
+                }
+                dialog.dismiss();
+            });
+        }
+
+        if (typeNameInput != null) {
+            typeNameInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    typeNameInput.setError(null);
+                }
+            });
+        }
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+    }
+
+    private void showDeleteTypeConfirmation(List<String> typeOptions,
+                                            @Nullable TypeSelectorAdapter adapter,
+                                            int position,
+                                            @Nullable Button selectTypeButton,
+                                            @NonNull String[] selectedTypeHolder,
+                                            @Nullable View bookFields,
+                                            @Nullable View trackFields,
+                                            @Nullable TextView trackTitle) {
+        if (position < 0 || position >= typeOptions.size()) {
+            return;
+        }
+        String typeLabel = typeOptions.get(position);
+        new AlertDialog.Builder(this)
+                .setMessage(getString(R.string.dialog_delete_type_message, typeLabel))
+                .setNegativeButton(R.string.action_cancel, (dialog, which) -> dialog.dismiss())
+                .setPositiveButton(R.string.action_delete, (dialog, which) -> {
+                    String removed = typeOptions.remove(position);
+                    if (adapter != null) {
+                        adapter.removeType(position);
+                    }
+                    if (selectedTypeHolder[0] != null && selectedTypeHolder[0].equals(removed)) {
+                        selectedTypeHolder[0] = null;
+                        if (adapter != null) {
+                            adapter.setSelectedType(null);
+                        }
+                        updateSelectionButtonText(selectTypeButton, null,
+                                R.string.dialog_button_choose_type);
+                        updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
+                    }
+                })
+                .create()
+                .show();
     }
 
     private void showAddCategoryDialog(List<String> categoryOptions,

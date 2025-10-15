@@ -19,9 +19,9 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
     public interface TypeActionListener {
         void onTypeSelected(@NonNull String type);
 
-        void onEditType(@NonNull String type);
+        void onEditType(@NonNull String type, int position);
 
-        void onDeleteType(@NonNull String type);
+        void onDeleteType(@NonNull String type, int position);
     }
 
     @NonNull
@@ -74,6 +74,27 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
         notifyItemInserted(types.size() - 1);
     }
 
+    public void updateType(int position, @NonNull String newLabel) {
+        if (position < 0 || position >= types.size()) {
+            return;
+        }
+        types.set(position, newLabel);
+        notifyItemChanged(position);
+    }
+
+    public void removeType(int position) {
+        if (position < 0 || position >= types.size()) {
+            return;
+        }
+        types.remove(position);
+        notifyItemRemoved(position);
+        if (selectedPosition == position) {
+            selectedPosition = RecyclerView.NO_POSITION;
+        } else if (selectedPosition > position) {
+            selectedPosition -= 1;
+        }
+    }
+
     private void selectType(int position) {
         if (position < 0 || position >= types.size()) {
             return;
@@ -116,8 +137,18 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
             radioButton.setOnClickListener(selectListener);
             labelView.setOnClickListener(selectListener);
 
-            editButton.setOnClickListener(view -> actionListener.onEditType(typeLabel));
-            deleteButton.setOnClickListener(view -> actionListener.onDeleteType(typeLabel));
+            editButton.setOnClickListener(view -> {
+                int adapterPosition = getBindingAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    actionListener.onEditType(types.get(adapterPosition), adapterPosition);
+                }
+            });
+            deleteButton.setOnClickListener(view -> {
+                int adapterPosition = getBindingAdapterPosition();
+                if (adapterPosition != RecyclerView.NO_POSITION) {
+                    actionListener.onDeleteType(types.get(adapterPosition), adapterPosition);
+                }
+            });
         }
     }
 }

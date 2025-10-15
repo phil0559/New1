@@ -93,7 +93,9 @@
     <string name="dialog_type_selector_title">Sélectionner un type</string>
     <string name="dialog_button_add_type">Ajouter un type</string>
     <string name="dialog_add_type_title">Nouveau type</string>
+    <string name="dialog_edit_type_title">Modifier le type</string>
     <string name="dialog_add_type_name_hint">Nom du type</string>
+    <string name="dialog_delete_type_message">Voulez-vous supprimer le type %1$s ?</string>
     <string name="dialog_label_category">Catégorie</string>
     <string name="dialog_button_choose_category">Choisir une catégorie</string>
     <string name="dialog_button_create_custom_category">Créer une catégorie personnalisée</string>
@@ -104,9 +106,11 @@
     <string name="dialog_category_selector_title">Sélectionner une catégorie</string>
     <string name="dialog_button_add_category">Ajouter une catégorie</string>
     <string name="dialog_add_category_title">Nouvelle catégorie</string>
+    <string name="dialog_edit_category_title">Modifier la catégorie</string>
     <string name="dialog_add_category_name_hint">Nom de la catégorie</string>
     <string name="dialog_category_placeholder_one">Catégorie 1</string>
     <string name="dialog_category_placeholder_two">Catégorie 2</string>
+    <string name="dialog_delete_category_message">Voulez-vous supprimer la catégorie %1$s ?</string>
     <string name="dialog_label_series">Série</string>
     <string name="dialog_label_number">Numéro</string>
     <string name="dialog_label_author">Auteur</string>
