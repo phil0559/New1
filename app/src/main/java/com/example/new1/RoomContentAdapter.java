@@ -5,6 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -15,6 +20,7 @@ import android.widget.TextView;
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,9 +29,13 @@ import java.util.List;
 
 public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.ViewHolder> {
 
+    private static final float LABEL_RELATIVE_SIZE = 0.85f;
+
     private final List<RoomContentItem> items;
     private final LayoutInflater inflater;
+
     private final Context context;
+    private final int labelColor;
     @Nullable
     private final OnRoomContentInteractionListener interactionListener;
 
@@ -41,6 +51,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         this.items = items;
         this.inflater = LayoutInflater.from(context);
         this.interactionListener = interactionListener;
+        this.labelColor = ContextCompat.getColor(context, R.color.icon_brown);
     }
 
     @NonNull
@@ -55,57 +66,32 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         RoomContentItem item = items.get(position);
         holder.bind(item);
 
-        String comment = item.getComment();
-        boolean hasComment = comment != null && !comment.trim().isEmpty();
+        CharSequence commentText = formatComment(item.getComment());
+        boolean hasComment = commentText != null;
         if (hasComment) {
             holder.commentView.setVisibility(View.VISIBLE);
-            holder.commentView.setText(comment);
+            holder.commentView.setText(commentText);
         } else {
             holder.commentView.setVisibility(View.GONE);
             holder.commentView.setText(null);
         }
 
-        List<String> metadataLines = new ArrayList<>();
-        String category = item.getCategory();
-        if (category != null && !category.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_category, category));
-        }
-        String series = item.getSeries();
-        if (series != null && !series.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_series, series));
-        }
-        String number = item.getNumber();
-        if (number != null && !number.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_number, number));
-        }
-        String author = item.getAuthor();
-        if (author != null && !author.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_author, author));
-        }
-        String publisher = item.getPublisher();
-        if (publisher != null && !publisher.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_publisher, publisher));
-        }
-        String edition = item.getEdition();
-        if (edition != null && !edition.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_edition, edition));
-        }
-        String publicationDate = item.getPublicationDate();
-        if (publicationDate != null && !publicationDate.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_publication_date, publicationDate));
-        }
-        String summary = item.getSummary();
-        if (summary != null && !summary.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_summary, summary));
-        }
-        String barcode = item.getBarcode();
-        if (barcode != null && !barcode.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_barcode, barcode));
-        }
-        boolean hasMetadata = !metadataLines.isEmpty();
+        List<CharSequence> metadataLines = new ArrayList<>();
+        addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_author, item.getAuthor());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_publisher, item.getPublisher());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_edition, item.getEdition());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_publication_date,
+                item.getPublicationDate());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_summary, item.getSummary());
+        addMetadataLine(metadataLines, R.string.room_content_metadata_barcode, item.getBarcode());
+        CharSequence metadataText = formatMetadataLines(metadataLines);
+        boolean hasMetadata = metadataText != null;
         if (hasMetadata) {
             holder.metadataView.setVisibility(View.VISIBLE);
-            holder.metadataView.setText(formatMetadataLines(metadataLines));
+            holder.metadataView.setText(metadataText);
         } else {
             holder.metadataView.setVisibility(View.GONE);
             holder.metadataView.setText(null);
@@ -119,16 +105,87 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return items.size();
     }
 
-    @NonNull
-    private CharSequence formatMetadataLines(@NonNull List<String> metadataLines) {
-        StringBuilder builder = new StringBuilder();
+    private void addMetadataLine(@NonNull List<CharSequence> metadataLines, int templateRes,
+            @Nullable String value) {
+        if (value == null) {
+            return;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            return;
+        }
+        metadataLines.add(createMetadataLine(templateRes, trimmed));
+    }
+
+    @Nullable
+    private CharSequence formatMetadataLines(@NonNull List<CharSequence> metadataLines) {
+        if (metadataLines.isEmpty()) {
+            return null;
+        }
+        SpannableStringBuilder builder = new SpannableStringBuilder();
         for (int i = 0; i < metadataLines.size(); i++) {
             if (i > 0) {
                 builder.append('\n');
             }
-            builder.append('\u2022').append(' ').append(metadataLines.get(i));
+            builder.append(metadataLines.get(i));
         }
-        return builder.toString();
+        return builder;
+    }
+
+    @NonNull
+    private CharSequence createMetadataLine(int templateRes, @NonNull String value) {
+        String formatted = context.getString(templateRes, value);
+        int colonIndex = formatted.indexOf(':');
+        String labelPart;
+        String valuePart;
+        if (colonIndex >= 0) {
+            labelPart = formatted.substring(0, colonIndex).trim();
+            valuePart = formatted.substring(colonIndex + 1).trim();
+        } else {
+            labelPart = formatted.trim();
+            valuePart = "";
+        }
+
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append('\u2022').append(' ');
+        int labelStart = builder.length();
+        builder.append(labelPart);
+        builder.append(" : ");
+        int labelEnd = builder.length();
+        applyLabelStyle(builder, labelStart, labelEnd);
+        if (!valuePart.isEmpty()) {
+            builder.append(valuePart);
+        }
+        return builder;
+    }
+
+    @Nullable
+    private CharSequence formatComment(@Nullable String comment) {
+        if (comment == null) {
+            return null;
+        }
+        String trimmed = comment.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        String label = context.getString(R.string.dialog_label_room_content_comment);
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append(label);
+        builder.append(" : ");
+        int labelEnd = builder.length();
+        applyLabelStyle(builder, 0, labelEnd);
+        builder.append(trimmed);
+        return builder;
+    }
+
+    private void applyLabelStyle(@NonNull Spannable spannable, int start, int end) {
+        if (start >= end) {
+            return;
+        }
+        spannable.setSpan(new ForegroundColorSpan(labelColor), start, end,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannable.setSpan(new RelativeSizeSpan(LABEL_RELATIVE_SIZE), start, end,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
     private void applyBannerColor(@NonNull View bannerView, @Nullable String type) {
