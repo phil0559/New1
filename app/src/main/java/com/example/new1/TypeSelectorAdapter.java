@@ -69,6 +69,11 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
         return types.size();
     }
 
+    public void addType(@NonNull String typeLabel) {
+        types.add(typeLabel);
+        notifyItemInserted(types.size() - 1);
+    }
+
     private void selectType(int position) {
         if (position < 0 || position >= types.size()) {
             return;
