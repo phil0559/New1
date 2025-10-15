@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.New1" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+    <style name="Theme.New1" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/button_blue</item>
+        <item name="colorSecondary">@color/button_blue</item>
         <item name="android:colorAccent">@color/button_blue</item>
-        <item name="android:colorPrimary">@color/button_blue</item>
     </style>
 </resources>
