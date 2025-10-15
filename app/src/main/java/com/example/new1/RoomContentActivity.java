@@ -7,10 +7,12 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -128,14 +130,11 @@ public class RoomContentActivity extends Activity {
         Button barcodeButton = dialogView.findViewById(R.id.button_barcode);
         Button addTrackButton = dialogView.findViewById(R.id.button_add_track);
         Button addTrackListButton = dialogView.findViewById(R.id.button_add_track_list);
-        View addTypeButton = dialogView.findViewById(R.id.button_add_type);
-        View editCustomTypeButton = dialogView.findViewById(R.id.button_edit_custom_type);
-        View deleteCustomTypeButton = dialogView.findViewById(R.id.button_delete_custom_type);
-        View addCategoryButton = dialogView.findViewById(R.id.button_add_category);
+        Spinner typeSpinner = dialogView.findViewById(R.id.spinner_type);
+        Spinner categorySpinner = dialogView.findViewById(R.id.spinner_category);
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
         View trackFields = dialogView.findViewById(R.id.container_track_fields);
         TextView trackTitle = dialogView.findViewById(R.id.text_track_title);
-        RadioGroup typeGroup = dialogView.findViewById(R.id.group_type);
 
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
@@ -193,33 +192,40 @@ public class RoomContentActivity extends Activity {
             addTrackListButton.setOnClickListener(comingSoonListener);
         }
 
-        if (addTypeButton != null) {
-            addTypeButton.setOnClickListener(comingSoonListener);
+        if (categorySpinner != null) {
+            ArrayAdapter<CharSequence> categoryAdapter = ArrayAdapter.createFromResource(
+                    this,
+                    R.array.room_content_category_options,
+                    android.R.layout.simple_spinner_item);
+            categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            categorySpinner.setAdapter(categoryAdapter);
         }
 
-        if (editCustomTypeButton != null) {
-            editCustomTypeButton.setOnClickListener(comingSoonListener);
-        }
+        if (typeSpinner != null) {
+            ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(
+                    this,
+                    R.array.room_content_type_options,
+                    android.R.layout.simple_spinner_item);
+            typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            typeSpinner.setAdapter(typeAdapter);
+            typeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    Object item = parent.getItemAtPosition(position);
+                    updateTypeSpecificFields(bookFields, trackFields, trackTitle,
+                            item != null ? item.toString() : null);
+                }
 
-        if (deleteCustomTypeButton != null) {
-            deleteCustomTypeButton.setOnClickListener(comingSoonListener);
-        }
-
-        if (addCategoryButton != null) {
-            addCategoryButton.setOnClickListener(comingSoonListener);
-        }
-
-        if (typeGroup != null) {
-            typeGroup.setOnCheckedChangeListener((group, checkedId) ->
-                    updateTypeSpecificFields(bookFields, trackFields, trackTitle, checkedId));
-            int checkedId = typeGroup.getCheckedRadioButtonId();
-            if (checkedId != View.NO_ID) {
-                updateTypeSpecificFields(bookFields, trackFields, trackTitle, checkedId);
-            } else {
-                updateTypeSpecificFields(bookFields, trackFields, trackTitle, R.id.radio_type_other);
-            }
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
+                }
+            });
+            Object initialSelection = typeSpinner.getSelectedItem();
+            updateTypeSpecificFields(bookFields, trackFields, trackTitle,
+                    initialSelection != null ? initialSelection.toString() : null);
         } else {
-            updateTypeSpecificFields(bookFields, trackFields, trackTitle, R.id.radio_type_other);
+            updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
         }
 
         if (dialog.getWindow() != null) {
@@ -232,9 +238,16 @@ public class RoomContentActivity extends Activity {
     private void updateTypeSpecificFields(@Nullable View bookFields,
                                           @Nullable View trackFields,
                                           @Nullable TextView trackTitle,
-                                          int checkedId) {
-        boolean showBookFields = checkedId == R.id.radio_type_book || checkedId == R.id.radio_type_comic;
-        boolean showTrackFields = checkedId == R.id.radio_type_cd || checkedId == R.id.radio_type_disc;
+                                          @Nullable String selectedType) {
+        String bookType = getString(R.string.dialog_type_book);
+        String comicType = getString(R.string.dialog_type_comic);
+        String cdType = getString(R.string.dialog_type_cd);
+        String discType = getString(R.string.dialog_type_disc);
+
+        boolean showBookFields = selectedType != null
+                && (selectedType.equals(bookType) || selectedType.equals(comicType));
+        boolean showTrackFields = selectedType != null
+                && (selectedType.equals(cdType) || selectedType.equals(discType));
 
         if (bookFields != null) {
             bookFields.setVisibility(showBookFields ? View.VISIBLE : View.GONE);
@@ -244,7 +257,7 @@ public class RoomContentActivity extends Activity {
             if (showTrackFields) {
                 trackFields.setVisibility(View.VISIBLE);
                 if (trackTitle != null) {
-                    int titleRes = checkedId == R.id.radio_type_disc
+                    int titleRes = selectedType != null && selectedType.equals(discType)
                             ? R.string.dialog_tracks_disc_title
                             : R.string.dialog_tracks_cd_title;
                     trackTitle.setText(titleRes);
