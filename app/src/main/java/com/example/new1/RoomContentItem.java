@@ -21,6 +21,9 @@ public class RoomContentItem {
     private static final String KEY_NUMBER = "number";
     private static final String KEY_AUTHOR = "author";
     private static final String KEY_PUBLISHER = "publisher";
+    private static final String KEY_EDITION = "edition";
+    private static final String KEY_PUBLICATION_DATE = "publicationDate";
+    private static final String KEY_SUMMARY = "summary";
     private static final String KEY_PHOTOS = "photos";
 
     private final String name;
@@ -39,6 +42,12 @@ public class RoomContentItem {
     private final String author;
     @Nullable
     private final String publisher;
+    @Nullable
+    private final String edition;
+    @Nullable
+    private final String publicationDate;
+    @Nullable
+    private final String summary;
     @NonNull
     private final List<String> photos;
 
@@ -51,6 +60,9 @@ public class RoomContentItem {
                            @Nullable String number,
                            @Nullable String author,
                            @Nullable String publisher,
+                           @Nullable String edition,
+                           @Nullable String publicationDate,
+                           @Nullable String summary,
                            @Nullable List<String> photos) {
         this.name = name;
         this.comment = comment != null ? comment : "";
@@ -61,6 +73,9 @@ public class RoomContentItem {
         this.number = isNullOrEmpty(number) ? null : number;
         this.author = isNullOrEmpty(author) ? null : author;
         this.publisher = isNullOrEmpty(publisher) ? null : publisher;
+        this.edition = isNullOrEmpty(edition) ? null : edition;
+        this.publicationDate = isNullOrEmpty(publicationDate) ? null : publicationDate;
+        this.summary = isNullOrEmpty(summary) ? null : summary;
         if (photos == null) {
             this.photos = new ArrayList<>();
         } else {
@@ -113,6 +128,21 @@ public class RoomContentItem {
         return publisher;
     }
 
+    @Nullable
+    public String getEdition() {
+        return edition;
+    }
+
+    @Nullable
+    public String getPublicationDate() {
+        return publicationDate;
+    }
+
+    @Nullable
+    public String getSummary() {
+        return summary;
+    }
+
     @NonNull
     public List<String> getPhotos() {
         return Collections.unmodifiableList(photos);
@@ -143,6 +173,15 @@ public class RoomContentItem {
             }
             if (publisher != null) {
                 object.put(KEY_PUBLISHER, publisher);
+            }
+            if (edition != null) {
+                object.put(KEY_EDITION, edition);
+            }
+            if (publicationDate != null) {
+                object.put(KEY_PUBLICATION_DATE, publicationDate);
+            }
+            if (summary != null) {
+                object.put(KEY_SUMMARY, summary);
             }
             if (!photos.isEmpty()) {
                 org.json.JSONArray photosArray = new org.json.JSONArray();
@@ -180,6 +219,16 @@ public class RoomContentItem {
         String publisher = object.has(KEY_PUBLISHER) && !object.isNull(KEY_PUBLISHER)
                 ? object.optString(KEY_PUBLISHER)
                 : null;
+        String edition = object.has(KEY_EDITION) && !object.isNull(KEY_EDITION)
+                ? object.optString(KEY_EDITION)
+                : null;
+        String publicationDate = object.has(KEY_PUBLICATION_DATE)
+                && !object.isNull(KEY_PUBLICATION_DATE)
+                ? object.optString(KEY_PUBLICATION_DATE)
+                : null;
+        String summary = object.has(KEY_SUMMARY) && !object.isNull(KEY_SUMMARY)
+                ? object.optString(KEY_SUMMARY)
+                : null;
         List<String> photos = new ArrayList<>();
         if (object.has(KEY_PHOTOS) && !object.isNull(KEY_PHOTOS)) {
             org.json.JSONArray photosArray = object.optJSONArray(KEY_PHOTOS);
@@ -201,6 +250,9 @@ public class RoomContentItem {
                 number,
                 author,
                 publisher,
+                edition,
+                publicationDate,
+                summary,
                 photos);
     }
 

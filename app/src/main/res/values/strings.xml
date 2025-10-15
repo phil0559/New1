@@ -82,6 +82,9 @@
     <string name="room_content_metadata_number">Numéro : %1$s</string>
     <string name="room_content_metadata_author">Auteur : %1$s</string>
     <string name="room_content_metadata_publisher">Éditeur : %1$s</string>
+    <string name="room_content_metadata_edition">Édition : %1$s</string>
+    <string name="room_content_metadata_publication_date">Date de publication : %1$s</string>
+    <string name="room_content_metadata_summary">Résumé : %1$s</string>
     <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="dialog_room_content_item_placeholder">- Élément</string>
     <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
@@ -140,6 +143,9 @@
     <string name="dialog_label_number">Numéro</string>
     <string name="dialog_label_author">Auteur</string>
     <string name="dialog_label_publisher">Éditeur</string>
+    <string name="dialog_label_edition">Édition</string>
+    <string name="dialog_label_publication_date">Date de publication</string>
+    <string name="dialog_label_summary">Résumé</string>
     <string name="dialog_tracks_cd_title">Pistes du CD</string>
     <string name="dialog_tracks_disc_title">Pistes du Disque</string>
     <string name="dialog_track_placeholder">Piste 1</string>
