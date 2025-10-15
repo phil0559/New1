@@ -77,6 +77,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         List<CharSequence> metadataLines = new ArrayList<>();
+        addMetadataLine(metadataLines, R.string.room_content_metadata_type, item.getType());
         addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
         addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
         addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
