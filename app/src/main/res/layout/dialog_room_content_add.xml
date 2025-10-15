@@ -32,7 +32,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_input_field_white"
                 android:hint="@string/dialog_label_room_content_name"
                 android:inputType="textCapSentences"
                 android:padding="12dp"
@@ -44,7 +44,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
-                android:background="@android:color/transparent"
+                android:background="@drawable/bg_input_field_white"
                 android:gravity="top|start"
                 android:hint="@string/dialog_label_room_content_comment"
                 android:inputType="textCapSentences|textMultiLine"
@@ -123,401 +123,45 @@
                     android:textSize="14sp" />
             </LinearLayout>
 
-            <LinearLayout
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:text="@string/dialog_label_type"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/dialog_label_type"
-                    android:textColor="@android:color/black"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <ImageButton
-                    android:id="@+id/button_add_type"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/content_description_add_type"
-                    android:padding="6dp"
-                    android:src="@drawable/ic_add"
-                    android:tint="@android:color/black" />
-            </LinearLayout>
-
-            <RadioGroup
-                android:id="@+id/group_type"
+            <Spinner
+                android:id="@+id/spinner_type"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input_field_white"
+                android:padding="12dp"
+                android:spinnerMode="dropdown" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/dialog_label_category"
+                android:textColor="@android:color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-                    <RadioButton
-                        android:id="@+id/radio_type_other"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:buttonTint="@color/icon_brown"
-                        android:checked="true"
-                        android:text="@string/dialog_type_other"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <RadioButton
-                        android:id="@+id/radio_type_book"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:buttonTint="@color/icon_brown"
-                        android:text="@string/dialog_type_book"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <RadioButton
-                        android:id="@+id/radio_type_cd"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:buttonTint="@color/icon_brown"
-                        android:text="@string/dialog_type_cd"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <RadioButton
-                        android:id="@+id/radio_type_disc"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:buttonTint="@color/icon_brown"
-                        android:text="@string/dialog_type_disc"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <RadioButton
-                        android:id="@+id/radio_type_comic"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:buttonTint="@color/icon_brown"
-                        android:text="@string/dialog_type_comic"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/layout_custom_type"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <RadioButton
-                        android:id="@+id/radio_type_custom"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:buttonTint="@color/icon_brown"
-                        android:text="@string/dialog_type_custom"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <ImageButton
-                            android:id="@+id/button_edit_custom_type"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:id="@+id/button_delete_custom_type"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_type"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-            </RadioGroup>
+            <Spinner
+                android:id="@+id/spinner_category"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input_field_white"
+                android:padding="12dp"
+                android:spinnerMode="dropdown" />
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="16dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/dialog_label_category"
-                    android:textColor="@android:color/black"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <ImageButton
-                    android:id="@+id/button_add_category"
-                    android:layout_width="36dp"
-                    android:layout_height="36dp"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/content_description_add_category"
-                    android:padding="6dp"
-                    android:src="@drawable/ic_add"
-                    android:tint="@android:color/black" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/dialog_category_placeholder_one"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_category"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_category"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="@string/dialog_category_placeholder_two"
-                        android:textColor="@android:color/black" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_edit_category"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_edit_white"
-                            android:tint="@android:color/black" />
-
-                        <ImageButton
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="?android:attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/content_description_delete_category"
-                            android:padding="6dp"
-                            android:src="@drawable/ic_delete_red" />
-                    </LinearLayout>
-                </LinearLayout>
-            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/container_book_fields"
@@ -533,7 +177,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:background="@android:color/transparent"
+                    android:background="@drawable/bg_input_field_white"
                     android:hint="@string/dialog_label_series"
                     android:inputType="textCapWords"
                     android:padding="12dp"
@@ -545,7 +189,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:background="@android:color/transparent"
+                    android:background="@drawable/bg_input_field_white"
                     android:hint="@string/dialog_label_number"
                     android:inputType="text"
                     android:padding="12dp"
@@ -557,7 +201,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
-                    android:background="@android:color/transparent"
+                    android:background="@drawable/bg_input_field_white"
                     android:hint="@string/dialog_label_author"
                     android:inputType="textCapWords"
                     android:padding="12dp"
@@ -568,7 +212,7 @@
                     android:id="@+id/input_publisher"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@android:color/transparent"
+                    android:background="@drawable/bg_input_field_white"
                     android:hint="@string/dialog_label_publisher"
                     android:inputType="textCapWords"
                     android:padding="12dp"
@@ -598,7 +242,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:background="@android:color/transparent"
+                    android:background="@drawable/bg_input_field_white"
                     android:hint="@string/dialog_track_placeholder"
                     android:inputType="textCapSentences"
                     android:padding="12dp"
@@ -660,10 +304,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="4dp"
-                        android:background="@android:color/transparent"
+                        android:background="@drawable/bg_input_field_white"
                         android:hint="@string/dialog_custom_field_label_hint"
                         android:inputType="textCapWords"
                         android:text="@string/dialog_custom_field_label_1"
+                        android:padding="12dp"
                         android:textColor="@android:color/black"
                         android:textColorHint="@color/icon_brown" />
 
@@ -671,7 +316,7 @@
                         android:id="@+id/input_custom_field_value_1"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
+                        android:background="@drawable/bg_input_field_white"
                         android:hint="@string/dialog_custom_field_value_hint"
                         android:inputType="textCapSentences"
                         android:padding="12dp"
@@ -689,10 +334,11 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="4dp"
-                        android:background="@android:color/transparent"
+                        android:background="@drawable/bg_input_field_white"
                         android:hint="@string/dialog_custom_field_label_hint"
                         android:inputType="textCapWords"
                         android:text="@string/dialog_custom_field_label_2"
+                        android:padding="12dp"
                         android:textColor="@android:color/black"
                         android:textColorHint="@color/icon_brown" />
 
@@ -700,7 +346,7 @@
                         android:id="@+id/input_custom_field_value_2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
+                        android:background="@drawable/bg_input_field_white"
                         android:hint="@string/dialog_custom_field_value_hint"
                         android:inputType="textCapSentences"
                         android:padding="12dp"
