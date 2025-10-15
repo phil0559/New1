@@ -5,6 +5,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +15,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -22,8 +25,10 @@ import androidx.annotation.Nullable;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Base64;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,6 +39,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,9 +49,20 @@ import java.util.List;
 public class RoomContentActivity extends Activity {
     private static final String PREFS_NAME = "room_content_prefs";
     private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
+    private static final int REQUEST_TAKE_PHOTO = 2001;
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
     public static final String EXTRA_ROOM_NAME = "extra_room_name";
+
+    private static class FormState {
+        @Nullable
+        TextView photoLabel;
+        @Nullable
+        LinearLayout photoContainer;
+        @Nullable
+        View addPhotoButton;
+        final List<String> photos = new ArrayList<>();
+    }
 
     @Nullable
     private String establishmentName;
@@ -59,6 +76,8 @@ public class RoomContentActivity extends Activity {
     private TextView placeholderView;
     @Nullable
     private RoomContentAdapter roomContentAdapter;
+    @Nullable
+    private FormState currentFormState;
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -167,6 +186,7 @@ public class RoomContentActivity extends Activity {
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button addPhotoButton = dialogView.findViewById(R.id.button_add_room_content_photo);
+        LinearLayout photoContainer = dialogView.findViewById(R.id.container_room_content_photos);
         Button barcodeButton = dialogView.findViewById(R.id.button_barcode);
         Button addTrackButton = dialogView.findViewById(R.id.button_add_track);
         Button addTrackListButton = dialogView.findViewById(R.id.button_add_track_list);
@@ -182,6 +202,12 @@ public class RoomContentActivity extends Activity {
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
         View trackFields = dialogView.findViewById(R.id.container_track_fields);
         TextView trackTitle = dialogView.findViewById(R.id.text_track_title);
+
+        final FormState formState = new FormState();
+        formState.photoLabel = dialogView.findViewById(R.id.text_room_content_photos_label);
+        formState.photoContainer = photoContainer;
+        formState.addPhotoButton = addPhotoButton;
+        currentFormState = formState;
 
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
@@ -226,11 +252,17 @@ public class RoomContentActivity extends Activity {
                     }
                 }
 
+                if (currentFormState != null && currentFormState != formState) {
+                    dialog.dismiss();
+                    return;
+                }
+
                 RoomContentItem item = new RoomContentItem(trimmedName,
                         trimmedComment,
                         selectedTypeHolder[0],
                         selectedCategoryHolder[0],
-                        barcodeValue);
+                        barcodeValue,
+                        new ArrayList<>(formState.photos));
                 roomContentItems.add(item);
                 sortRoomContentItems();
                 if (roomContentAdapter != null) {
@@ -250,6 +282,12 @@ public class RoomContentActivity extends Activity {
             });
         }
 
+        dialog.setOnDismissListener(d -> {
+            if (currentFormState == formState) {
+                currentFormState = null;
+            }
+        });
+
         if (nameInput != null) {
             nameInput.addTextChangedListener(new TextWatcher() {
                 @Override
@@ -267,12 +305,26 @@ public class RoomContentActivity extends Activity {
             });
         }
 
-        View.OnClickListener comingSoonListener = v ->
-                Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
+        refreshPhotoSection(formState);
 
         if (addPhotoButton != null) {
-            addPhotoButton.setOnClickListener(comingSoonListener);
+            addPhotoButton.setOnClickListener(v -> {
+                if (currentFormState == null || currentFormState != formState) {
+                    return;
+                }
+                if (formState.photos.size() >= 5) {
+                    Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (cameraIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(cameraIntent, REQUEST_TAKE_PHOTO);
+                }
+            });
         }
+
+        View.OnClickListener comingSoonListener = v ->
+                Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
 
         if (barcodeButton != null) {
             barcodeButton.setOnClickListener(comingSoonListener);
@@ -551,6 +603,173 @@ public class RoomContentActivity extends Activity {
         if (contentList != null) {
             contentList.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         }
+    }
+
+    private void refreshPhotoSection(@NonNull FormState formState) {
+        if (formState.photoLabel != null) {
+            formState.photoLabel.setText(getString(R.string.dialog_label_room_content_photos_template,
+                    formState.photos.size()));
+        }
+
+        if (formState.addPhotoButton != null) {
+            formState.addPhotoButton.setEnabled(formState.photos.size() < 5);
+        }
+
+        if (formState.photoContainer == null) {
+            return;
+        }
+
+        formState.photoContainer.removeAllViews();
+        if (formState.photos.isEmpty()) {
+            formState.photoContainer.setVisibility(View.GONE);
+            return;
+        }
+
+        formState.photoContainer.setVisibility(View.VISIBLE);
+        int size = getResources().getDimensionPixelSize(R.dimen.dialog_photo_thumbnail_size);
+        int margin = getResources().getDimensionPixelSize(R.dimen.dialog_photo_thumbnail_spacing);
+
+        for (int i = 0; i < formState.photos.size(); i++) {
+            String photoData = formState.photos.get(i);
+            Bitmap bitmap = decodePhoto(photoData);
+            if (bitmap == null) {
+                continue;
+            }
+            ImageView thumbnail = new ImageView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(size, size);
+            if (i > 0) {
+                params.setMarginStart(margin);
+            }
+            thumbnail.setLayoutParams(params);
+            thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            thumbnail.setImageBitmap(bitmap);
+            final int index = i;
+            thumbnail.setOnClickListener(view -> showPhotoPreview(formState, index));
+            formState.photoContainer.addView(thumbnail);
+        }
+    }
+
+    private void showPhotoPreview(@NonNull FormState formState, int startIndex) {
+        if (formState.photos.isEmpty()) {
+            return;
+        }
+
+        View previewView = getLayoutInflater().inflate(R.layout.dialog_photo_preview, null);
+        ImageView previewImage = previewView.findViewById(R.id.image_photo_preview);
+        ImageButton previousButton = previewView.findViewById(R.id.button_previous_photo);
+        ImageButton nextButton = previewView.findViewById(R.id.button_next_photo);
+        ImageButton deleteButton = previewView.findViewById(R.id.button_delete_photo);
+
+        AlertDialog previewDialog = new AlertDialog.Builder(this)
+                .setView(previewView)
+                .create();
+
+        final int[] currentIndex = {Math.max(0, Math.min(startIndex, formState.photos.size() - 1))};
+
+        Runnable updateImage = new Runnable() {
+            @Override
+            public void run() {
+                if (formState.photos.isEmpty()) {
+                    previewDialog.dismiss();
+                    refreshPhotoSection(formState);
+                    return;
+                }
+                Bitmap bitmap = decodePhoto(formState.photos.get(currentIndex[0]));
+                if (bitmap != null) {
+                    previewImage.setImageBitmap(bitmap);
+                }
+                boolean hasMultiple = formState.photos.size() > 1;
+                previousButton.setEnabled(hasMultiple);
+                nextButton.setEnabled(hasMultiple);
+            }
+        };
+
+        previousButton.setOnClickListener(view -> {
+            if (formState.photos.size() <= 1) {
+                return;
+            }
+            currentIndex[0] = (currentIndex[0] - 1 + formState.photos.size()) % formState.photos.size();
+            updateImage.run();
+        });
+
+        nextButton.setOnClickListener(view -> {
+            if (formState.photos.size() <= 1) {
+                return;
+            }
+            currentIndex[0] = (currentIndex[0] + 1) % formState.photos.size();
+            updateImage.run();
+        });
+
+        deleteButton.setOnClickListener(view -> {
+            if (formState.photos.isEmpty()) {
+                return;
+            }
+            formState.photos.remove(currentIndex[0]);
+            if (formState.photos.isEmpty()) {
+                previewDialog.dismiss();
+            } else {
+                currentIndex[0] = currentIndex[0] % formState.photos.size();
+                updateImage.run();
+            }
+            refreshPhotoSection(formState);
+        });
+
+        previewDialog.setOnDismissListener(dialog -> {
+            if (!isFinishing()) {
+                refreshPhotoSection(formState);
+            }
+        });
+
+        updateImage.run();
+        previewDialog.show();
+    }
+
+    @Nullable
+    private Bitmap decodePhoto(@NonNull String data) {
+        try {
+            byte[] decoded = Base64.decode(data, Base64.DEFAULT);
+            return BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    @NonNull
+    private String encodePhoto(@NonNull Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream);
+        byte[] bytes = outputStream.toByteArray();
+        return Base64.encodeToString(bytes, Base64.DEFAULT);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_TAKE_PHOTO || resultCode != RESULT_OK || currentFormState == null) {
+            return;
+        }
+
+        if (data == null || data.getExtras() == null) {
+            return;
+        }
+
+        Object value = data.getExtras().get("data");
+        if (!(value instanceof Bitmap)) {
+            return;
+        }
+
+        Bitmap bitmap = (Bitmap) value;
+        if (bitmap == null) {
+            return;
+        }
+
+        if (currentFormState.photos.size() >= 5) {
+            Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        currentFormState.photos.add(encodePhoto(bitmap));
+        refreshPhotoSection(currentFormState);
     }
 
     private String buildRoomContentKey() {
