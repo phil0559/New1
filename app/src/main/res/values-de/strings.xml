@@ -113,6 +113,7 @@
     <string name="rooms_empty_state_with_name">Fügen Sie einen Raum für %1$s hinzu</string>
     <string name="dialog_edit_room_title">Raum bearbeiten</string>
     <string name="content_description_room_menu">Optionen für %1$s</string>
+    <string name="content_description_room_content_menu">Weitere Optionen für dieses Element</string>
     <string name="dialog_delete_room_title">Raum löschen</string>
     <string name="dialog_delete_room_message">Möchten Sie den Raum %1$s löschen?</string>
     <string name="dialog_delete_room_confirm">Löschen</string>

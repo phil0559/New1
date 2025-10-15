@@ -36,6 +36,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class RoomContentActivity extends Activity {
@@ -230,12 +232,16 @@ public class RoomContentActivity extends Activity {
                         selectedCategoryHolder[0],
                         barcodeValue);
                 roomContentItems.add(item);
+                sortRoomContentItems();
                 if (roomContentAdapter != null) {
-                    roomContentAdapter.notifyItemInserted(roomContentItems.size() - 1);
+                    roomContentAdapter.notifyDataSetChanged();
                 }
                 if (contentList != null) {
-                    int targetPosition = roomContentItems.size() - 1;
-                    contentList.post(() -> contentList.smoothScrollToPosition(targetPosition));
+                    int targetPosition = roomContentItems.indexOf(item);
+                    if (targetPosition >= 0) {
+                        final int scrollPosition = targetPosition;
+                        contentList.post(() -> contentList.smoothScrollToPosition(scrollPosition));
+                    }
                 }
                 saveRoomContent();
                 updateEmptyState();
@@ -487,6 +493,7 @@ public class RoomContentActivity extends Activity {
             roomContentItems.clear();
             preferences.edit().remove(buildRoomContentKey()).apply();
         }
+        sortRoomContentItems();
         if (roomContentAdapter != null) {
             roomContentAdapter.notifyDataSetChanged();
         }
@@ -501,6 +508,39 @@ public class RoomContentActivity extends Activity {
         preferences.edit()
                 .putString(buildRoomContentKey(), array.toString())
                 .apply();
+    }
+
+    private void sortRoomContentItems() {
+        if (roomContentItems.size() <= 1) {
+            return;
+        }
+        Collections.sort(roomContentItems, new Comparator<RoomContentItem>() {
+            @Override
+            public int compare(RoomContentItem first, RoomContentItem second) {
+                String firstType = normalizeForSort(first.getType());
+                String secondType = normalizeForSort(second.getType());
+                boolean firstHasType = !firstType.isEmpty();
+                boolean secondHasType = !secondType.isEmpty();
+                if (firstHasType && secondHasType) {
+                    int typeComparison = firstType.compareToIgnoreCase(secondType);
+                    if (typeComparison != 0) {
+                        return typeComparison;
+                    }
+                } else if (firstHasType) {
+                    return -1;
+                } else if (secondHasType) {
+                    return 1;
+                }
+                String firstName = normalizeForSort(first.getName());
+                String secondName = normalizeForSort(second.getName());
+                return firstName.compareToIgnoreCase(secondName);
+            }
+        });
+    }
+
+    @NonNull
+    private String normalizeForSort(@Nullable String value) {
+        return value == null ? "" : value.trim();
     }
 
     private void updateEmptyState() {
