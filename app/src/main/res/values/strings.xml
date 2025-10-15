@@ -32,6 +32,7 @@
     <string name="feature_coming_soon">Fonctionnalité à venir</string>
     <string name="content_description_establishment_photos">Photos de %1$s</string>
     <string name="content_description_establishment_menu">Options de %1$s</string>
+    <string name="content_description_room_content_photos">Photos de %1$s</string>
     <string name="popup_establishment_title">Établissement</string>
     <string name="popup_establishment_edit">Modifier</string>
     <string name="popup_establishment_delete">Supprimer</string>
