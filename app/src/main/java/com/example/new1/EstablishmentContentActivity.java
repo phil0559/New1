@@ -528,7 +528,7 @@ public class EstablishmentContentActivity extends Activity {
             return;
         }
 
-        Bitmap bitmap = (Bitmap) value;
+        Bitmap bitmap = ImageProcessingUtils.cropObjectOnWhiteBackground((Bitmap) value);
         if (bitmap == null) {
             return;
         }
