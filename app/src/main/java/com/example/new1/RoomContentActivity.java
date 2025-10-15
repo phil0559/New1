@@ -1566,7 +1566,8 @@ public class RoomContentActivity extends Activity {
         integrator.setCameraId(0);
         integrator.setBeepEnabled(true);
         integrator.setBarcodeImageEnabled(false);
-        integrator.setOrientationLocked(false);
+        integrator.setCaptureActivity(PortraitCaptureActivity.class);
+        integrator.setOrientationLocked(true);
         integrator.initiateScan();
     }
 
