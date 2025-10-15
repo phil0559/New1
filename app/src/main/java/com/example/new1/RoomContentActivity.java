@@ -11,6 +11,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -132,6 +133,16 @@ public class RoomContentActivity extends Activity {
         Button addTrackListButton = dialogView.findViewById(R.id.button_add_track_list);
         Spinner typeSpinner = dialogView.findViewById(R.id.spinner_type);
         Spinner categorySpinner = dialogView.findViewById(R.id.spinner_category);
+        Button selectTypeButton = dialogView.findViewById(R.id.button_select_type);
+        ImageButton openTypeListButton = dialogView.findViewById(R.id.button_open_type_list);
+        Button createCustomTypeButton = dialogView.findViewById(R.id.button_create_custom_type);
+        ImageButton editCustomTypeButton = dialogView.findViewById(R.id.button_edit_custom_type);
+        ImageButton deleteCustomTypeButton = dialogView.findViewById(R.id.button_delete_custom_type);
+        Button selectCategoryButton = dialogView.findViewById(R.id.button_select_category);
+        ImageButton openCategoryListButton = dialogView.findViewById(R.id.button_open_category_list);
+        Button createCustomCategoryButton = dialogView.findViewById(R.id.button_create_custom_category);
+        ImageButton editCustomCategoryButton = dialogView.findViewById(R.id.button_edit_custom_category);
+        ImageButton deleteCustomCategoryButton = dialogView.findViewById(R.id.button_delete_custom_category);
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
         View trackFields = dialogView.findViewById(R.id.container_track_fields);
         TextView trackTitle = dialogView.findViewById(R.id.text_track_title);
@@ -192,6 +203,50 @@ public class RoomContentActivity extends Activity {
             addTrackListButton.setOnClickListener(comingSoonListener);
         }
 
+        if (selectTypeButton != null && typeSpinner != null) {
+            View.OnClickListener openTypeSelector = v -> typeSpinner.performClick();
+            selectTypeButton.setOnClickListener(openTypeSelector);
+            if (openTypeListButton != null) {
+                openTypeListButton.setOnClickListener(openTypeSelector);
+            }
+        } else if (openTypeListButton != null) {
+            openTypeListButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (createCustomTypeButton != null) {
+            createCustomTypeButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (editCustomTypeButton != null) {
+            editCustomTypeButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (deleteCustomTypeButton != null) {
+            deleteCustomTypeButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (selectCategoryButton != null && categorySpinner != null) {
+            View.OnClickListener openCategorySelector = v -> categorySpinner.performClick();
+            selectCategoryButton.setOnClickListener(openCategorySelector);
+            if (openCategoryListButton != null) {
+                openCategoryListButton.setOnClickListener(openCategorySelector);
+            }
+        } else if (openCategoryListButton != null) {
+            openCategoryListButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (createCustomCategoryButton != null) {
+            createCustomCategoryButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (editCustomCategoryButton != null) {
+            editCustomCategoryButton.setOnClickListener(comingSoonListener);
+        }
+
+        if (deleteCustomCategoryButton != null) {
+            deleteCustomCategoryButton.setOnClickListener(comingSoonListener);
+        }
+
         if (categorySpinner != null) {
             ArrayAdapter<CharSequence> categoryAdapter = ArrayAdapter.createFromResource(
                     this,
@@ -199,6 +254,26 @@ public class RoomContentActivity extends Activity {
                     android.R.layout.simple_spinner_item);
             categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             categorySpinner.setAdapter(categoryAdapter);
+            updateSelectionButtonText(selectCategoryButton,
+                    categorySpinner.getSelectedItem(),
+                    R.string.dialog_button_choose_category);
+            categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    Object item = parent.getItemAtPosition(position);
+                    updateSelectionButtonText(selectCategoryButton, item,
+                            R.string.dialog_button_choose_category);
+                }
+
+                @Override
+                public void onNothingSelected(AdapterView<?> parent) {
+                    updateSelectionButtonText(selectCategoryButton, null,
+                            R.string.dialog_button_choose_category);
+                }
+            });
+        } else {
+            updateSelectionButtonText(selectCategoryButton, null,
+                    R.string.dialog_button_choose_category);
         }
 
         if (typeSpinner != null) {
@@ -214,24 +289,45 @@ public class RoomContentActivity extends Activity {
                     Object item = parent.getItemAtPosition(position);
                     updateTypeSpecificFields(bookFields, trackFields, trackTitle,
                             item != null ? item.toString() : null);
+                    updateSelectionButtonText(selectTypeButton, item,
+                            R.string.dialog_button_choose_type);
                 }
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
                     updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
+                    updateSelectionButtonText(selectTypeButton, null,
+                            R.string.dialog_button_choose_type);
                 }
             });
             Object initialSelection = typeSpinner.getSelectedItem();
             updateTypeSpecificFields(bookFields, trackFields, trackTitle,
                     initialSelection != null ? initialSelection.toString() : null);
+            updateSelectionButtonText(selectTypeButton, initialSelection,
+                    R.string.dialog_button_choose_type);
         } else {
             updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
+            updateSelectionButtonText(selectTypeButton, null,
+                    R.string.dialog_button_choose_type);
         }
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void updateSelectionButtonText(@Nullable Button button,
+                                           @Nullable Object selectedItem,
+                                           int fallbackTextResId) {
+        if (button == null) {
+            return;
+        }
+        if (selectedItem != null) {
+            button.setText(selectedItem.toString());
+        } else {
+            button.setText(fallbackTextResId);
         }
     }
 
