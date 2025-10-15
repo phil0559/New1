@@ -69,6 +69,10 @@
     <string name="room_content_empty_state">Les éléments de la pièce apparaîtront ici.</string>
     <string name="content_description_add_room_content">Ajouter un contenu pour la pièce</string>
     <string name="content_description_room_menu">Options de %1$s</string>
+    <string name="room_content_added_confirmation">Élément ajouté à la pièce.</string>
+    <string name="room_content_metadata_type">Type : %1$s</string>
+    <string name="room_content_metadata_category">Catégorie : %1$s</string>
+    <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="dialog_room_content_item_placeholder">- Élément</string>
     <string name="dialog_add_room_content_title">Ajouter un élément</string>
     <string name="dialog_label_room_content_name">Nom de l’élément</string>

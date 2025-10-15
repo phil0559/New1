@@ -56,6 +56,10 @@
     <string name="room_content_placeholder_with_establishment">Agregue contenido para %1$s.</string>
     <string name="room_content_empty_state">Los elementos de la habitación aparecerán aquí.</string>
     <string name="content_description_add_room_content">Agregar contenido para la habitación</string>
+    <string name="room_content_added_confirmation">Elemento añadido a la habitación.</string>
+    <string name="room_content_metadata_type">Tipo: %1$s</string>
+    <string name="room_content_metadata_category">Categoría: %1$s</string>
+    <string name="room_content_metadata_barcode">Código de barras: %1$s</string>
     <string name="content_description_photo_preview">Vista previa de la foto</string>
     <string name="dialog_room_content_item_placeholder">- Elemento</string>
     <string name="dialog_add_room_content_title">Añadir un elemento</string>

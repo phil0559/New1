@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,11 +30,18 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class RoomContentActivity extends Activity {
+    private static final String PREFS_NAME = "room_content_prefs";
+    private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
+
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
     public static final String EXTRA_ROOM_NAME = "extra_room_name";
 
@@ -41,6 +49,14 @@ public class RoomContentActivity extends Activity {
     private String establishmentName;
     @Nullable
     private String roomName;
+
+    private final List<RoomContentItem> roomContentItems = new ArrayList<>();
+    @Nullable
+    private RecyclerView contentList;
+    @Nullable
+    private TextView placeholderView;
+    @Nullable
+    private RoomContentAdapter roomContentAdapter;
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -87,10 +103,20 @@ public class RoomContentActivity extends Activity {
         applyTitle();
         applySubtitle();
 
-        TextView placeholderView = findViewById(R.id.text_room_placeholder);
+        placeholderView = findViewById(R.id.text_room_placeholder);
         if (placeholderView != null) {
             placeholderView.setText(R.string.room_content_empty_state);
         }
+
+        contentList = findViewById(R.id.list_room_content);
+        if (contentList != null) {
+            contentList.setLayoutManager(new LinearLayoutManager(this));
+            roomContentAdapter = new RoomContentAdapter(this, roomContentItems);
+            contentList.setAdapter(roomContentAdapter);
+        }
+
+        loadRoomContent();
+        updateEmptyState();
 
         View addButton = findViewById(R.id.button_add_room_content);
         if (addButton != null) {
@@ -134,6 +160,8 @@ public class RoomContentActivity extends Activity {
         dialog.show();
 
         EditText nameInput = dialogView.findViewById(R.id.input_room_content_name);
+        EditText commentInput = dialogView.findViewById(R.id.input_room_content_comment);
+        TextView barcodeValueView = dialogView.findViewById(R.id.text_barcode_value);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button addPhotoButton = dialogView.findViewById(R.id.button_add_room_content_photo);
@@ -159,16 +187,47 @@ public class RoomContentActivity extends Activity {
 
         if (confirmButton != null) {
             confirmButton.setOnClickListener(v -> {
+                String trimmedName = "";
                 if (nameInput != null) {
                     CharSequence nameValue = nameInput.getText();
-                    String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
+                    trimmedName = nameValue != null ? nameValue.toString().trim() : "";
                     if (trimmedName.isEmpty()) {
                         nameInput.setError(getString(R.string.error_room_content_name_required));
                         nameInput.requestFocus();
                         return;
                     }
                 }
-                Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
+                String trimmedComment = "";
+                if (commentInput != null) {
+                    CharSequence commentValue = commentInput.getText();
+                    trimmedComment = commentValue != null ? commentValue.toString().trim() : "";
+                }
+                String barcodeValue = "";
+                if (barcodeValueView != null) {
+                    CharSequence barcodeText = barcodeValueView.getText();
+                    String trimmedBarcode = barcodeText != null ? barcodeText.toString().trim() : "";
+                    if (!trimmedBarcode.isEmpty()
+                            && !trimmedBarcode.equals(getString(R.string.dialog_label_barcode_placeholder))) {
+                        barcodeValue = trimmedBarcode;
+                    }
+                }
+
+                RoomContentItem item = new RoomContentItem(trimmedName,
+                        trimmedComment,
+                        selectedTypeHolder[0],
+                        selectedCategoryHolder[0],
+                        barcodeValue);
+                roomContentItems.add(item);
+                if (roomContentAdapter != null) {
+                    roomContentAdapter.notifyItemInserted(roomContentItems.size() - 1);
+                }
+                if (contentList != null) {
+                    int targetPosition = roomContentItems.size() - 1;
+                    contentList.post(() -> contentList.smoothScrollToPosition(targetPosition));
+                }
+                saveRoomContent();
+                updateEmptyState();
+                Toast.makeText(this, R.string.room_content_added_confirmation, Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
         }
@@ -404,6 +463,71 @@ public class RoomContentActivity extends Activity {
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
         }
+    }
+
+    private void loadRoomContent() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String storedValue = preferences.getString(buildRoomContentKey(), null);
+        roomContentItems.clear();
+        if (storedValue == null || storedValue.trim().isEmpty()) {
+            if (roomContentAdapter != null) {
+                roomContentAdapter.notifyDataSetChanged();
+            }
+            return;
+        }
+        try {
+            JSONArray array = new JSONArray(storedValue);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject itemObject = array.getJSONObject(i);
+                RoomContentItem item = RoomContentItem.fromJson(itemObject);
+                roomContentItems.add(item);
+            }
+        } catch (JSONException e) {
+            roomContentItems.clear();
+            preferences.edit().remove(buildRoomContentKey()).apply();
+        }
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void saveRoomContent() {
+        JSONArray array = new JSONArray();
+        for (RoomContentItem item : roomContentItems) {
+            array.put(item.toJson());
+        }
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        preferences.edit()
+                .putString(buildRoomContentKey(), array.toString())
+                .apply();
+    }
+
+    private void updateEmptyState() {
+        boolean isEmpty = roomContentItems.isEmpty();
+        if (placeholderView != null) {
+            placeholderView.setVisibility(isEmpty ? View.VISIBLE : View.GONE);
+        }
+        if (contentList != null) {
+            contentList.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private String buildRoomContentKey() {
+        return KEY_ROOM_CONTENT_PREFIX
+                + sanitizeForKey(establishmentName)
+                + "_"
+                + sanitizeForKey(roomName);
+    }
+
+    private String sanitizeForKey(@Nullable String value) {
+        if (value == null) {
+            return "default";
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            return "default";
+        }
+        return trimmed.replaceAll("[^A-Za-z0-9]", "_");
     }
 
     private void showEditCategoryDialog(List<String> categoryOptions,
