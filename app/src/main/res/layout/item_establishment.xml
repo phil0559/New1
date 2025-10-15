@@ -46,10 +46,21 @@
     </LinearLayout>
 
     <TextView
-        android:id="@+id/text_establishment_comment"
+        android:id="@+id/text_establishment_summary_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="4dp"
+        android:text="@string/establishment_summary_label"
+        android:textColor="@color/icon_brown"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/text_establishment_summary"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:textColor="@color/text_dark"
-        android:textSize="14sp" />
+        android:textSize="14sp"
+        android:visibility="gone" />
 </LinearLayout>
