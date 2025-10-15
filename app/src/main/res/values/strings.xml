@@ -101,6 +101,10 @@
     <string name="content_description_add_category">Ajouter une catégorie</string>
     <string name="content_description_edit_category">Modifier la catégorie</string>
     <string name="content_description_delete_category">Supprimer la catégorie</string>
+    <string name="dialog_category_selector_title">Sélectionner une catégorie</string>
+    <string name="dialog_button_add_category">Ajouter une catégorie</string>
+    <string name="dialog_add_category_title">Nouvelle catégorie</string>
+    <string name="dialog_add_category_name_hint">Nom de la catégorie</string>
     <string name="dialog_category_placeholder_one">Catégorie 1</string>
     <string name="dialog_category_placeholder_two">Catégorie 2</string>
     <string name="dialog_label_series">Série</string>
@@ -120,6 +124,7 @@
     <string name="dialog_content_description_edit_custom_field_label">Modifier l’intitulé du champ personnalisé</string>
     <string name="error_room_content_name_required">Le nom de l’élément est obligatoire</string>
     <string name="error_type_name_required">Le nom du type est obligatoire</string>
+    <string name="error_category_name_required">Le nom de la catégorie est obligatoire</string>
     <string name="dialog_delete_room_title">Supprimer la pièce</string>
     <string name="dialog_delete_room_message">Voulez-vous supprimer la pièce %1$s ?</string>
     <string name="dialog_delete_room_confirm">Supprimer</string>

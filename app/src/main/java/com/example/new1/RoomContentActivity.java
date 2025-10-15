@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -215,9 +214,29 @@ public class RoomContentActivity extends Activity {
         final String[] selectedTypeHolder = new String[1];
         selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
 
+        List<String> categoryOptions = new ArrayList<>(Arrays.asList(
+                getResources().getStringArray(R.array.room_content_category_options)));
+        final String[] selectedCategoryHolder = new String[1];
+        selectedCategoryHolder[0] = !categoryOptions.isEmpty() ? categoryOptions.get(0) : null;
+
+        final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
+        if (categorySpinner != null) {
+            ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this,
+                    android.R.layout.simple_spinner_item,
+                    categoryOptions);
+            categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            categorySpinner.setAdapter(categoryAdapter);
+            if (!categoryOptions.isEmpty()) {
+                categorySpinner.setSelection(0);
+            }
+            categoryAdapterHolder[0] = categoryAdapter;
+        }
+
         updateTypeSpecificFields(bookFields, trackFields, trackTitle, selectedTypeHolder[0]);
         updateSelectionButtonText(selectTypeButton, selectedTypeHolder[0],
                 R.string.dialog_button_choose_type);
+        updateSelectionButtonText(selectCategoryButton, selectedCategoryHolder[0],
+                R.string.dialog_button_choose_category);
 
         View.OnClickListener typeDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
@@ -288,14 +307,73 @@ public class RoomContentActivity extends Activity {
             deleteCustomTypeButton.setOnClickListener(comingSoonListener);
         }
 
-        if (selectCategoryButton != null && categorySpinner != null) {
-            View.OnClickListener openCategorySelector = v -> categorySpinner.performClick();
-            selectCategoryButton.setOnClickListener(openCategorySelector);
-            if (openCategoryListButton != null) {
-                openCategoryListButton.setOnClickListener(openCategorySelector);
+        View.OnClickListener categoryDialogLauncher = v -> {
+            BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+            View sheetView = getLayoutInflater().inflate(R.layout.dialog_category_selector, null);
+            bottomSheetDialog.setContentView(sheetView);
+
+            RecyclerView recyclerView = sheetView.findViewById(R.id.recycler_category_options);
+            Button addCategoryButtonSheet = sheetView.findViewById(R.id.button_add_category);
+            final CategorySelectorAdapter[] adapterHolder = new CategorySelectorAdapter[1];
+
+            if (recyclerView != null) {
+                CategorySelectorAdapter adapter = new CategorySelectorAdapter(categoryOptions,
+                        new CategorySelectorAdapter.CategoryActionListener() {
+                            @Override
+                            public void onCategorySelected(String category) {
+                                selectedCategoryHolder[0] = category;
+                                updateSelectionButtonText(selectCategoryButton, category,
+                                        R.string.dialog_button_choose_category);
+                                if (categorySpinner != null) {
+                                    int index = categoryOptions.indexOf(category);
+                                    if (index >= 0) {
+                                        categorySpinner.setSelection(index);
+                                    }
+                                }
+                                bottomSheetDialog.dismiss();
+                            }
+
+                            @Override
+                            public void onEditCategory(String category) {
+                                if (editCustomCategoryButton != null) {
+                                    editCustomCategoryButton.performClick();
+                                } else {
+                                    comingSoonListener.onClick(sheetView);
+                                }
+                            }
+
+                            @Override
+                            public void onDeleteCategory(String category) {
+                                if (deleteCustomCategoryButton != null) {
+                                    deleteCustomCategoryButton.performClick();
+                                } else {
+                                    comingSoonListener.onClick(sheetView);
+                                }
+                            }
+                        });
+                adapter.setSelectedCategory(selectedCategoryHolder[0]);
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+                recyclerView.setAdapter(adapter);
+                adapterHolder[0] = adapter;
             }
-        } else if (openCategoryListButton != null) {
-            openCategoryListButton.setOnClickListener(comingSoonListener);
+
+            if (addCategoryButtonSheet != null) {
+                addCategoryButtonSheet.setOnClickListener(view ->
+                        showAddCategoryDialog(categoryOptions,
+                                adapterHolder[0],
+                                recyclerView,
+                                categoryAdapterHolder[0]));
+            }
+
+            bottomSheetDialog.show();
+        };
+
+        if (selectCategoryButton != null) {
+            selectCategoryButton.setOnClickListener(categoryDialogLauncher);
+        }
+
+        if (openCategoryListButton != null) {
+            openCategoryListButton.setOnClickListener(categoryDialogLauncher);
         }
 
         if (createCustomCategoryButton != null) {
@@ -310,39 +388,79 @@ public class RoomContentActivity extends Activity {
             deleteCustomCategoryButton.setOnClickListener(comingSoonListener);
         }
 
-        if (categorySpinner != null) {
-            ArrayAdapter<CharSequence> categoryAdapter = ArrayAdapter.createFromResource(
-                    this,
-                    R.array.room_content_category_options,
-                    android.R.layout.simple_spinner_item);
-            categoryAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            categorySpinner.setAdapter(categoryAdapter);
-            updateSelectionButtonText(selectCategoryButton,
-                    categorySpinner.getSelectedItem(),
-                    R.string.dialog_button_choose_category);
-            categorySpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    Object item = parent.getItemAtPosition(position);
-                    updateSelectionButtonText(selectCategoryButton, item,
-                            R.string.dialog_button_choose_category);
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
-                    updateSelectionButtonText(selectCategoryButton, null,
-                            R.string.dialog_button_choose_category);
-                }
-            });
-        } else {
-            updateSelectionButtonText(selectCategoryButton, null,
-                    R.string.dialog_button_choose_category);
-        }
-
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void showAddCategoryDialog(List<String> categoryOptions,
+                                       @Nullable CategorySelectorAdapter adapter,
+                                       @Nullable RecyclerView recyclerView,
+                                       @Nullable ArrayAdapter<String> spinnerAdapter) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_category, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        EditText categoryNameInput = dialogView.findViewById(R.id.input_new_category_name);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                if (categoryNameInput == null) {
+                    dialog.dismiss();
+                    return;
+                }
+                CharSequence nameValue = categoryNameInput.getText();
+                String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
+                if (trimmedName.isEmpty()) {
+                    categoryNameInput.setError(getString(R.string.error_category_name_required));
+                    categoryNameInput.requestFocus();
+                    return;
+                }
+                categoryOptions.add(trimmedName);
+                if (adapter != null) {
+                    adapter.addCategory(trimmedName);
+                    if (recyclerView != null) {
+                        recyclerView.post(() ->
+                                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1));
+                    }
+                }
+                if (spinnerAdapter != null) {
+                    spinnerAdapter.notifyDataSetChanged();
+                }
+                dialog.dismiss();
+            });
+        }
+
+        if (categoryNameInput != null) {
+            categoryNameInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    categoryNameInput.setError(null);
+                }
+            });
+        }
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
     }
 
