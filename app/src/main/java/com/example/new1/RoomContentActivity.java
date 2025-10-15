@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -34,22 +35,37 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.journeyapps.barcodescanner.IntentIntegrator;
+import com.journeyapps.barcodescanner.IntentResult;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class RoomContentActivity extends Activity {
     private static final String PREFS_NAME = "room_content_prefs";
     private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
     private static final int REQUEST_TAKE_PHOTO = 2001;
+    private static final int MAX_FORM_PHOTOS = 5;
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
     public static final String EXTRA_ROOM_NAME = "extra_room_name";
@@ -62,6 +78,79 @@ public class RoomContentActivity extends Activity {
         @Nullable
         View addPhotoButton;
         final List<String> photos = new ArrayList<>();
+    }
+
+    private static class BarcodeScanContext {
+        final FormState formState;
+        @Nullable
+        final EditText nameInput;
+        @Nullable
+        final TextView barcodeValueView;
+        @Nullable
+        final Button selectTypeButton;
+        @Nullable
+        final View bookFields;
+        @Nullable
+        final View trackFields;
+        @Nullable
+        final TextView trackTitle;
+        final String[] selectedTypeHolder;
+        @Nullable
+        final EditText seriesInput;
+        @Nullable
+        final EditText numberInput;
+        @Nullable
+        final EditText authorInput;
+        @Nullable
+        final EditText publisherInput;
+
+        BarcodeScanContext(@NonNull FormState formState,
+                            @Nullable EditText nameInput,
+                            @Nullable TextView barcodeValueView,
+                            @Nullable Button selectTypeButton,
+                            @Nullable View bookFields,
+                            @Nullable View trackFields,
+                            @Nullable TextView trackTitle,
+                            @NonNull String[] selectedTypeHolder,
+                            @Nullable EditText seriesInput,
+                            @Nullable EditText numberInput,
+                            @Nullable EditText authorInput,
+                            @Nullable EditText publisherInput) {
+            this.formState = formState;
+            this.nameInput = nameInput;
+            this.barcodeValueView = barcodeValueView;
+            this.selectTypeButton = selectTypeButton;
+            this.bookFields = bookFields;
+            this.trackFields = trackFields;
+            this.trackTitle = trackTitle;
+            this.selectedTypeHolder = selectedTypeHolder;
+            this.seriesInput = seriesInput;
+            this.numberInput = numberInput;
+            this.authorInput = authorInput;
+            this.publisherInput = publisherInput;
+        }
+    }
+
+    private static class BarcodeLookupResult {
+        boolean found;
+        boolean networkError;
+        @Nullable
+        String typeLabel;
+        @Nullable
+        String title;
+        @Nullable
+        String author;
+        @Nullable
+        String publisher;
+        @Nullable
+        String series;
+        @Nullable
+        String number;
+        final List<String> photos = new ArrayList<>();
+        @Nullable
+        String infoMessage;
+        @Nullable
+        String errorMessage;
     }
 
     @Nullable
@@ -78,6 +167,9 @@ public class RoomContentActivity extends Activity {
     private RoomContentAdapter roomContentAdapter;
     @Nullable
     private FormState currentFormState;
+    @Nullable
+    private BarcodeScanContext barcodeScanContext;
+    private final ExecutorService barcodeLookupExecutor = Executors.newSingleThreadExecutor();
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -216,6 +308,10 @@ public class RoomContentActivity extends Activity {
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
         View trackFields = dialogView.findViewById(R.id.container_track_fields);
         TextView trackTitle = dialogView.findViewById(R.id.text_track_title);
+        EditText seriesInput = dialogView.findViewById(R.id.input_series);
+        EditText numberInput = dialogView.findViewById(R.id.input_number);
+        EditText authorInput = dialogView.findViewById(R.id.input_author);
+        EditText publisherInput = dialogView.findViewById(R.id.input_publisher);
         TextView dialogTitle = dialogView.findViewById(R.id.text_dialog_room_content_title);
 
         if (dialogTitle != null) {
@@ -247,6 +343,34 @@ public class RoomContentActivity extends Activity {
             }
             if (commentInput != null) {
                 commentInput.setText(itemToEdit.getComment());
+            }
+            if (seriesInput != null) {
+                String series = itemToEdit.getSeries();
+                seriesInput.setText(series);
+                if (series != null) {
+                    seriesInput.setSelection(series.length());
+                }
+            }
+            if (numberInput != null) {
+                String number = itemToEdit.getNumber();
+                numberInput.setText(number);
+                if (number != null) {
+                    numberInput.setSelection(number.length());
+                }
+            }
+            if (authorInput != null) {
+                String author = itemToEdit.getAuthor();
+                authorInput.setText(author);
+                if (author != null) {
+                    authorInput.setSelection(author.length());
+                }
+            }
+            if (publisherInput != null) {
+                String publisher = itemToEdit.getPublisher();
+                publisherInput.setText(publisher);
+                if (publisher != null) {
+                    publisherInput.setSelection(publisher.length());
+                }
             }
         }
 
@@ -330,6 +454,42 @@ public class RoomContentActivity extends Activity {
                     }
                 }
 
+                String seriesValue = null;
+                if (seriesInput != null) {
+                    CharSequence seriesText = seriesInput.getText();
+                    String trimmedSeries = seriesText != null ? seriesText.toString().trim() : "";
+                    if (!trimmedSeries.isEmpty()) {
+                        seriesValue = trimmedSeries;
+                    }
+                }
+
+                String numberValue = null;
+                if (numberInput != null) {
+                    CharSequence numberText = numberInput.getText();
+                    String trimmedNumber = numberText != null ? numberText.toString().trim() : "";
+                    if (!trimmedNumber.isEmpty()) {
+                        numberValue = trimmedNumber;
+                    }
+                }
+
+                String authorValue = null;
+                if (authorInput != null) {
+                    CharSequence authorText = authorInput.getText();
+                    String trimmedAuthor = authorText != null ? authorText.toString().trim() : "";
+                    if (!trimmedAuthor.isEmpty()) {
+                        authorValue = trimmedAuthor;
+                    }
+                }
+
+                String publisherValue = null;
+                if (publisherInput != null) {
+                    CharSequence publisherText = publisherInput.getText();
+                    String trimmedPublisher = publisherText != null ? publisherText.toString().trim() : "";
+                    if (!trimmedPublisher.isEmpty()) {
+                        publisherValue = trimmedPublisher;
+                    }
+                }
+
                 if (currentFormState != null && currentFormState != formState) {
                     dialog.dismiss();
                     return;
@@ -340,6 +500,10 @@ public class RoomContentActivity extends Activity {
                         selectedTypeHolder[0],
                         selectedCategoryHolder[0],
                         barcodeValue,
+                        seriesValue,
+                        numberValue,
+                        authorValue,
+                        publisherValue,
                         new ArrayList<>(formState.photos));
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
@@ -374,6 +538,9 @@ public class RoomContentActivity extends Activity {
             if (currentFormState == formState) {
                 currentFormState = null;
             }
+            if (barcodeScanContext != null && barcodeScanContext.formState == formState) {
+                barcodeScanContext = null;
+            }
         });
 
         if (nameInput != null) {
@@ -400,7 +567,7 @@ public class RoomContentActivity extends Activity {
                 if (currentFormState == null || currentFormState != formState) {
                     return;
                 }
-                if (formState.photos.size() >= 5) {
+                if (formState.photos.size() >= MAX_FORM_PHOTOS) {
                     Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
                     return;
                 }
@@ -415,7 +582,24 @@ public class RoomContentActivity extends Activity {
                 Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
 
         if (barcodeButton != null) {
-            barcodeButton.setOnClickListener(comingSoonListener);
+            barcodeButton.setOnClickListener(v -> {
+                if (currentFormState == null || currentFormState != formState) {
+                    return;
+                }
+                barcodeScanContext = new BarcodeScanContext(formState,
+                        nameInput,
+                        barcodeValueView,
+                        selectTypeButton,
+                        bookFields,
+                        trackFields,
+                        trackTitle,
+                        selectedTypeHolder,
+                        seriesInput,
+                        numberInput,
+                        authorInput,
+                        publisherInput);
+                launchBarcodeScanner();
+            });
         }
 
         if (addTrackButton != null) {
@@ -737,7 +921,7 @@ public class RoomContentActivity extends Activity {
         }
 
         if (formState.addPhotoButton != null) {
-            formState.addPhotoButton.setEnabled(formState.photos.size() < 5);
+            formState.addPhotoButton.setEnabled(formState.photos.size() < MAX_FORM_PHOTOS);
         }
 
         if (formState.photoContainer == null) {
@@ -869,6 +1053,12 @@ public class RoomContentActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if (scanResult != null) {
+            handleBarcodeScanResult(scanResult);
+            return;
+        }
+
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode != REQUEST_TAKE_PHOTO || resultCode != RESULT_OK || currentFormState == null) {
             return;
@@ -888,7 +1078,7 @@ public class RoomContentActivity extends Activity {
             return;
         }
 
-        if (currentFormState.photos.size() >= 5) {
+        if (currentFormState.photos.size() >= MAX_FORM_PHOTOS) {
             Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -913,6 +1103,495 @@ public class RoomContentActivity extends Activity {
             return "default";
         }
         return trimmed.replaceAll("[^A-Za-z0-9]", "_");
+    }
+
+    private void launchBarcodeScanner() {
+        IntentIntegrator integrator = new IntentIntegrator(this);
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
+        integrator.setPrompt(getString(R.string.dialog_barcode_prompt));
+        integrator.setCameraId(0);
+        integrator.setBeepEnabled(true);
+        integrator.setBarcodeImageEnabled(false);
+        integrator.setOrientationLocked(false);
+        integrator.initiateScan();
+    }
+
+    private void handleBarcodeScanResult(@NonNull IntentResult result) {
+        String contents = result.getContents();
+        if (contents == null) {
+            Toast.makeText(this, R.string.dialog_barcode_scan_cancelled, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String trimmed = contents.trim();
+        if (trimmed.isEmpty()) {
+            Toast.makeText(this, R.string.dialog_barcode_scan_failed, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        BarcodeScanContext context = barcodeScanContext;
+        if (context == null || currentFormState == null || currentFormState != context.formState) {
+            Toast.makeText(this, R.string.dialog_barcode_scan_lost_context, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (context.barcodeValueView != null) {
+            context.barcodeValueView.setText(trimmed);
+        }
+        Toast.makeText(this, R.string.dialog_barcode_lookup_in_progress, Toast.LENGTH_SHORT).show();
+        fetchMetadataForBarcode(trimmed, context);
+    }
+
+    private void fetchMetadataForBarcode(@NonNull String barcode,
+                                         @NonNull BarcodeScanContext context) {
+        barcodeLookupExecutor.execute(() -> {
+            BarcodeLookupResult lookupResult = performLookup(barcode);
+            runOnUiThread(() -> applyBarcodeLookupResult(barcode, context, lookupResult));
+        });
+    }
+
+    @NonNull
+    private BarcodeLookupResult performLookup(@NonNull String barcode) {
+        BarcodeLookupResult bookResult = lookupBook(barcode);
+        if (bookResult != null && bookResult.found) {
+            return bookResult;
+        }
+        BarcodeLookupResult musicResult = lookupMusic(barcode);
+        if (musicResult != null && musicResult.found) {
+            return musicResult;
+        }
+        if (bookResult != null) {
+            if (bookResult.errorMessage != null || bookResult.infoMessage != null) {
+                return bookResult;
+            }
+        }
+        if (musicResult != null) {
+            if (musicResult.errorMessage != null || musicResult.infoMessage != null) {
+                return musicResult;
+            }
+        }
+        BarcodeLookupResult fallback = new BarcodeLookupResult();
+        fallback.infoMessage = getString(R.string.dialog_barcode_lookup_not_found, barcode);
+        return fallback;
+    }
+
+    @Nullable
+    private BarcodeLookupResult lookupBook(@NonNull String barcode) {
+        if (!isIsbnCandidate(barcode)) {
+            return null;
+        }
+        HttpURLConnection connection = null;
+        try {
+            String urlValue = "https://www.googleapis.com/books/v1/volumes?q=isbn:" +
+                    URLEncoder.encode(barcode, StandardCharsets.UTF_8.name());
+            URL url = new URL(urlValue);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
+            int responseCode = connection.getResponseCode();
+            InputStream stream = responseCode >= 400
+                    ? connection.getErrorStream()
+                    : connection.getInputStream();
+            if (stream == null) {
+                BarcodeLookupResult error = new BarcodeLookupResult();
+                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+                error.networkError = true;
+                return error;
+            }
+            String response = readStream(stream);
+            if (responseCode >= 400) {
+                BarcodeLookupResult error = new BarcodeLookupResult();
+                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+                error.networkError = true;
+                return error;
+            }
+            JSONObject root = new JSONObject(response);
+            JSONArray items = root.optJSONArray("items");
+            if (items == null || items.length() == 0) {
+                return new BarcodeLookupResult();
+            }
+            JSONObject firstItem = items.getJSONObject(0);
+            JSONObject volumeInfo = firstItem.optJSONObject("volumeInfo");
+            if (volumeInfo == null) {
+                return new BarcodeLookupResult();
+            }
+            BarcodeLookupResult result = new BarcodeLookupResult();
+            result.found = true;
+            String title = volumeInfo.optString("title", null);
+            if (!TextUtils.isEmpty(title)) {
+                result.title = title;
+            }
+            JSONArray authorsArray = volumeInfo.optJSONArray("authors");
+            if (authorsArray != null && authorsArray.length() > 0) {
+                List<String> authors = new ArrayList<>();
+                for (int i = 0; i < authorsArray.length(); i++) {
+                    String value = authorsArray.optString(i, null);
+                    if (value != null) {
+                        String trimmed = value.trim();
+                        if (!trimmed.isEmpty()) {
+                            authors.add(trimmed);
+                        }
+                    }
+                }
+                if (!authors.isEmpty()) {
+                    result.author = TextUtils.join(", ", authors);
+                }
+            }
+            String publisher = volumeInfo.optString("publisher", null);
+            if (!TextUtils.isEmpty(publisher)) {
+                result.publisher = publisher;
+            }
+            JSONObject seriesInfo = volumeInfo.optJSONObject("seriesInfo");
+            if (seriesInfo != null) {
+                String series = seriesInfo.optString("series", null);
+                if (!TextUtils.isEmpty(series)) {
+                    result.series = series;
+                }
+                String number = seriesInfo.optString("bookDisplayNumber", null);
+                if (!TextUtils.isEmpty(number)) {
+                    result.number = number;
+                }
+            }
+            JSONArray categories = volumeInfo.optJSONArray("categories");
+            boolean isComic = false;
+            if (categories != null) {
+                for (int i = 0; i < categories.length(); i++) {
+                    String category = categories.optString(i, "");
+                    String lowered = category.toLowerCase(Locale.getDefault());
+                    if (lowered.contains("comic")
+                            || lowered.contains("bande dessin")
+                            || lowered.contains("manga")) {
+                        isComic = true;
+                        break;
+                    }
+                }
+            }
+            result.typeLabel = getString(isComic
+                    ? R.string.dialog_type_comic
+                    : R.string.dialog_type_book);
+            JSONObject imageLinks = volumeInfo.optJSONObject("imageLinks");
+            if (imageLinks != null) {
+                String[] keys = new String[]{"extraLarge", "large", "medium", "thumbnail", "smallThumbnail"};
+                for (String key : keys) {
+                    String urlCandidate = imageLinks.optString(key, null);
+                    if (urlCandidate == null || urlCandidate.trim().isEmpty()) {
+                        continue;
+                    }
+                    String sanitizedUrl = urlCandidate.replace("http://", "https://");
+                    String photo = downloadImageAsBase64(sanitizedUrl);
+                    if (photo != null) {
+                        result.photos.add(photo);
+                        if (result.photos.size() >= MAX_FORM_PHOTOS) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return result;
+        } catch (IOException e) {
+            BarcodeLookupResult error = new BarcodeLookupResult();
+            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+            error.networkError = true;
+            return error;
+        } catch (JSONException e) {
+            BarcodeLookupResult error = new BarcodeLookupResult();
+            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+            return error;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    private boolean isIsbnCandidate(@NonNull String barcode) {
+        String trimmed = barcode.replaceAll("\\s", "");
+        if (trimmed.length() == 10) {
+            return true;
+        }
+        if (trimmed.length() == 13) {
+            return trimmed.startsWith("978") || trimmed.startsWith("979");
+        }
+        return false;
+    }
+
+    @Nullable
+    private BarcodeLookupResult lookupMusic(@NonNull String barcode) {
+        HttpURLConnection connection = null;
+        try {
+            String urlValue = "https://musicbrainz.org/ws/2/release/?query=barcode:" +
+                    URLEncoder.encode(barcode, StandardCharsets.UTF_8.name()) +
+                    "&fmt=json&limit=1";
+            URL url = new URL(urlValue);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
+            int responseCode = connection.getResponseCode();
+            InputStream stream = responseCode >= 400
+                    ? connection.getErrorStream()
+                    : connection.getInputStream();
+            if (stream == null) {
+                BarcodeLookupResult error = new BarcodeLookupResult();
+                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+                error.networkError = true;
+                return error;
+            }
+            String response = readStream(stream);
+            if (responseCode >= 400) {
+                BarcodeLookupResult error = new BarcodeLookupResult();
+                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+                error.networkError = true;
+                return error;
+            }
+            JSONObject root = new JSONObject(response);
+            JSONArray releases = root.optJSONArray("releases");
+            if (releases == null || releases.length() == 0) {
+                return new BarcodeLookupResult();
+            }
+            JSONObject release = releases.getJSONObject(0);
+            BarcodeLookupResult result = new BarcodeLookupResult();
+            result.found = true;
+            String title = release.optString("title", null);
+            if (!TextUtils.isEmpty(title)) {
+                result.title = title;
+            }
+            JSONArray artistCredit = release.optJSONArray("artist-credit");
+            if (artistCredit != null && artistCredit.length() > 0) {
+                List<String> artists = new ArrayList<>();
+                for (int i = 0; i < artistCredit.length(); i++) {
+                    JSONObject credit = artistCredit.optJSONObject(i);
+                    if (credit == null) {
+                        continue;
+                    }
+                    String name = credit.optString("name", null);
+                    if (!TextUtils.isEmpty(name)) {
+                        artists.add(name.trim());
+                        continue;
+                    }
+                    JSONObject artistObject = credit.optJSONObject("artist");
+                    if (artistObject != null) {
+                        String artistName = artistObject.optString("name", null);
+                        if (!TextUtils.isEmpty(artistName)) {
+                            artists.add(artistName.trim());
+                        }
+                    }
+                }
+                if (!artists.isEmpty()) {
+                    result.author = TextUtils.join(", ", artists);
+                }
+            }
+            JSONArray mediaArray = release.optJSONArray("media");
+            boolean hasDiscFormat = false;
+            boolean hasCdFormat = false;
+            if (mediaArray != null) {
+                for (int i = 0; i < mediaArray.length(); i++) {
+                    JSONObject media = mediaArray.optJSONObject(i);
+                    if (media == null) {
+                        continue;
+                    }
+                    String format = media.optString("format", "");
+                    String lowered = format.toLowerCase(Locale.getDefault());
+                    if (lowered.contains("dvd") || lowered.contains("blu-ray") || lowered.contains("video")) {
+                        hasDiscFormat = true;
+                    }
+                    if (lowered.contains("cd") || lowered.contains("sacd") || lowered.contains("audio")) {
+                        hasCdFormat = true;
+                    }
+                }
+            }
+            if (hasDiscFormat && !hasCdFormat) {
+                result.typeLabel = getString(R.string.dialog_type_disc);
+            } else {
+                result.typeLabel = getString(R.string.dialog_type_cd);
+            }
+            JSONArray labelInfo = release.optJSONArray("label-info");
+            if (labelInfo != null) {
+                for (int i = 0; i < labelInfo.length(); i++) {
+                    JSONObject info = labelInfo.optJSONObject(i);
+                    if (info == null) {
+                        continue;
+                    }
+                    JSONObject label = info.optJSONObject("label");
+                    if (label == null) {
+                        continue;
+                    }
+                    String labelName = label.optString("name", null);
+                    if (!TextUtils.isEmpty(labelName)) {
+                        result.publisher = labelName;
+                        break;
+                    }
+                }
+            }
+            String releaseId = release.optString("id", null);
+            if (!TextUtils.isEmpty(releaseId)) {
+                addCoverArtFromMusicBrainz(releaseId, result.photos);
+            }
+            return result;
+        } catch (IOException e) {
+            BarcodeLookupResult error = new BarcodeLookupResult();
+            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+            error.networkError = true;
+            return error;
+        } catch (JSONException e) {
+            BarcodeLookupResult error = new BarcodeLookupResult();
+            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
+            return error;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    private void addCoverArtFromMusicBrainz(@NonNull String releaseId,
+                                            @NonNull List<String> destination) {
+        if (destination.size() >= MAX_FORM_PHOTOS) {
+            return;
+        }
+        String base = "https://coverartarchive.org/release/" + releaseId + "/";
+        String[] paths = new String[]{"front-500", "front"};
+        for (String path : paths) {
+            if (destination.size() >= MAX_FORM_PHOTOS) {
+                break;
+            }
+            String photo = downloadImageAsBase64(base + path);
+            if (photo != null && !destination.contains(photo)) {
+                destination.add(photo);
+            }
+        }
+    }
+
+    private void applyBarcodeLookupResult(@NonNull String barcode,
+                                          @NonNull BarcodeScanContext context,
+                                          @NonNull BarcodeLookupResult result) {
+        if (currentFormState == null || currentFormState != context.formState) {
+            barcodeScanContext = null;
+            return;
+        }
+        if (context.barcodeValueView != null) {
+            context.barcodeValueView.setText(barcode);
+        }
+        if (result.errorMessage != null) {
+            Toast.makeText(this, result.errorMessage, Toast.LENGTH_LONG).show();
+            barcodeScanContext = null;
+            return;
+        }
+        if (!result.found) {
+            String message = result.infoMessage != null
+                    ? result.infoMessage
+                    : getString(R.string.dialog_barcode_lookup_not_found, barcode);
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            barcodeScanContext = null;
+            refreshPhotoSection(context.formState);
+            return;
+        }
+        if (!TextUtils.isEmpty(result.title) && context.nameInput != null) {
+            context.nameInput.setText(result.title);
+            context.nameInput.setSelection(result.title.length());
+        }
+        if (!TextUtils.isEmpty(result.author) && context.authorInput != null) {
+            context.authorInput.setText(result.author);
+        }
+        if (!TextUtils.isEmpty(result.publisher) && context.publisherInput != null) {
+            context.publisherInput.setText(result.publisher);
+        }
+        if (!TextUtils.isEmpty(result.series) && context.seriesInput != null) {
+            context.seriesInput.setText(result.series);
+        }
+        if (!TextUtils.isEmpty(result.number) && context.numberInput != null) {
+            context.numberInput.setText(result.number);
+        }
+        if (!TextUtils.isEmpty(result.typeLabel)) {
+            context.selectedTypeHolder[0] = result.typeLabel;
+            updateTypeSpecificFields(context.bookFields, context.trackFields, context.trackTitle,
+                    result.typeLabel);
+            updateSelectionButtonText(context.selectTypeButton, result.typeLabel,
+                    R.string.dialog_button_choose_type);
+        }
+        boolean photosAdded = false;
+        if (!result.photos.isEmpty()) {
+            photosAdded = addPhotosToForm(context.formState, result.photos);
+        }
+        if (!photosAdded) {
+            refreshPhotoSection(context.formState);
+        }
+        String message = result.infoMessage != null
+                ? result.infoMessage
+                : getString(R.string.dialog_barcode_lookup_success);
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        barcodeScanContext = null;
+    }
+
+    private boolean addPhotosToForm(@NonNull FormState formState,
+                                    @NonNull List<String> photos) {
+        boolean added = false;
+        for (String photo : photos) {
+            if (photo == null || photo.trim().isEmpty()) {
+                continue;
+            }
+            if (formState.photos.contains(photo)) {
+                continue;
+            }
+            if (formState.photos.size() >= MAX_FORM_PHOTOS) {
+                break;
+            }
+            formState.photos.add(photo);
+            added = true;
+        }
+        if (added) {
+            refreshPhotoSection(formState);
+        }
+        return added;
+    }
+
+    @NonNull
+    private String readStream(@NonNull InputStream inputStream) throws IOException {
+        StringBuilder builder = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream,
+                StandardCharsets.UTF_8))) {
+            char[] buffer = new char[4096];
+            int read;
+            while ((read = reader.read(buffer)) != -1) {
+                builder.append(buffer, 0, read);
+            }
+        }
+        return builder.toString();
+    }
+
+    @Nullable
+    private Bitmap downloadBitmap(@NonNull String urlString) {
+        HttpURLConnection connection = null;
+        try {
+            URL url = new URL(urlString);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.setInstanceFollowRedirects(true);
+            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
+            int responseCode = connection.getResponseCode();
+            if (responseCode >= 400) {
+                return null;
+            }
+            try (InputStream stream = new BufferedInputStream(connection.getInputStream())) {
+                return BitmapFactory.decodeStream(stream);
+            }
+        } catch (IOException ignored) {
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    @Nullable
+    private String downloadImageAsBase64(@NonNull String urlString) {
+        Bitmap bitmap = downloadBitmap(urlString);
+        if (bitmap == null) {
+            return null;
+        }
+        return encodePhoto(bitmap);
     }
 
     private void showEditCategoryDialog(List<String> categoryOptions,
@@ -1007,6 +1686,12 @@ public class RoomContentActivity extends Activity {
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        barcodeLookupExecutor.shutdownNow();
     }
 
     private void showDeleteCategoryConfirmation(List<String> categoryOptions,

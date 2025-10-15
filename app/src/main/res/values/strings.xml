@@ -78,6 +78,10 @@
     <string name="room_content_deleted_confirmation">Élément supprimé.</string>
     <string name="room_content_metadata_type">Type : %1$s</string>
     <string name="room_content_metadata_category">Catégorie : %1$s</string>
+    <string name="room_content_metadata_series">Série : %1$s</string>
+    <string name="room_content_metadata_number">Numéro : %1$s</string>
+    <string name="room_content_metadata_author">Auteur : %1$s</string>
+    <string name="room_content_metadata_publisher">Éditeur : %1$s</string>
     <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="dialog_room_content_item_placeholder">- Élément</string>
     <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
@@ -90,6 +94,14 @@
     <string name="dialog_label_room_content_photos_template">Photos de l’élément (%1$d)</string>
     <string name="dialog_button_barcode">Code barre</string>
     <string name="dialog_label_barcode_placeholder">Aucun code</string>
+    <string name="dialog_barcode_prompt">Cadrez le code-barres dans le viseur</string>
+    <string name="dialog_barcode_scan_cancelled">Lecture du code-barres annulée.</string>
+    <string name="dialog_barcode_scan_failed">Impossible de lire le code-barres.</string>
+    <string name="dialog_barcode_scan_lost_context">Le formulaire n’est plus disponible pour ce code-barres.</string>
+    <string name="dialog_barcode_lookup_in_progress">Recherche des informations…</string>
+    <string name="dialog_barcode_lookup_error">Impossible de récupérer les informations pour ce code-barres.</string>
+    <string name="dialog_barcode_lookup_not_found">Aucune donnée trouvée pour le code-barres %1$s.</string>
+    <string name="dialog_barcode_lookup_success">Informations trouvées à partir du code-barres.</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Autre</string>
     <string name="dialog_type_book">Livre</string>
