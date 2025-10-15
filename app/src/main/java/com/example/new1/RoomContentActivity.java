@@ -24,6 +24,13 @@ import android.graphics.drawable.ColorDrawable;
 import android.text.Editable;
 import android.text.TextWatcher;
 
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.bottomsheet.BottomSheetDialog;
+
+import java.util.Arrays;
+
 public class RoomContentActivity extends Activity {
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
     public static final String EXTRA_ROOM_NAME = "extra_room_name";
@@ -131,7 +138,6 @@ public class RoomContentActivity extends Activity {
         Button barcodeButton = dialogView.findViewById(R.id.button_barcode);
         Button addTrackButton = dialogView.findViewById(R.id.button_add_track);
         Button addTrackListButton = dialogView.findViewById(R.id.button_add_track_list);
-        Spinner typeSpinner = dialogView.findViewById(R.id.spinner_type);
         Spinner categorySpinner = dialogView.findViewById(R.id.spinner_category);
         Button selectTypeButton = dialogView.findViewById(R.id.button_select_type);
         ImageButton openTypeListButton = dialogView.findViewById(R.id.button_open_type_list);
@@ -203,14 +209,76 @@ public class RoomContentActivity extends Activity {
             addTrackListButton.setOnClickListener(comingSoonListener);
         }
 
-        if (selectTypeButton != null && typeSpinner != null) {
-            View.OnClickListener openTypeSelector = v -> typeSpinner.performClick();
-            selectTypeButton.setOnClickListener(openTypeSelector);
-            if (openTypeListButton != null) {
-                openTypeListButton.setOnClickListener(openTypeSelector);
+        String[] typeOptions = getResources().getStringArray(R.array.room_content_type_options);
+        final String[] selectedTypeHolder = new String[1];
+        selectedTypeHolder[0] = typeOptions.length > 0 ? typeOptions[0] : null;
+
+        updateTypeSpecificFields(bookFields, trackFields, trackTitle, selectedTypeHolder[0]);
+        updateSelectionButtonText(selectTypeButton, selectedTypeHolder[0],
+                R.string.dialog_button_choose_type);
+
+        View.OnClickListener typeDialogLauncher = v -> {
+            BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+            View sheetView = getLayoutInflater().inflate(R.layout.dialog_type_selector, null);
+            bottomSheetDialog.setContentView(sheetView);
+
+            RecyclerView recyclerView = sheetView.findViewById(R.id.recycler_type_options);
+            Button addTypeButtonSheet = sheetView.findViewById(R.id.button_add_type);
+
+            if (recyclerView != null) {
+                TypeSelectorAdapter adapter = new TypeSelectorAdapter(Arrays.asList(typeOptions),
+                        new TypeSelectorAdapter.TypeActionListener() {
+                            @Override
+                            public void onTypeSelected(String type) {
+                                selectedTypeHolder[0] = type;
+                                updateTypeSpecificFields(bookFields, trackFields, trackTitle, type);
+                                updateSelectionButtonText(selectTypeButton, type,
+                                        R.string.dialog_button_choose_type);
+                                bottomSheetDialog.dismiss();
+                            }
+
+                            @Override
+                            public void onEditType(String type) {
+                                if (editCustomTypeButton != null) {
+                                    editCustomTypeButton.performClick();
+                                } else {
+                                    comingSoonListener.onClick(sheetView);
+                                }
+                            }
+
+                            @Override
+                            public void onDeleteType(String type) {
+                                if (deleteCustomTypeButton != null) {
+                                    deleteCustomTypeButton.performClick();
+                                } else {
+                                    comingSoonListener.onClick(sheetView);
+                                }
+                            }
+                        });
+                adapter.setSelectedType(selectedTypeHolder[0]);
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+                recyclerView.setAdapter(adapter);
             }
-        } else if (openTypeListButton != null) {
-            openTypeListButton.setOnClickListener(comingSoonListener);
+
+            if (addTypeButtonSheet != null) {
+                addTypeButtonSheet.setOnClickListener(view -> {
+                    if (createCustomTypeButton != null) {
+                        createCustomTypeButton.performClick();
+                    } else {
+                        comingSoonListener.onClick(sheetView);
+                    }
+                });
+            }
+
+            bottomSheetDialog.show();
+        };
+
+        if (selectTypeButton != null) {
+            selectTypeButton.setOnClickListener(typeDialogLauncher);
+        }
+
+        if (openTypeListButton != null) {
+            openTypeListButton.setOnClickListener(typeDialogLauncher);
         }
 
         if (createCustomTypeButton != null) {
@@ -274,41 +342,6 @@ public class RoomContentActivity extends Activity {
         } else {
             updateSelectionButtonText(selectCategoryButton, null,
                     R.string.dialog_button_choose_category);
-        }
-
-        if (typeSpinner != null) {
-            ArrayAdapter<CharSequence> typeAdapter = ArrayAdapter.createFromResource(
-                    this,
-                    R.array.room_content_type_options,
-                    android.R.layout.simple_spinner_item);
-            typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            typeSpinner.setAdapter(typeAdapter);
-            typeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                    Object item = parent.getItemAtPosition(position);
-                    updateTypeSpecificFields(bookFields, trackFields, trackTitle,
-                            item != null ? item.toString() : null);
-                    updateSelectionButtonText(selectTypeButton, item,
-                            R.string.dialog_button_choose_type);
-                }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) {
-                    updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
-                    updateSelectionButtonText(selectTypeButton, null,
-                            R.string.dialog_button_choose_type);
-                }
-            });
-            Object initialSelection = typeSpinner.getSelectedItem();
-            updateTypeSpecificFields(bookFields, trackFields, trackTitle,
-                    initialSelection != null ? initialSelection.toString() : null);
-            updateSelectionButtonText(selectTypeButton, initialSelection,
-                    R.string.dialog_button_choose_type);
-        } else {
-            updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
-            updateSelectionButtonText(selectTypeButton, null,
-                    R.string.dialog_button_choose_type);
         }
 
         if (dialog.getWindow() != null) {
