@@ -27,17 +27,31 @@
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/dialog_label_room_content_name"
+                android:textColor="@android:color/black"
+                android:textSize="14sp" />
+
             <EditText
                 android:id="@+id/input_room_content_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
+                android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_input_field_white"
-                android:hint="@string/dialog_label_room_content_name"
                 android:inputType="textCapSentences"
                 android:padding="12dp"
+                android:textColor="@android:color/black" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/dialog_label_room_content_comment"
                 android:textColor="@android:color/black"
-                android:textColorHint="@color/icon_brown" />
+                android:textSize="14sp" />
 
             <EditText
                 android:id="@+id/input_room_content_comment"
@@ -46,12 +60,10 @@
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/bg_input_field_white"
                 android:gravity="top|start"
-                android:hint="@string/dialog_label_room_content_comment"
                 android:inputType="textCapSentences|textMultiLine"
                 android:minLines="1"
                 android:padding="12dp"
-                android:textColor="@android:color/black"
-                android:textColorHint="@color/icon_brown" />
+                android:textColor="@android:color/black" />
 
             <TextView
                 android:id="@+id/text_room_content_photos_label"
