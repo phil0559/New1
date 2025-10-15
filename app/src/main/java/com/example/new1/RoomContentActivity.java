@@ -80,6 +80,57 @@ public class RoomContentActivity extends Activity {
         final List<String> photos = new ArrayList<>();
     }
 
+    private static class DialogController {
+        final boolean isEditing;
+        final int positionToEdit;
+        @Nullable
+        final EditText nameInput;
+        @Nullable
+        final EditText commentInput;
+        @Nullable
+        final TextView barcodeValueView;
+        @Nullable
+        final EditText seriesInput;
+        @Nullable
+        final EditText numberInput;
+        @Nullable
+        final EditText authorInput;
+        @Nullable
+        final EditText publisherInput;
+        final String[] selectedTypeHolder;
+        final String[] selectedCategoryHolder;
+        final FormState formState;
+        final AlertDialog dialog;
+
+        DialogController(boolean isEditing,
+                         int positionToEdit,
+                         @Nullable EditText nameInput,
+                         @Nullable EditText commentInput,
+                         @Nullable TextView barcodeValueView,
+                         @Nullable EditText seriesInput,
+                         @Nullable EditText numberInput,
+                         @Nullable EditText authorInput,
+                         @Nullable EditText publisherInput,
+                         @NonNull String[] selectedTypeHolder,
+                         @NonNull String[] selectedCategoryHolder,
+                         @NonNull FormState formState,
+                         @NonNull AlertDialog dialog) {
+            this.isEditing = isEditing;
+            this.positionToEdit = positionToEdit;
+            this.nameInput = nameInput;
+            this.commentInput = commentInput;
+            this.barcodeValueView = barcodeValueView;
+            this.seriesInput = seriesInput;
+            this.numberInput = numberInput;
+            this.authorInput = authorInput;
+            this.publisherInput = publisherInput;
+            this.selectedTypeHolder = selectedTypeHolder;
+            this.selectedCategoryHolder = selectedCategoryHolder;
+            this.formState = formState;
+            this.dialog = dialog;
+        }
+    }
+
     private static class BarcodeScanContext {
         final FormState formState;
         @Nullable
@@ -154,6 +205,7 @@ public class RoomContentActivity extends Activity {
         String publisher;
         final ArrayList<String> photos = new ArrayList<>();
         boolean resumeLookup;
+        boolean reopenDialog;
 
         PendingBarcodeResult(boolean editing, int positionToEdit) {
             this.editing = editing;
@@ -207,6 +259,8 @@ public class RoomContentActivity extends Activity {
     private RoomContentAdapter roomContentAdapter;
     @Nullable
     private FormState currentFormState;
+    @Nullable
+    private DialogController currentDialogController;
     @Nullable
     private BarcodeScanContext barcodeScanContext;
     private final ExecutorService barcodeLookupExecutor = Executors.newSingleThreadExecutor();
@@ -291,6 +345,7 @@ public class RoomContentActivity extends Activity {
         }
 
         restorePendingBarcodeResult(savedInstanceState);
+        maybeRestorePendingDialog();
     }
 
     private void restorePendingBarcodeResult(@Nullable Bundle savedInstanceState) {
@@ -314,13 +369,61 @@ public class RoomContentActivity extends Activity {
             restored.photos.addAll(photos);
         }
         restored.resumeLookup = savedInstanceState.getBoolean("pending_barcode_resume_lookup", false);
+        restored.reopenDialog = savedInstanceState.getBoolean("pending_barcode_reopen", false);
         pendingBarcodeResult = restored;
         barcodeScanAwaitingResult = savedInstanceState.getBoolean("pending_barcode_waiting", false);
+    }
+
+    private void maybeRestorePendingDialog() {
+        if (pendingBarcodeResult == null || !pendingBarcodeResult.reopenDialog || barcodeScanAwaitingResult) {
+            return;
+        }
+        RoomContentItem itemToEdit = null;
+        int positionToEdit = pendingBarcodeResult.positionToEdit;
+        if (pendingBarcodeResult.editing) {
+            if (positionToEdit >= 0 && positionToEdit < roomContentItems.size()) {
+                itemToEdit = roomContentItems.get(positionToEdit);
+            } else {
+                positionToEdit = -1;
+            }
+        }
+        showRoomContentDialog(itemToEdit, positionToEdit);
+        if (pendingBarcodeResult != null) {
+            pendingBarcodeResult.reopenDialog = false;
+        }
     }
 
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         super.onSaveInstanceState(outState);
+        if (currentDialogController != null) {
+            DialogController controller = currentDialogController;
+            PendingBarcodeResult existing = pendingBarcodeResult;
+            PendingBarcodeResult snapshot = capturePendingBarcodeResult(controller.isEditing,
+                    controller.positionToEdit,
+                    controller.nameInput,
+                    controller.commentInput,
+                    controller.barcodeValueView,
+                    controller.selectedTypeHolder,
+                    controller.selectedCategoryHolder,
+                    controller.seriesInput,
+                    controller.numberInput,
+                    controller.authorInput,
+                    controller.publisherInput,
+                    controller.formState);
+            if (existing != null && existing.resumeLookup) {
+                snapshot.resumeLookup = true;
+            } else if (barcodeScanContext != null
+                    && barcodeScanContext.formState == controller.formState) {
+                snapshot.resumeLookup = true;
+            }
+            if (existing != null && TextUtils.isEmpty(snapshot.barcode)
+                    && !TextUtils.isEmpty(existing.barcode)) {
+                snapshot.barcode = existing.barcode;
+            }
+            snapshot.reopenDialog = controller.dialog.isShowing();
+            pendingBarcodeResult = snapshot;
+        }
         if (pendingBarcodeResult != null) {
             outState.putBoolean("pending_barcode_exists", true);
             outState.putBoolean("pending_barcode_editing", pendingBarcodeResult.editing);
@@ -337,6 +440,7 @@ public class RoomContentActivity extends Activity {
             outState.putStringArrayList("pending_barcode_photos", new ArrayList<>(pendingBarcodeResult.photos));
             outState.putBoolean("pending_barcode_resume_lookup", pendingBarcodeResult.resumeLookup);
             outState.putBoolean("pending_barcode_waiting", barcodeScanAwaitingResult);
+            outState.putBoolean("pending_barcode_reopen", pendingBarcodeResult.reopenDialog);
         }
     }
 
@@ -409,6 +513,11 @@ public class RoomContentActivity extends Activity {
                 && pendingBarcodeResult.matches(isEditing, positionToEdit)
                 ? pendingBarcodeResult
                 : null;
+
+        if (pendingBarcodeResult != null
+                && pendingBarcodeResult.matches(isEditing, positionToEdit)) {
+            pendingBarcodeResult.reopenDialog = false;
+        }
 
         if (dialogTitle != null) {
             dialogTitle.setText(isEditing
@@ -702,6 +811,9 @@ public class RoomContentActivity extends Activity {
                     && !barcodeScanAwaitingResult) {
                 pendingBarcodeResult = null;
             }
+            if (currentDialogController != null && currentDialogController.dialog == dialog) {
+                currentDialogController = null;
+            }
         });
 
         if (nameInput != null) {
@@ -962,6 +1074,20 @@ public class RoomContentActivity extends Activity {
         if (deleteCustomCategoryButton != null) {
             deleteCustomCategoryButton.setOnClickListener(comingSoonListener);
         }
+
+        currentDialogController = new DialogController(isEditing,
+                positionToEdit,
+                nameInput,
+                commentInput,
+                barcodeValueView,
+                seriesInput,
+                numberInput,
+                authorInput,
+                publisherInput,
+                selectedTypeHolder,
+                selectedCategoryHolder,
+                formState,
+                dialog);
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
