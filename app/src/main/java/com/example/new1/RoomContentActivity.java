@@ -132,7 +132,18 @@ public class RoomContentActivity extends Activity {
         contentList = findViewById(R.id.list_room_content);
         if (contentList != null) {
             contentList.setLayoutManager(new LinearLayoutManager(this));
-            roomContentAdapter = new RoomContentAdapter(this, roomContentItems);
+            roomContentAdapter = new RoomContentAdapter(this, roomContentItems,
+                    new RoomContentAdapter.OnRoomContentInteractionListener() {
+                        @Override
+                        public void onEditRoomContent(@NonNull RoomContentItem item, int position) {
+                            showEditRoomContentDialog(item, position);
+                        }
+
+                        @Override
+                        public void onDeleteRoomContent(@NonNull RoomContentItem item, int position) {
+                            showDeleteRoomContentConfirmation(item, position);
+                        }
+                    });
             contentList.setAdapter(roomContentAdapter);
         }
 
@@ -172,7 +183,10 @@ public class RoomContentActivity extends Activity {
         }
     }
 
-    private void showAddRoomContentDialog() {
+    private void showRoomContentDialog(@Nullable RoomContentItem itemToEdit, int positionToEdit) {
+        final boolean isEditing = itemToEdit != null
+                && positionToEdit >= 0
+                && positionToEdit < roomContentItems.size();
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_room_content_add, null);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -202,12 +216,48 @@ public class RoomContentActivity extends Activity {
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
         View trackFields = dialogView.findViewById(R.id.container_track_fields);
         TextView trackTitle = dialogView.findViewById(R.id.text_track_title);
+        TextView dialogTitle = dialogView.findViewById(R.id.text_dialog_room_content_title);
+
+        if (dialogTitle != null) {
+            dialogTitle.setText(isEditing
+                    ? R.string.dialog_edit_room_content_title
+                    : R.string.dialog_add_room_content_title);
+        }
+
+        if (barcodeValueView != null) {
+            if (isEditing && itemToEdit != null) {
+                String barcode = itemToEdit.getBarcode();
+                if (barcode != null && !barcode.trim().isEmpty()) {
+                    barcodeValueView.setText(barcode);
+                } else {
+                    barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
+                }
+            } else {
+                barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
+            }
+        }
+
+        if (isEditing && itemToEdit != null) {
+            if (nameInput != null) {
+                String name = itemToEdit.getName();
+                nameInput.setText(name);
+                if (name != null) {
+                    nameInput.setSelection(name.length());
+                }
+            }
+            if (commentInput != null) {
+                commentInput.setText(itemToEdit.getComment());
+            }
+        }
 
         final FormState formState = new FormState();
         formState.photoLabel = dialogView.findViewById(R.id.text_room_content_photos_label);
         formState.photoContainer = photoContainer;
         formState.addPhotoButton = addPhotoButton;
         currentFormState = formState;
+        if (isEditing && itemToEdit != null) {
+            formState.photos.addAll(itemToEdit.getPhotos());
+        }
 
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
@@ -215,13 +265,41 @@ public class RoomContentActivity extends Activity {
 
         List<String> typeOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_type_options)));
+        if (isEditing && itemToEdit != null) {
+            String existingType = itemToEdit.getType();
+            if (existingType != null && !existingType.trim().isEmpty()
+                    && !typeOptions.contains(existingType)) {
+                typeOptions.add(existingType);
+            }
+        }
         final String[] selectedTypeHolder = new String[1];
-        selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
+        if (isEditing && itemToEdit != null) {
+            String existingType = itemToEdit.getType();
+            selectedTypeHolder[0] = existingType != null && !existingType.trim().isEmpty()
+                    ? existingType
+                    : (!typeOptions.isEmpty() ? typeOptions.get(0) : null);
+        } else {
+            selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
+        }
 
         List<String> categoryOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_category_options)));
+        if (isEditing && itemToEdit != null) {
+            String existingCategory = itemToEdit.getCategory();
+            if (existingCategory != null && !existingCategory.trim().isEmpty()
+                    && !categoryOptions.contains(existingCategory)) {
+                categoryOptions.add(existingCategory);
+            }
+        }
         final String[] selectedCategoryHolder = new String[1];
-        selectedCategoryHolder[0] = null;
+        if (isEditing && itemToEdit != null) {
+            String existingCategory = itemToEdit.getCategory();
+            selectedCategoryHolder[0] = existingCategory != null && !existingCategory.trim().isEmpty()
+                    ? existingCategory
+                    : null;
+        } else {
+            selectedCategoryHolder[0] = null;
+        }
 
         final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
 
@@ -263,6 +341,13 @@ public class RoomContentActivity extends Activity {
                         selectedCategoryHolder[0],
                         barcodeValue,
                         new ArrayList<>(formState.photos));
+                if (isEditing) {
+                    if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
+                        dialog.dismiss();
+                        return;
+                    }
+                    roomContentItems.remove(positionToEdit);
+                }
                 roomContentItems.add(item);
                 sortRoomContentItems();
                 if (roomContentAdapter != null) {
@@ -277,7 +362,10 @@ public class RoomContentActivity extends Activity {
                 }
                 saveRoomContent();
                 updateEmptyState();
-                Toast.makeText(this, R.string.room_content_added_confirmation, Toast.LENGTH_SHORT).show();
+                int messageRes = isEditing
+                        ? R.string.room_content_updated_confirmation
+                        : R.string.room_content_added_confirmation;
+                Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             });
         }
@@ -522,6 +610,43 @@ public class RoomContentActivity extends Activity {
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
         }
+    }
+
+    private void showAddRoomContentDialog() {
+        showRoomContentDialog(null, -1);
+    }
+
+    private void showEditRoomContentDialog(@NonNull RoomContentItem item, int position) {
+        showRoomContentDialog(item, position);
+    }
+
+    private void showDeleteRoomContentConfirmation(@NonNull RoomContentItem item, int position) {
+        String name = item.getName();
+        if (name == null || name.trim().isEmpty()) {
+            name = getString(R.string.dialog_room_content_item_placeholder);
+        }
+        final int targetPosition = position;
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_delete_room_content_title)
+                .setMessage(getString(R.string.dialog_delete_room_content_message, name))
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_delete, (dialog, which) ->
+                        deleteRoomContent(targetPosition))
+                .show();
+    }
+
+    private void deleteRoomContent(int position) {
+        if (position < 0 || position >= roomContentItems.size()) {
+            return;
+        }
+        roomContentItems.remove(position);
+        sortRoomContentItems();
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+        saveRoomContent();
+        updateEmptyState();
+        Toast.makeText(this, R.string.room_content_deleted_confirmation, Toast.LENGTH_SHORT).show();
     }
 
     private void loadRoomContent() {
