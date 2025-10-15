@@ -41,12 +41,14 @@
             android:textStyle="bold" />
 
         <ImageView
-            android:id="@+id/image_room_content_menu"
+            android:id="@+id/image_room_content_delete"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:contentDescription="@string/content_description_room_content_menu"
-            android:src="@drawable/ic_more_vertical"
-            android:tint="@color/icon_brown" />
+            android:layout_marginStart="12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/content_description_room_content_delete"
+            android:padding="4dp"
+            android:src="@drawable/ic_delete_red" />
     </LinearLayout>
 
     <LinearLayout

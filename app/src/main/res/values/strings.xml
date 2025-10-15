@@ -72,7 +72,7 @@
     <string name="room_content_empty_state">Les éléments de la pièce apparaîtront ici.</string>
     <string name="content_description_add_room_content">Ajouter un contenu pour la pièce</string>
     <string name="content_description_room_menu">Options de %1$s</string>
-    <string name="content_description_room_content_menu">Plus d’options pour cet élément</string>
+    <string name="content_description_room_content_delete">Supprimer cet élément</string>
     <string name="room_content_added_confirmation">Élément ajouté à la pièce.</string>
     <string name="room_content_updated_confirmation">Élément mis à jour.</string>
     <string name="room_content_deleted_confirmation">Élément supprimé.</string>
