@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="16dp"
@@ -20,32 +21,46 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <EditText
-        android:id="@+id/input_establishment_name"
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
-        android:background="@android:color/transparent"
         android:hint="@string/dialog_label_establishment_name"
-        android:inputType="textCapWords"
-        android:padding="12dp"
-        android:textColor="@color/text_dark"
-        android:textColorHint="@color/icon_brown" />
+        app:expandedHintEnabled="false"
+        app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
-    <EditText
-        android:id="@+id/input_establishment_comment"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/input_establishment_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:inputType="textCapWords"
+            android:padding="12dp"
+            android:textColor="@color/text_dark"
+            android:textColorHint="@color/icon_brown" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:background="@android:color/transparent"
-        android:gravity="top|start"
         android:hint="@string/dialog_label_establishment_comment"
-        android:inputType="textCapSentences|textMultiLine"
-        android:maxLines="3"
-        android:minLines="2"
-        android:padding="12dp"
-        android:textColor="@color/text_dark"
-        android:textColorHint="@color/icon_brown" />
+        app:expandedHintEnabled="false"
+        app:hintTextAppearance="@style/TextInputLayoutHint.Small">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/input_establishment_comment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@android:color/transparent"
+            android:gravity="top|start"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="3"
+            android:minLines="2"
+            android:padding="12dp"
+            android:textColor="@color/text_dark"
+            android:textColorHint="@color/icon_brown" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
         android:id="@+id/text_establishment_photos_label"
