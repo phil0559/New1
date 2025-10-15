@@ -18,6 +18,10 @@
     <color name="popup_dark_green">#1B4332</color>
     <color name="popup_purple">#D7B6F2</color>
     <color name="popup_delete_red">#D32F2F</color>
+    <color name="popup_button_background">#F6E8FF</color>
+    <color name="popup_button_delete_background">#FFE8E8</color>
+    <color name="popup_button_ripple">#66FFFFFF</color>
+    <color name="popup_button_delete_ripple">#66D32F2F</color>
     <color name="room_content_banner_default">#E9E1D7</color>
     <color name="room_content_banner_other">#D2C7BD</color>
     <color name="room_content_banner_book">#F3DBC0</color>
