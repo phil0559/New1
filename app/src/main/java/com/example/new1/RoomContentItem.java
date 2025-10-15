@@ -6,6 +6,10 @@ import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class RoomContentItem {
 
     private static final String KEY_NAME = "name";
@@ -13,6 +17,7 @@ public class RoomContentItem {
     private static final String KEY_TYPE = "type";
     private static final String KEY_CATEGORY = "category";
     private static final String KEY_BARCODE = "barcode";
+    private static final String KEY_PHOTOS = "photos";
 
     private final String name;
     private final String comment;
@@ -22,17 +27,25 @@ public class RoomContentItem {
     private final String category;
     @Nullable
     private final String barcode;
+    @NonNull
+    private final List<String> photos;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
                            @Nullable String type,
                            @Nullable String category,
-                           @Nullable String barcode) {
+                           @Nullable String barcode,
+                           @Nullable List<String> photos) {
         this.name = name;
         this.comment = comment != null ? comment : "";
         this.type = isNullOrEmpty(type) ? null : type;
         this.category = isNullOrEmpty(category) ? null : category;
         this.barcode = isNullOrEmpty(barcode) ? null : barcode;
+        if (photos == null) {
+            this.photos = new ArrayList<>();
+        } else {
+            this.photos = new ArrayList<>(photos);
+        }
     }
 
     @NonNull
@@ -60,6 +73,11 @@ public class RoomContentItem {
         return barcode;
     }
 
+    @NonNull
+    public List<String> getPhotos() {
+        return Collections.unmodifiableList(photos);
+    }
+
     public JSONObject toJson() {
         JSONObject object = new JSONObject();
         try {
@@ -73,6 +91,13 @@ public class RoomContentItem {
             }
             if (barcode != null) {
                 object.put(KEY_BARCODE, barcode);
+            }
+            if (!photos.isEmpty()) {
+                org.json.JSONArray photosArray = new org.json.JSONArray();
+                for (String photo : photos) {
+                    photosArray.put(photo);
+                }
+                object.put(KEY_PHOTOS, photosArray);
             }
         } catch (JSONException ignored) {
         }
@@ -91,7 +116,19 @@ public class RoomContentItem {
         String barcode = object.has(KEY_BARCODE) && !object.isNull(KEY_BARCODE)
                 ? object.optString(KEY_BARCODE)
                 : null;
-        return new RoomContentItem(name, comment, type, category, barcode);
+        List<String> photos = new ArrayList<>();
+        if (object.has(KEY_PHOTOS) && !object.isNull(KEY_PHOTOS)) {
+            org.json.JSONArray photosArray = object.optJSONArray(KEY_PHOTOS);
+            if (photosArray != null) {
+                for (int i = 0; i < photosArray.length(); i++) {
+                    String value = photosArray.optString(i, null);
+                    if (value != null && !value.isEmpty()) {
+                        photos.add(value);
+                    }
+                }
+            }
+        }
+        return new RoomContentItem(name, comment, type, category, barcode, photos);
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {
