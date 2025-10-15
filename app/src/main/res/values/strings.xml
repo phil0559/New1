@@ -85,7 +85,6 @@
     <string name="dialog_type_comic">BD</string>
     <string name="dialog_type_custom">Type personnalisé</string>
     <string name="dialog_button_choose_type">Choisir un type</string>
-    <string name="dialog_button_create_custom_type">Créer un type personnalisé</string>
     <string name="dialog_custom_type_placeholder">Type personnalisé</string>
     <string name="content_description_add_type">Ajouter un type</string>
     <string name="content_description_edit_type">Modifier le type</string>
