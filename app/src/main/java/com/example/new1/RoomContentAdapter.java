@@ -53,10 +53,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         List<String> metadataLines = new ArrayList<>();
-        String type = item.getType();
-        if (type != null && !type.trim().isEmpty()) {
-            metadataLines.add(context.getString(R.string.room_content_metadata_type, type));
-        }
         String category = item.getCategory();
         if (category != null && !category.trim().isEmpty()) {
             metadataLines.add(context.getString(R.string.room_content_metadata_category, category));
