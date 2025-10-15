@@ -141,7 +141,6 @@ public class RoomContentActivity extends Activity {
         Spinner categorySpinner = dialogView.findViewById(R.id.spinner_category);
         Button selectTypeButton = dialogView.findViewById(R.id.button_select_type);
         ImageButton openTypeListButton = dialogView.findViewById(R.id.button_open_type_list);
-        Button createCustomTypeButton = dialogView.findViewById(R.id.button_create_custom_type);
         ImageButton editCustomTypeButton = dialogView.findViewById(R.id.button_edit_custom_type);
         ImageButton deleteCustomTypeButton = dialogView.findViewById(R.id.button_delete_custom_type);
         Button selectCategoryButton = dialogView.findViewById(R.id.button_select_category);
@@ -261,13 +260,7 @@ public class RoomContentActivity extends Activity {
             }
 
             if (addTypeButtonSheet != null) {
-                addTypeButtonSheet.setOnClickListener(view -> {
-                    if (createCustomTypeButton != null) {
-                        createCustomTypeButton.performClick();
-                    } else {
-                        comingSoonListener.onClick(sheetView);
-                    }
-                });
+                addTypeButtonSheet.setOnClickListener(comingSoonListener);
             }
 
             bottomSheetDialog.show();
@@ -279,10 +272,6 @@ public class RoomContentActivity extends Activity {
 
         if (openTypeListButton != null) {
             openTypeListButton.setOnClickListener(typeDialogLauncher);
-        }
-
-        if (createCustomTypeButton != null) {
-            createCustomTypeButton.setOnClickListener(comingSoonListener);
         }
 
         if (editCustomTypeButton != null) {
