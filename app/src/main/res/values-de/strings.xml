@@ -17,6 +17,7 @@
     <string name="establishment_content_title_with_name">Inhalt für %1$s</string>
     <string name="establishment_content_placeholder">Es wurden noch keine Inhalte hinzugefügt.</string>
     <string name="establishment_content_placeholder_with_name">Für %1$s wurden noch keine Inhalte hinzugefügt.</string>
+    <string name="establishment_summary_label">Zusammenfassung</string>
     <plurals name="establishment_content_rooms_count">
         <item quantity="one">%1$d Raum hinzugefügt.</item>
         <item quantity="other">%1$d Räume hinzugefügt.</item>

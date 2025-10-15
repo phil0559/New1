@@ -60,7 +60,8 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
-        private final TextView commentView;
+        private final TextView summaryLabelView;
+        private final TextView summaryView;
         private final ImageView menuView;
         private final ImageView photoView;
         private final int defaultPaddingStart;
@@ -74,7 +75,8 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         ViewHolder(@NonNull View itemView, OnEstablishmentInteractionListener interactionListener) {
             super(itemView);
             nameView = itemView.findViewById(R.id.text_establishment_name);
-            commentView = itemView.findViewById(R.id.text_establishment_comment);
+            summaryLabelView = itemView.findViewById(R.id.text_establishment_summary_label);
+            summaryView = itemView.findViewById(R.id.text_establishment_summary);
             menuView = itemView.findViewById(R.id.image_establishment_menu);
             photoView = itemView.findViewById(R.id.image_establishment_photo);
             defaultPaddingStart = photoView.getPaddingStart();
@@ -112,11 +114,14 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             ));
             updatePhotoThumbnail(item);
             String comment = item.getComment();
-            if (comment == null || comment.isEmpty()) {
-                commentView.setVisibility(View.GONE);
+            if (comment == null || comment.trim().isEmpty()) {
+                summaryLabelView.setVisibility(View.GONE);
+                summaryView.setVisibility(View.GONE);
+                summaryView.setText(null);
             } else {
-                commentView.setVisibility(View.VISIBLE);
-                commentView.setText(comment);
+                summaryLabelView.setVisibility(View.VISIBLE);
+                summaryView.setVisibility(View.VISIBLE);
+                summaryView.setText(comment.trim());
             }
         }
 
