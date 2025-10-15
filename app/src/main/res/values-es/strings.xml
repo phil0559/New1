@@ -113,6 +113,7 @@
     <string name="rooms_empty_state_with_name">Agregue una habitación para %1$s</string>
     <string name="dialog_edit_room_title">Editar habitación</string>
     <string name="content_description_room_menu">Opciones de %1$s</string>
+    <string name="content_description_room_content_menu">Más opciones para este elemento</string>
     <string name="dialog_delete_room_title">Eliminar habitación</string>
     <string name="dialog_delete_room_message">¿Desea eliminar la habitación %1$s?</string>
     <string name="dialog_delete_room_confirm">Eliminar</string>

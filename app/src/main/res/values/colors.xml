@@ -18,4 +18,10 @@
     <color name="popup_dark_green">#1B4332</color>
     <color name="popup_purple">#D7B6F2</color>
     <color name="popup_delete_red">#D32F2F</color>
+    <color name="room_content_banner_default">#E9E1D7</color>
+    <color name="room_content_banner_other">#D2C7BD</color>
+    <color name="room_content_banner_book">#F3DBC0</color>
+    <color name="room_content_banner_cd">#D0E4C2</color>
+    <color name="room_content_banner_disc">#C5DBF5</color>
+    <color name="room_content_banner_comic">#F7C2D7</color>
 </resources>
