@@ -60,6 +60,10 @@
     <string name="room_content_added_confirmation">Item added to the room.</string>
     <string name="room_content_metadata_type">Type: %1$s</string>
     <string name="room_content_metadata_category">Category: %1$s</string>
+    <string name="room_content_metadata_series">Series: %1$s</string>
+    <string name="room_content_metadata_number">Number: %1$s</string>
+    <string name="room_content_metadata_author">Author: %1$s</string>
+    <string name="room_content_metadata_publisher">Publisher: %1$s</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
     <string name="content_description_photo_preview">Photo preview</string>
     <string name="dialog_room_content_item_placeholder">- Item</string>
@@ -70,6 +74,14 @@
     <string name="dialog_label_room_content_photos_template">Item photos (%1$d)</string>
     <string name="dialog_button_barcode">Barcode</string>
     <string name="dialog_label_barcode_placeholder">No barcode</string>
+    <string name="dialog_barcode_prompt">Place the barcode inside the frame</string>
+    <string name="dialog_barcode_scan_cancelled">Barcode scan cancelled.</string>
+    <string name="dialog_barcode_scan_failed">Unable to read the barcode.</string>
+    <string name="dialog_barcode_scan_lost_context">The form is no longer available for this barcode.</string>
+    <string name="dialog_barcode_lookup_in_progress">Fetching information…</string>
+    <string name="dialog_barcode_lookup_error">Unable to retrieve information for this barcode.</string>
+    <string name="dialog_barcode_lookup_not_found">No data found for barcode %1$s.</string>
+    <string name="dialog_barcode_lookup_success">Information retrieved from the barcode.</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Other</string>
     <string name="dialog_type_book">Book</string>

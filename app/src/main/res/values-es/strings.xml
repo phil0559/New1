@@ -60,6 +60,10 @@
     <string name="room_content_added_confirmation">Elemento añadido a la habitación.</string>
     <string name="room_content_metadata_type">Tipo: %1$s</string>
     <string name="room_content_metadata_category">Categoría: %1$s</string>
+    <string name="room_content_metadata_series">Serie: %1$s</string>
+    <string name="room_content_metadata_number">Número: %1$s</string>
+    <string name="room_content_metadata_author">Autor: %1$s</string>
+    <string name="room_content_metadata_publisher">Editorial: %1$s</string>
     <string name="room_content_metadata_barcode">Código de barras: %1$s</string>
     <string name="content_description_photo_preview">Vista previa de la foto</string>
     <string name="dialog_room_content_item_placeholder">- Elemento</string>
@@ -70,6 +74,14 @@
     <string name="dialog_label_room_content_photos_template">Fotos del elemento (%1$d)</string>
     <string name="dialog_button_barcode">Código de barras</string>
     <string name="dialog_label_barcode_placeholder">Sin código</string>
+    <string name="dialog_barcode_prompt">Coloque el código de barras en el visor</string>
+    <string name="dialog_barcode_scan_cancelled">Lectura de código de barras cancelada.</string>
+    <string name="dialog_barcode_scan_failed">No se pudo leer el código de barras.</string>
+    <string name="dialog_barcode_scan_lost_context">El formulario ya no está disponible para este código de barras.</string>
+    <string name="dialog_barcode_lookup_in_progress">Obteniendo información…</string>
+    <string name="dialog_barcode_lookup_error">No se pudo recuperar la información de este código de barras.</string>
+    <string name="dialog_barcode_lookup_not_found">No se encontraron datos para el código de barras %1$s.</string>
+    <string name="dialog_barcode_lookup_success">Información obtenida a partir del código de barras.</string>
     <string name="dialog_label_type">Tipo</string>
     <string name="dialog_type_other">Otro</string>
     <string name="dialog_type_book">Libro</string>

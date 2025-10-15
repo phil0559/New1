@@ -60,6 +60,10 @@
     <string name="room_content_added_confirmation">Element wurde dem Raum hinzugefügt.</string>
     <string name="room_content_metadata_type">Typ: %1$s</string>
     <string name="room_content_metadata_category">Kategorie: %1$s</string>
+    <string name="room_content_metadata_series">Reihe: %1$s</string>
+    <string name="room_content_metadata_number">Nummer: %1$s</string>
+    <string name="room_content_metadata_author">Autor: %1$s</string>
+    <string name="room_content_metadata_publisher">Verlag: %1$s</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
     <string name="content_description_photo_preview">Foto-Vorschau</string>
     <string name="dialog_room_content_item_placeholder">- Element</string>
@@ -70,6 +74,14 @@
     <string name="dialog_label_room_content_photos_template">Fotos des Elements (%1$d)</string>
     <string name="dialog_button_barcode">Barcode</string>
     <string name="dialog_label_barcode_placeholder">Kein Barcode</string>
+    <string name="dialog_barcode_prompt">Positionieren Sie den Barcode im Sucher</string>
+    <string name="dialog_barcode_scan_cancelled">Barcode-Scan abgebrochen.</string>
+    <string name="dialog_barcode_scan_failed">Der Barcode konnte nicht gelesen werden.</string>
+    <string name="dialog_barcode_scan_lost_context">Das Formular ist für diesen Barcode nicht mehr verfügbar.</string>
+    <string name="dialog_barcode_lookup_in_progress">Informationen werden abgerufen…</string>
+    <string name="dialog_barcode_lookup_error">Informationen zu diesem Barcode konnten nicht abgerufen werden.</string>
+    <string name="dialog_barcode_lookup_not_found">Keine Daten für den Barcode %1$s gefunden.</string>
+    <string name="dialog_barcode_lookup_success">Informationen wurden über den Barcode gefunden.</string>
     <string name="dialog_label_type">Typ</string>
     <string name="dialog_type_other">Andere</string>
     <string name="dialog_type_book">Buch</string>

@@ -17,6 +17,10 @@ public class RoomContentItem {
     private static final String KEY_TYPE = "type";
     private static final String KEY_CATEGORY = "category";
     private static final String KEY_BARCODE = "barcode";
+    private static final String KEY_SERIES = "series";
+    private static final String KEY_NUMBER = "number";
+    private static final String KEY_AUTHOR = "author";
+    private static final String KEY_PUBLISHER = "publisher";
     private static final String KEY_PHOTOS = "photos";
 
     private final String name;
@@ -27,6 +31,14 @@ public class RoomContentItem {
     private final String category;
     @Nullable
     private final String barcode;
+    @Nullable
+    private final String series;
+    @Nullable
+    private final String number;
+    @Nullable
+    private final String author;
+    @Nullable
+    private final String publisher;
     @NonNull
     private final List<String> photos;
 
@@ -35,12 +47,20 @@ public class RoomContentItem {
                            @Nullable String type,
                            @Nullable String category,
                            @Nullable String barcode,
+                           @Nullable String series,
+                           @Nullable String number,
+                           @Nullable String author,
+                           @Nullable String publisher,
                            @Nullable List<String> photos) {
         this.name = name;
         this.comment = comment != null ? comment : "";
         this.type = isNullOrEmpty(type) ? null : type;
         this.category = isNullOrEmpty(category) ? null : category;
         this.barcode = isNullOrEmpty(barcode) ? null : barcode;
+        this.series = isNullOrEmpty(series) ? null : series;
+        this.number = isNullOrEmpty(number) ? null : number;
+        this.author = isNullOrEmpty(author) ? null : author;
+        this.publisher = isNullOrEmpty(publisher) ? null : publisher;
         if (photos == null) {
             this.photos = new ArrayList<>();
         } else {
@@ -73,6 +93,26 @@ public class RoomContentItem {
         return barcode;
     }
 
+    @Nullable
+    public String getSeries() {
+        return series;
+    }
+
+    @Nullable
+    public String getNumber() {
+        return number;
+    }
+
+    @Nullable
+    public String getAuthor() {
+        return author;
+    }
+
+    @Nullable
+    public String getPublisher() {
+        return publisher;
+    }
+
     @NonNull
     public List<String> getPhotos() {
         return Collections.unmodifiableList(photos);
@@ -91,6 +131,18 @@ public class RoomContentItem {
             }
             if (barcode != null) {
                 object.put(KEY_BARCODE, barcode);
+            }
+            if (series != null) {
+                object.put(KEY_SERIES, series);
+            }
+            if (number != null) {
+                object.put(KEY_NUMBER, number);
+            }
+            if (author != null) {
+                object.put(KEY_AUTHOR, author);
+            }
+            if (publisher != null) {
+                object.put(KEY_PUBLISHER, publisher);
             }
             if (!photos.isEmpty()) {
                 org.json.JSONArray photosArray = new org.json.JSONArray();
@@ -116,6 +168,18 @@ public class RoomContentItem {
         String barcode = object.has(KEY_BARCODE) && !object.isNull(KEY_BARCODE)
                 ? object.optString(KEY_BARCODE)
                 : null;
+        String series = object.has(KEY_SERIES) && !object.isNull(KEY_SERIES)
+                ? object.optString(KEY_SERIES)
+                : null;
+        String number = object.has(KEY_NUMBER) && !object.isNull(KEY_NUMBER)
+                ? object.optString(KEY_NUMBER)
+                : null;
+        String author = object.has(KEY_AUTHOR) && !object.isNull(KEY_AUTHOR)
+                ? object.optString(KEY_AUTHOR)
+                : null;
+        String publisher = object.has(KEY_PUBLISHER) && !object.isNull(KEY_PUBLISHER)
+                ? object.optString(KEY_PUBLISHER)
+                : null;
         List<String> photos = new ArrayList<>();
         if (object.has(KEY_PHOTOS) && !object.isNull(KEY_PHOTOS)) {
             org.json.JSONArray photosArray = object.optJSONArray(KEY_PHOTOS);
@@ -128,7 +192,16 @@ public class RoomContentItem {
                 }
             }
         }
-        return new RoomContentItem(name, comment, type, category, barcode, photos);
+        return new RoomContentItem(name,
+                comment,
+                type,
+                category,
+                barcode,
+                series,
+                number,
+                author,
+                publisher,
+                photos);
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {
