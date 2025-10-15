@@ -131,6 +131,46 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private static class PendingBarcodeResult {
+        final boolean editing;
+        final int positionToEdit;
+        @Nullable
+        String name;
+        @Nullable
+        String comment;
+        @Nullable
+        String selectedType;
+        @Nullable
+        String selectedCategory;
+        @Nullable
+        String barcode;
+        @Nullable
+        String series;
+        @Nullable
+        String number;
+        @Nullable
+        String author;
+        @Nullable
+        String publisher;
+        final ArrayList<String> photos = new ArrayList<>();
+        boolean resumeLookup;
+
+        PendingBarcodeResult(boolean editing, int positionToEdit) {
+            this.editing = editing;
+            this.positionToEdit = positionToEdit;
+        }
+
+        boolean matches(boolean editing, int positionToEdit) {
+            if (this.editing != editing) {
+                return false;
+            }
+            if (!this.editing) {
+                return true;
+            }
+            return this.positionToEdit == positionToEdit;
+        }
+    }
+
     private static class BarcodeLookupResult {
         boolean found;
         boolean networkError;
@@ -170,6 +210,9 @@ public class RoomContentActivity extends Activity {
     @Nullable
     private BarcodeScanContext barcodeScanContext;
     private final ExecutorService barcodeLookupExecutor = Executors.newSingleThreadExecutor();
+    @Nullable
+    private PendingBarcodeResult pendingBarcodeResult;
+    private boolean barcodeScanAwaitingResult;
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -246,6 +289,55 @@ public class RoomContentActivity extends Activity {
         if (addButton != null) {
             addButton.setOnClickListener(view -> showAddRoomContentDialog());
         }
+
+        restorePendingBarcodeResult(savedInstanceState);
+    }
+
+    private void restorePendingBarcodeResult(@Nullable Bundle savedInstanceState) {
+        if (savedInstanceState == null || !savedInstanceState.getBoolean("pending_barcode_exists", false)) {
+            return;
+        }
+        PendingBarcodeResult restored = new PendingBarcodeResult(
+                savedInstanceState.getBoolean("pending_barcode_editing", false),
+                savedInstanceState.getInt("pending_barcode_position", -1));
+        restored.name = savedInstanceState.getString("pending_barcode_name");
+        restored.comment = savedInstanceState.getString("pending_barcode_comment");
+        restored.selectedType = savedInstanceState.getString("pending_barcode_type");
+        restored.selectedCategory = savedInstanceState.getString("pending_barcode_category");
+        restored.barcode = savedInstanceState.getString("pending_barcode_value");
+        restored.series = savedInstanceState.getString("pending_barcode_series");
+        restored.number = savedInstanceState.getString("pending_barcode_number");
+        restored.author = savedInstanceState.getString("pending_barcode_author");
+        restored.publisher = savedInstanceState.getString("pending_barcode_publisher");
+        ArrayList<String> photos = savedInstanceState.getStringArrayList("pending_barcode_photos");
+        if (photos != null) {
+            restored.photos.addAll(photos);
+        }
+        restored.resumeLookup = savedInstanceState.getBoolean("pending_barcode_resume_lookup", false);
+        pendingBarcodeResult = restored;
+        barcodeScanAwaitingResult = savedInstanceState.getBoolean("pending_barcode_waiting", false);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (pendingBarcodeResult != null) {
+            outState.putBoolean("pending_barcode_exists", true);
+            outState.putBoolean("pending_barcode_editing", pendingBarcodeResult.editing);
+            outState.putInt("pending_barcode_position", pendingBarcodeResult.positionToEdit);
+            outState.putString("pending_barcode_name", pendingBarcodeResult.name);
+            outState.putString("pending_barcode_comment", pendingBarcodeResult.comment);
+            outState.putString("pending_barcode_type", pendingBarcodeResult.selectedType);
+            outState.putString("pending_barcode_category", pendingBarcodeResult.selectedCategory);
+            outState.putString("pending_barcode_value", pendingBarcodeResult.barcode);
+            outState.putString("pending_barcode_series", pendingBarcodeResult.series);
+            outState.putString("pending_barcode_number", pendingBarcodeResult.number);
+            outState.putString("pending_barcode_author", pendingBarcodeResult.author);
+            outState.putString("pending_barcode_publisher", pendingBarcodeResult.publisher);
+            outState.putStringArrayList("pending_barcode_photos", new ArrayList<>(pendingBarcodeResult.photos));
+            outState.putBoolean("pending_barcode_resume_lookup", pendingBarcodeResult.resumeLookup);
+            outState.putBoolean("pending_barcode_waiting", barcodeScanAwaitingResult);
+        }
     }
 
     private void applyTitle() {
@@ -313,6 +405,10 @@ public class RoomContentActivity extends Activity {
         EditText authorInput = dialogView.findViewById(R.id.input_author);
         EditText publisherInput = dialogView.findViewById(R.id.input_publisher);
         TextView dialogTitle = dialogView.findViewById(R.id.text_dialog_room_content_title);
+        PendingBarcodeResult restoreData = pendingBarcodeResult != null
+                && pendingBarcodeResult.matches(isEditing, positionToEdit)
+                ? pendingBarcodeResult
+                : null;
 
         if (dialogTitle != null) {
             dialogTitle.setText(isEditing
@@ -321,7 +417,9 @@ public class RoomContentActivity extends Activity {
         }
 
         if (barcodeValueView != null) {
-            if (isEditing && itemToEdit != null) {
+            if (restoreData != null && !TextUtils.isEmpty(restoreData.barcode)) {
+                barcodeValueView.setText(restoreData.barcode);
+            } else if (isEditing && itemToEdit != null) {
                 String barcode = itemToEdit.getBarcode();
                 if (barcode != null && !barcode.trim().isEmpty()) {
                     barcodeValueView.setText(barcode);
@@ -374,6 +472,48 @@ public class RoomContentActivity extends Activity {
             }
         }
 
+        if (restoreData != null) {
+            if (nameInput != null) {
+                String value = restoreData.name != null ? restoreData.name : "";
+                nameInput.setText(value);
+                nameInput.setSelection(value.length());
+            }
+            if (commentInput != null) {
+                commentInput.setText(restoreData.comment != null ? restoreData.comment : "");
+            }
+            if (seriesInput != null) {
+                seriesInput.setText(restoreData.series != null ? restoreData.series : "");
+                if (restoreData.series != null) {
+                    seriesInput.setSelection(restoreData.series.length());
+                }
+            }
+            if (numberInput != null) {
+                numberInput.setText(restoreData.number != null ? restoreData.number : "");
+                if (restoreData.number != null) {
+                    numberInput.setSelection(restoreData.number.length());
+                }
+            }
+            if (authorInput != null) {
+                authorInput.setText(restoreData.author != null ? restoreData.author : "");
+                if (restoreData.author != null) {
+                    authorInput.setSelection(restoreData.author.length());
+                }
+            }
+            if (publisherInput != null) {
+                publisherInput.setText(restoreData.publisher != null ? restoreData.publisher : "");
+                if (restoreData.publisher != null) {
+                    publisherInput.setSelection(restoreData.publisher.length());
+                }
+            }
+            if (barcodeValueView != null) {
+                if (!TextUtils.isEmpty(restoreData.barcode)) {
+                    barcodeValueView.setText(restoreData.barcode);
+                } else {
+                    barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
+                }
+            }
+        }
+
         final FormState formState = new FormState();
         formState.photoLabel = dialogView.findViewById(R.id.text_room_content_photos_label);
         formState.photoContainer = photoContainer;
@@ -381,6 +521,10 @@ public class RoomContentActivity extends Activity {
         currentFormState = formState;
         if (isEditing && itemToEdit != null) {
             formState.photos.addAll(itemToEdit.getPhotos());
+        }
+        if (restoreData != null) {
+            formState.photos.clear();
+            formState.photos.addAll(restoreData.photos);
         }
 
         if (cancelButton != null) {
@@ -405,6 +549,12 @@ public class RoomContentActivity extends Activity {
         } else {
             selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
         }
+        if (restoreData != null && !TextUtils.isEmpty(restoreData.selectedType)) {
+            if (!typeOptions.contains(restoreData.selectedType)) {
+                typeOptions.add(restoreData.selectedType);
+            }
+            selectedTypeHolder[0] = restoreData.selectedType;
+        }
 
         List<String> categoryOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_category_options)));
@@ -423,6 +573,12 @@ public class RoomContentActivity extends Activity {
                     : null;
         } else {
             selectedCategoryHolder[0] = null;
+        }
+        if (restoreData != null && !TextUtils.isEmpty(restoreData.selectedCategory)) {
+            if (!categoryOptions.contains(restoreData.selectedCategory)) {
+                categoryOptions.add(restoreData.selectedCategory);
+            }
+            selectedCategoryHolder[0] = restoreData.selectedCategory;
         }
 
         final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
@@ -541,6 +697,11 @@ public class RoomContentActivity extends Activity {
             if (barcodeScanContext != null && barcodeScanContext.formState == formState) {
                 barcodeScanContext = null;
             }
+            if (pendingBarcodeResult != null
+                    && pendingBarcodeResult.matches(isEditing, positionToEdit)
+                    && !barcodeScanAwaitingResult) {
+                pendingBarcodeResult = null;
+            }
         });
 
         if (nameInput != null) {
@@ -586,7 +747,19 @@ public class RoomContentActivity extends Activity {
                 if (currentFormState == null || currentFormState != formState) {
                     return;
                 }
-                barcodeScanContext = new BarcodeScanContext(formState,
+                pendingBarcodeResult = capturePendingBarcodeResult(isEditing,
+                        positionToEdit,
+                        nameInput,
+                        commentInput,
+                        barcodeValueView,
+                        selectedTypeHolder,
+                        selectedCategoryHolder,
+                        seriesInput,
+                        numberInput,
+                        authorInput,
+                        publisherInput,
+                        formState);
+                barcodeScanContext = createBarcodeScanContext(formState,
                         nameInput,
                         barcodeValueView,
                         selectTypeButton,
@@ -598,6 +771,7 @@ public class RoomContentActivity extends Activity {
                         numberInput,
                         authorInput,
                         publisherInput);
+                barcodeScanAwaitingResult = true;
                 launchBarcodeScanner();
             });
         }
@@ -793,6 +967,25 @@ public class RoomContentActivity extends Activity {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+
+        if (restoreData != null && restoreData.resumeLookup
+                && !TextUtils.isEmpty(restoreData.barcode)) {
+            barcodeScanContext = createBarcodeScanContext(formState,
+                    nameInput,
+                    barcodeValueView,
+                    selectTypeButton,
+                    bookFields,
+                    trackFields,
+                    trackTitle,
+                    selectedTypeHolder,
+                    seriesInput,
+                    numberInput,
+                    authorInput,
+                    publisherInput);
+            Toast.makeText(this, R.string.dialog_barcode_lookup_in_progress, Toast.LENGTH_SHORT).show();
+            fetchMetadataForBarcode(restoreData.barcode, barcodeScanContext);
+            restoreData.resumeLookup = false;
         }
     }
 
@@ -1120,17 +1313,41 @@ public class RoomContentActivity extends Activity {
         String contents = result.getContents();
         if (contents == null) {
             Toast.makeText(this, R.string.dialog_barcode_scan_cancelled, Toast.LENGTH_SHORT).show();
+            barcodeScanAwaitingResult = false;
+            pendingBarcodeResult = null;
             return;
         }
         String trimmed = contents.trim();
         if (trimmed.isEmpty()) {
             Toast.makeText(this, R.string.dialog_barcode_scan_failed, Toast.LENGTH_SHORT).show();
+            barcodeScanAwaitingResult = false;
             return;
         }
         BarcodeScanContext context = barcodeScanContext;
         if (context == null || currentFormState == null || currentFormState != context.formState) {
-            Toast.makeText(this, R.string.dialog_barcode_scan_lost_context, Toast.LENGTH_SHORT).show();
+            barcodeScanAwaitingResult = false;
+            if (pendingBarcodeResult != null) {
+                pendingBarcodeResult.barcode = trimmed;
+                pendingBarcodeResult.resumeLookup = true;
+                if (pendingBarcodeResult.editing) {
+                    RoomContentItem itemToEdit = null;
+                    if (pendingBarcodeResult.positionToEdit >= 0
+                            && pendingBarcodeResult.positionToEdit < roomContentItems.size()) {
+                        itemToEdit = roomContentItems.get(pendingBarcodeResult.positionToEdit);
+                    }
+                    showRoomContentDialog(itemToEdit, pendingBarcodeResult.positionToEdit);
+                } else {
+                    showRoomContentDialog(null, -1);
+                }
+            } else {
+                Toast.makeText(this, R.string.dialog_barcode_scan_lost_context, Toast.LENGTH_SHORT).show();
+            }
             return;
+        }
+        barcodeScanAwaitingResult = false;
+        if (pendingBarcodeResult != null) {
+            pendingBarcodeResult.barcode = trimmed;
+            pendingBarcodeResult.resumeLookup = false;
         }
         if (context.barcodeValueView != null) {
             context.barcodeValueView.setText(trimmed);
@@ -1467,6 +1684,7 @@ public class RoomContentActivity extends Activity {
                                           @NonNull BarcodeLookupResult result) {
         if (currentFormState == null || currentFormState != context.formState) {
             barcodeScanContext = null;
+            pendingBarcodeResult = null;
             return;
         }
         if (context.barcodeValueView != null) {
@@ -1475,6 +1693,7 @@ public class RoomContentActivity extends Activity {
         if (result.errorMessage != null) {
             Toast.makeText(this, result.errorMessage, Toast.LENGTH_LONG).show();
             barcodeScanContext = null;
+            pendingBarcodeResult = null;
             return;
         }
         if (!result.found) {
@@ -1483,6 +1702,7 @@ public class RoomContentActivity extends Activity {
                     : getString(R.string.dialog_barcode_lookup_not_found, barcode);
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             barcodeScanContext = null;
+            pendingBarcodeResult = null;
             refreshPhotoSection(context.formState);
             return;
         }
@@ -1521,6 +1741,90 @@ public class RoomContentActivity extends Activity {
                 : getString(R.string.dialog_barcode_lookup_success);
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         barcodeScanContext = null;
+        pendingBarcodeResult = null;
+    }
+
+    @NonNull
+    private BarcodeScanContext createBarcodeScanContext(@NonNull FormState formState,
+                                                        @Nullable EditText nameInput,
+                                                        @Nullable TextView barcodeValueView,
+                                                        @Nullable Button selectTypeButton,
+                                                        @Nullable View bookFields,
+                                                        @Nullable View trackFields,
+                                                        @Nullable TextView trackTitle,
+                                                        @NonNull String[] selectedTypeHolder,
+                                                        @Nullable EditText seriesInput,
+                                                        @Nullable EditText numberInput,
+                                                        @Nullable EditText authorInput,
+                                                        @Nullable EditText publisherInput) {
+        return new BarcodeScanContext(formState,
+                nameInput,
+                barcodeValueView,
+                selectTypeButton,
+                bookFields,
+                trackFields,
+                trackTitle,
+                selectedTypeHolder,
+                seriesInput,
+                numberInput,
+                authorInput,
+                publisherInput);
+    }
+
+    private PendingBarcodeResult capturePendingBarcodeResult(boolean isEditing,
+                                                             int positionToEdit,
+                                                             @Nullable EditText nameInput,
+                                                             @Nullable EditText commentInput,
+                                                             @Nullable TextView barcodeValueView,
+                                                             @NonNull String[] selectedTypeHolder,
+                                                             @NonNull String[] selectedCategoryHolder,
+                                                             @Nullable EditText seriesInput,
+                                                             @Nullable EditText numberInput,
+                                                             @Nullable EditText authorInput,
+                                                             @Nullable EditText publisherInput,
+                                                             @NonNull FormState formState) {
+        PendingBarcodeResult result = new PendingBarcodeResult(isEditing, positionToEdit);
+        result.name = extractText(nameInput);
+        result.comment = extractText(commentInput);
+        result.series = extractText(seriesInput);
+        result.number = extractText(numberInput);
+        result.author = extractText(authorInput);
+        result.publisher = extractText(publisherInput);
+        result.selectedType = selectedTypeHolder[0];
+        result.selectedCategory = selectedCategoryHolder[0];
+        result.barcode = extractBarcodeValue(barcodeValueView);
+        result.photos.addAll(formState.photos);
+        result.resumeLookup = false;
+        return result;
+    }
+
+    @Nullable
+    private String extractText(@Nullable EditText input) {
+        if (input == null) {
+            return null;
+        }
+        CharSequence text = input.getText();
+        if (text == null) {
+            return null;
+        }
+        return text.toString();
+    }
+
+    @Nullable
+    private String extractBarcodeValue(@Nullable TextView barcodeValueView) {
+        if (barcodeValueView == null) {
+            return null;
+        }
+        CharSequence value = barcodeValueView.getText();
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.toString().trim();
+        if (trimmed.isEmpty()
+                || trimmed.equals(getString(R.string.dialog_label_barcode_placeholder))) {
+            return null;
+        }
+        return trimmed;
     }
 
     private boolean addPhotosToForm(@NonNull FormState formState,
