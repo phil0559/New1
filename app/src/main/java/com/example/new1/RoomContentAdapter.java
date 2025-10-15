@@ -1,12 +1,15 @@
 package com.example.new1;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -143,6 +146,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     class ViewHolder extends RecyclerView.ViewHolder {
         final View bannerContainer;
         final View detailsContainer;
+        @Nullable
+        final ImageView photoView;
         final TextView nameView;
         final TextView commentView;
         final TextView metadataView;
@@ -154,20 +159,32 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private PopupWindow popupWindow;
         @Nullable
         private RoomContentItem currentItem;
+        private final int defaultPaddingStart;
+        private final int defaultPaddingTop;
+        private final int defaultPaddingEnd;
+        private final int defaultPaddingBottom;
 
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
             super(itemView);
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
             detailsContainer = itemView.findViewById(R.id.container_room_content_details);
+            photoView = itemView.findViewById(R.id.image_room_content_photo);
             nameView = itemView.findViewById(R.id.text_room_content_name);
             commentView = itemView.findViewById(R.id.text_room_content_comment);
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
             menuView = itemView.findViewById(R.id.image_room_content_menu);
             this.interactionListener = interactionListener;
+            if (photoView != null) {
+                photoView.setOnClickListener(view -> notifyEdit());
+            }
             if (menuView != null) {
                 menuView.setOnClickListener(view -> togglePopup());
             }
+            defaultPaddingStart = photoView != null ? photoView.getPaddingStart() : 0;
+            defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
+            defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
+            defaultPaddingBottom = photoView != null ? photoView.getPaddingBottom() : 0;
         }
 
         void bind(@NonNull RoomContentItem item) {
@@ -177,9 +194,53 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             currentItem = item;
             nameView.setText(item.getName());
             applyBannerColor(bannerContainer, item.getType());
+            updatePhoto(item);
             if (menuView != null) {
                 menuView.setContentDescription(itemView.getContext()
                         .getString(R.string.content_description_room_content_menu));
+            }
+            if (photoView != null) {
+                photoView.setContentDescription(itemView.getContext()
+                        .getString(R.string.content_description_room_content_photos, item.getName()));
+            }
+        }
+
+        private void updatePhoto(@NonNull RoomContentItem item) {
+            if (photoView == null) {
+                return;
+            }
+            List<String> photos = item.getPhotos();
+            if (photos.isEmpty()) {
+                resetPhoto();
+                return;
+            }
+            Bitmap bitmap = decodePhoto(photos.get(0));
+            if (bitmap == null) {
+                resetPhoto();
+                return;
+            }
+            photoView.setImageBitmap(bitmap);
+            photoView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            photoView.setPadding(0, 0, 0, 0);
+        }
+
+        private void resetPhoto() {
+            if (photoView == null) {
+                return;
+            }
+            photoView.setImageResource(R.drawable.ic_establishment_photos);
+            photoView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            photoView.setPadding(defaultPaddingStart, defaultPaddingTop, defaultPaddingEnd,
+                    defaultPaddingBottom);
+        }
+
+        @Nullable
+        private Bitmap decodePhoto(@NonNull String encoded) {
+            try {
+                byte[] decoded = Base64.decode(encoded, Base64.DEFAULT);
+                return BitmapFactory.decodeByteArray(decoded, 0, decoded.length);
+            } catch (IllegalArgumentException exception) {
+                return null;
             }
         }
 
