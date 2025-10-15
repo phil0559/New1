@@ -56,8 +56,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -97,6 +99,12 @@ public class RoomContentActivity extends Activity {
         final EditText authorInput;
         @Nullable
         final EditText publisherInput;
+        @Nullable
+        final EditText editionInput;
+        @Nullable
+        final EditText publicationDateInput;
+        @Nullable
+        final EditText summaryInput;
         final String[] selectedTypeHolder;
         final String[] selectedCategoryHolder;
         final FormState formState;
@@ -111,6 +119,9 @@ public class RoomContentActivity extends Activity {
                          @Nullable EditText numberInput,
                          @Nullable EditText authorInput,
                          @Nullable EditText publisherInput,
+                         @Nullable EditText editionInput,
+                         @Nullable EditText publicationDateInput,
+                         @Nullable EditText summaryInput,
                          @NonNull String[] selectedTypeHolder,
                          @NonNull String[] selectedCategoryHolder,
                          @NonNull FormState formState,
@@ -124,6 +135,9 @@ public class RoomContentActivity extends Activity {
             this.numberInput = numberInput;
             this.authorInput = authorInput;
             this.publisherInput = publisherInput;
+            this.editionInput = editionInput;
+            this.publicationDateInput = publicationDateInput;
+            this.summaryInput = summaryInput;
             this.selectedTypeHolder = selectedTypeHolder;
             this.selectedCategoryHolder = selectedCategoryHolder;
             this.formState = formState;
@@ -154,6 +168,12 @@ public class RoomContentActivity extends Activity {
         final EditText authorInput;
         @Nullable
         final EditText publisherInput;
+        @Nullable
+        final EditText editionInput;
+        @Nullable
+        final EditText publicationDateInput;
+        @Nullable
+        final EditText summaryInput;
 
         BarcodeScanContext(@NonNull FormState formState,
                             @Nullable EditText nameInput,
@@ -166,7 +186,10 @@ public class RoomContentActivity extends Activity {
                             @Nullable EditText seriesInput,
                             @Nullable EditText numberInput,
                             @Nullable EditText authorInput,
-                            @Nullable EditText publisherInput) {
+                            @Nullable EditText publisherInput,
+                            @Nullable EditText editionInput,
+                            @Nullable EditText publicationDateInput,
+                            @Nullable EditText summaryInput) {
             this.formState = formState;
             this.nameInput = nameInput;
             this.barcodeValueView = barcodeValueView;
@@ -179,6 +202,9 @@ public class RoomContentActivity extends Activity {
             this.numberInput = numberInput;
             this.authorInput = authorInput;
             this.publisherInput = publisherInput;
+            this.editionInput = editionInput;
+            this.publicationDateInput = publicationDateInput;
+            this.summaryInput = summaryInput;
         }
     }
 
@@ -203,6 +229,12 @@ public class RoomContentActivity extends Activity {
         String author;
         @Nullable
         String publisher;
+        @Nullable
+        String edition;
+        @Nullable
+        String publicationDate;
+        @Nullable
+        String summary;
         final ArrayList<String> photos = new ArrayList<>();
         boolean resumeLookup;
         boolean reopenDialog;
@@ -238,6 +270,12 @@ public class RoomContentActivity extends Activity {
         String series;
         @Nullable
         String number;
+        @Nullable
+        String edition;
+        @Nullable
+        String publishDate;
+        @Nullable
+        String summary;
         final List<String> photos = new ArrayList<>();
         @Nullable
         String infoMessage;
@@ -364,6 +402,9 @@ public class RoomContentActivity extends Activity {
         restored.number = savedInstanceState.getString("pending_barcode_number");
         restored.author = savedInstanceState.getString("pending_barcode_author");
         restored.publisher = savedInstanceState.getString("pending_barcode_publisher");
+        restored.edition = savedInstanceState.getString("pending_barcode_edition");
+        restored.publicationDate = savedInstanceState.getString("pending_barcode_publication_date");
+        restored.summary = savedInstanceState.getString("pending_barcode_summary");
         ArrayList<String> photos = savedInstanceState.getStringArrayList("pending_barcode_photos");
         if (photos != null) {
             restored.photos.addAll(photos);
@@ -410,6 +451,9 @@ public class RoomContentActivity extends Activity {
                     controller.numberInput,
                     controller.authorInput,
                     controller.publisherInput,
+                    controller.editionInput,
+                    controller.publicationDateInput,
+                    controller.summaryInput,
                     controller.formState);
             if (existing != null && existing.resumeLookup) {
                 snapshot.resumeLookup = true;
@@ -437,6 +481,9 @@ public class RoomContentActivity extends Activity {
             outState.putString("pending_barcode_number", pendingBarcodeResult.number);
             outState.putString("pending_barcode_author", pendingBarcodeResult.author);
             outState.putString("pending_barcode_publisher", pendingBarcodeResult.publisher);
+            outState.putString("pending_barcode_edition", pendingBarcodeResult.edition);
+            outState.putString("pending_barcode_publication_date", pendingBarcodeResult.publicationDate);
+            outState.putString("pending_barcode_summary", pendingBarcodeResult.summary);
             outState.putStringArrayList("pending_barcode_photos", new ArrayList<>(pendingBarcodeResult.photos));
             outState.putBoolean("pending_barcode_resume_lookup", pendingBarcodeResult.resumeLookup);
             outState.putBoolean("pending_barcode_waiting", barcodeScanAwaitingResult);
@@ -508,6 +555,9 @@ public class RoomContentActivity extends Activity {
         EditText numberInput = dialogView.findViewById(R.id.input_number);
         EditText authorInput = dialogView.findViewById(R.id.input_author);
         EditText publisherInput = dialogView.findViewById(R.id.input_publisher);
+        EditText editionInput = dialogView.findViewById(R.id.input_edition);
+        EditText publicationDateInput = dialogView.findViewById(R.id.input_publication_date);
+        EditText summaryInput = dialogView.findViewById(R.id.input_summary);
         TextView dialogTitle = dialogView.findViewById(R.id.text_dialog_room_content_title);
         PendingBarcodeResult restoreData = pendingBarcodeResult != null
                 && pendingBarcodeResult.matches(isEditing, positionToEdit)
@@ -579,6 +629,27 @@ public class RoomContentActivity extends Activity {
                     publisherInput.setSelection(publisher.length());
                 }
             }
+            if (editionInput != null) {
+                String edition = itemToEdit.getEdition();
+                editionInput.setText(edition);
+                if (edition != null) {
+                    editionInput.setSelection(edition.length());
+                }
+            }
+            if (publicationDateInput != null) {
+                String publicationDate = itemToEdit.getPublicationDate();
+                publicationDateInput.setText(publicationDate);
+                if (publicationDate != null) {
+                    publicationDateInput.setSelection(publicationDate.length());
+                }
+            }
+            if (summaryInput != null) {
+                String summary = itemToEdit.getSummary();
+                summaryInput.setText(summary);
+                if (summary != null) {
+                    summaryInput.setSelection(summary.length());
+                }
+            }
         }
 
         if (restoreData != null) {
@@ -612,6 +683,26 @@ public class RoomContentActivity extends Activity {
                 publisherInput.setText(restoreData.publisher != null ? restoreData.publisher : "");
                 if (restoreData.publisher != null) {
                     publisherInput.setSelection(restoreData.publisher.length());
+                }
+            }
+            if (editionInput != null) {
+                editionInput.setText(restoreData.edition != null ? restoreData.edition : "");
+                if (restoreData.edition != null) {
+                    editionInput.setSelection(restoreData.edition.length());
+                }
+            }
+            if (publicationDateInput != null) {
+                publicationDateInput.setText(restoreData.publicationDate != null
+                        ? restoreData.publicationDate
+                        : "");
+                if (restoreData.publicationDate != null) {
+                    publicationDateInput.setSelection(restoreData.publicationDate.length());
+                }
+            }
+            if (summaryInput != null) {
+                summaryInput.setText(restoreData.summary != null ? restoreData.summary : "");
+                if (restoreData.summary != null) {
+                    summaryInput.setSelection(restoreData.summary.length());
                 }
             }
             if (barcodeValueView != null) {
@@ -755,6 +846,35 @@ public class RoomContentActivity extends Activity {
                     }
                 }
 
+                String editionValue = null;
+                if (editionInput != null) {
+                    CharSequence editionText = editionInput.getText();
+                    String trimmedEdition = editionText != null ? editionText.toString().trim() : "";
+                    if (!trimmedEdition.isEmpty()) {
+                        editionValue = trimmedEdition;
+                    }
+                }
+
+                String publicationDateValue = null;
+                if (publicationDateInput != null) {
+                    CharSequence publicationDateText = publicationDateInput.getText();
+                    String trimmedPublicationDate = publicationDateText != null
+                            ? publicationDateText.toString().trim()
+                            : "";
+                    if (!trimmedPublicationDate.isEmpty()) {
+                        publicationDateValue = trimmedPublicationDate;
+                    }
+                }
+
+                String summaryValue = null;
+                if (summaryInput != null) {
+                    CharSequence summaryText = summaryInput.getText();
+                    String trimmedSummary = summaryText != null ? summaryText.toString().trim() : "";
+                    if (!trimmedSummary.isEmpty()) {
+                        summaryValue = trimmedSummary;
+                    }
+                }
+
                 if (currentFormState != null && currentFormState != formState) {
                     dialog.dismiss();
                     return;
@@ -769,6 +889,9 @@ public class RoomContentActivity extends Activity {
                         numberValue,
                         authorValue,
                         publisherValue,
+                        editionValue,
+                        publicationDateValue,
+                        summaryValue,
                         new ArrayList<>(formState.photos));
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
@@ -870,6 +993,9 @@ public class RoomContentActivity extends Activity {
                         numberInput,
                         authorInput,
                         publisherInput,
+                        editionInput,
+                        publicationDateInput,
+                        summaryInput,
                         formState);
                 barcodeScanContext = createBarcodeScanContext(formState,
                         nameInput,
@@ -882,7 +1008,10 @@ public class RoomContentActivity extends Activity {
                         seriesInput,
                         numberInput,
                         authorInput,
-                        publisherInput);
+                        publisherInput,
+                        editionInput,
+                        publicationDateInput,
+                        summaryInput);
                 barcodeScanAwaitingResult = true;
                 launchBarcodeScanner();
             });
@@ -1084,6 +1213,9 @@ public class RoomContentActivity extends Activity {
                 numberInput,
                 authorInput,
                 publisherInput,
+                editionInput,
+                publicationDateInput,
+                summaryInput,
                 selectedTypeHolder,
                 selectedCategoryHolder,
                 formState,
@@ -1108,7 +1240,10 @@ public class RoomContentActivity extends Activity {
                     seriesInput,
                     numberInput,
                     authorInput,
-                    publisherInput);
+                    publisherInput,
+                    editionInput,
+                    publicationDateInput,
+                    summaryInput);
             Toast.makeText(this, R.string.dialog_barcode_lookup_in_progress, Toast.LENGTH_SHORT).show();
             fetchMetadataForBarcode(restoreData.barcode, barcodeScanContext);
             restoreData.resumeLookup = false;
@@ -1550,12 +1685,16 @@ public class RoomContentActivity extends Activity {
             JSONObject root = new JSONObject(response);
             JSONArray items = root.optJSONArray("items");
             if (items == null || items.length() == 0) {
-                return new BarcodeLookupResult();
+                BarcodeLookupResult fallback = new BarcodeLookupResult();
+                enrichBookWithOpenLibrary(barcode, fallback);
+                return fallback;
             }
             JSONObject firstItem = items.getJSONObject(0);
             JSONObject volumeInfo = firstItem.optJSONObject("volumeInfo");
             if (volumeInfo == null) {
-                return new BarcodeLookupResult();
+                BarcodeLookupResult fallback = new BarcodeLookupResult();
+                enrichBookWithOpenLibrary(barcode, fallback);
+                return fallback;
             }
             BarcodeLookupResult result = new BarcodeLookupResult();
             result.found = true;
@@ -1582,6 +1721,27 @@ public class RoomContentActivity extends Activity {
             String publisher = volumeInfo.optString("publisher", null);
             if (!TextUtils.isEmpty(publisher)) {
                 result.publisher = publisher;
+            }
+            String publishedDate = volumeInfo.optString("publishedDate", null);
+            if (!TextUtils.isEmpty(publishedDate)) {
+                result.publishDate = publishedDate;
+            }
+            String description = resolveDescription(volumeInfo.opt("description"));
+            if (!TextUtils.isEmpty(description)) {
+                result.summary = description;
+            }
+            String subtitle = volumeInfo.optString("subtitle", null);
+            if (!TextUtils.isEmpty(subtitle)) {
+                String trimmedSubtitle = subtitle.trim();
+                if (TextUtils.isEmpty(result.summary)) {
+                    result.summary = trimmedSubtitle;
+                }
+                String loweredSubtitle = trimmedSubtitle.toLowerCase(Locale.getDefault());
+                if (loweredSubtitle.contains("édition")
+                        || loweredSubtitle.contains("edition")
+                        || loweredSubtitle.contains("éd.")) {
+                    result.edition = trimmedSubtitle;
+                }
             }
             JSONObject seriesInfo = volumeInfo.optJSONObject("seriesInfo");
             if (seriesInfo != null) {
@@ -1621,7 +1781,7 @@ public class RoomContentActivity extends Activity {
                     }
                     String sanitizedUrl = urlCandidate.replace("http://", "https://");
                     String photo = downloadImageAsBase64(sanitizedUrl);
-                    if (photo != null) {
+                    if (photo != null && !result.photos.contains(photo)) {
                         result.photos.add(photo);
                         if (result.photos.size() >= MAX_FORM_PHOTOS) {
                             break;
@@ -1629,6 +1789,7 @@ public class RoomContentActivity extends Activity {
                     }
                 }
             }
+            enrichBookWithOpenLibrary(barcode, result);
             return result;
         } catch (IOException e) {
             BarcodeLookupResult error = new BarcodeLookupResult();
@@ -1644,6 +1805,259 @@ public class RoomContentActivity extends Activity {
                 connection.disconnect();
             }
         }
+    }
+
+    private void enrichBookWithOpenLibrary(@NonNull String isbn,
+                                           @NonNull BarcodeLookupResult result) {
+        HttpURLConnection connection = null;
+        boolean hasData = result.found;
+        try {
+            String urlValue = "https://openlibrary.org/isbn/" +
+                    URLEncoder.encode(isbn, StandardCharsets.UTF_8.name()) + ".json";
+            URL url = new URL(urlValue);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
+            int responseCode = connection.getResponseCode();
+            InputStream stream = responseCode >= 400
+                    ? connection.getErrorStream()
+                    : connection.getInputStream();
+            if (stream == null || responseCode >= 400) {
+                return;
+            }
+            String response = readStream(stream);
+            JSONObject root = new JSONObject(response);
+
+            if (TextUtils.isEmpty(result.title)) {
+                String title = root.optString("title", null);
+                if (!TextUtils.isEmpty(title)) {
+                    result.title = title;
+                    hasData = true;
+                }
+            }
+
+            if (TextUtils.isEmpty(result.publisher)) {
+                JSONArray publishers = root.optJSONArray("publishers");
+                if (publishers != null && publishers.length() > 0) {
+                    Set<String> publisherSet = new LinkedHashSet<>();
+                    for (int i = 0; i < publishers.length(); i++) {
+                        String value = publishers.optString(i, null);
+                        if (value == null) {
+                            continue;
+                        }
+                        String trimmed = value.trim();
+                        if (!trimmed.isEmpty()) {
+                            publisherSet.add(trimmed);
+                        }
+                    }
+                    if (!publisherSet.isEmpty()) {
+                        result.publisher = TextUtils.join(", ", new ArrayList<>(publisherSet));
+                        hasData = true;
+                    }
+                }
+            }
+
+            if (TextUtils.isEmpty(result.series)) {
+                JSONArray seriesArray = root.optJSONArray("series");
+                if (seriesArray != null && seriesArray.length() > 0) {
+                    Set<String> seriesSet = new LinkedHashSet<>();
+                    for (int i = 0; i < seriesArray.length(); i++) {
+                        String value = seriesArray.optString(i, null);
+                        if (value == null) {
+                            continue;
+                        }
+                        String trimmed = value.trim();
+                        if (!trimmed.isEmpty()) {
+                            seriesSet.add(trimmed);
+                        }
+                    }
+                    if (!seriesSet.isEmpty()) {
+                        result.series = TextUtils.join(", ", new ArrayList<>(seriesSet));
+                        hasData = true;
+                    }
+                }
+            }
+
+            if (TextUtils.isEmpty(result.number)) {
+                String volume = root.optString("series_number", null);
+                if (TextUtils.isEmpty(volume)) {
+                    volume = root.optString("volume", null);
+                }
+                if (TextUtils.isEmpty(volume)) {
+                    volume = root.optString("number", null);
+                }
+                if (!TextUtils.isEmpty(volume)) {
+                    result.number = volume;
+                    hasData = true;
+                }
+            }
+
+            if (TextUtils.isEmpty(result.edition)) {
+                String edition = root.optString("edition_name", null);
+                if (!TextUtils.isEmpty(edition)) {
+                    result.edition = edition;
+                    hasData = true;
+                }
+            }
+
+            if (TextUtils.isEmpty(result.publishDate)) {
+                String publishDate = root.optString("publish_date", null);
+                if (!TextUtils.isEmpty(publishDate)) {
+                    result.publishDate = publishDate;
+                    hasData = true;
+                }
+            }
+
+            if (TextUtils.isEmpty(result.summary)) {
+                String description = resolveDescription(root.opt("description"));
+                if (TextUtils.isEmpty(description)) {
+                    description = resolveDescription(root.opt("notes"));
+                }
+                if (!TextUtils.isEmpty(description)) {
+                    result.summary = description;
+                    hasData = true;
+                }
+            }
+
+            if (TextUtils.isEmpty(result.author)) {
+                JSONArray authors = root.optJSONArray("authors");
+                if (authors != null && authors.length() > 0) {
+                    Set<String> authorNames = new LinkedHashSet<>();
+                    for (int i = 0; i < authors.length(); i++) {
+                        JSONObject authorObject = authors.optJSONObject(i);
+                        if (authorObject == null) {
+                            continue;
+                        }
+                        String key = authorObject.optString("key", null);
+                        String authorName = fetchOpenLibraryAuthorName(key);
+                        if (!TextUtils.isEmpty(authorName)) {
+                            authorNames.add(authorName);
+                        }
+                    }
+                    if (!authorNames.isEmpty()) {
+                        result.author = TextUtils.join(", ", new ArrayList<>(authorNames));
+                        hasData = true;
+                    }
+                }
+            }
+
+            JSONArray covers = root.optJSONArray("covers");
+            if (covers != null) {
+                for (int i = 0; i < covers.length(); i++) {
+                    if (result.photos.size() >= MAX_FORM_PHOTOS) {
+                        break;
+                    }
+                    int coverId = covers.optInt(i, -1);
+                    if (coverId <= 0) {
+                        continue;
+                    }
+                    if (addOpenLibraryCoverPhoto(coverId, result.photos)) {
+                        hasData = true;
+                    }
+                }
+            }
+
+            if (hasData) {
+                result.found = true;
+            }
+        } catch (IOException | JSONException ignored) {
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    @Nullable
+    private String fetchOpenLibraryAuthorName(@Nullable String authorKey) {
+        if (authorKey == null) {
+            return null;
+        }
+        String normalizedKey = authorKey.trim();
+        if (normalizedKey.isEmpty()) {
+            return null;
+        }
+        if (!normalizedKey.startsWith("/")) {
+            normalizedKey = "/" + normalizedKey;
+        }
+        if (!normalizedKey.endsWith(".json")) {
+            normalizedKey = normalizedKey + ".json";
+        }
+        HttpURLConnection connection = null;
+        try {
+            String urlValue = "https://openlibrary.org" + normalizedKey;
+            URL url = new URL(urlValue);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(10000);
+            connection.setReadTimeout(15000);
+            connection.setRequestProperty("Accept", "application/json");
+            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
+            int responseCode = connection.getResponseCode();
+            if (responseCode >= 400) {
+                return null;
+            }
+            InputStream stream = connection.getInputStream();
+            if (stream == null) {
+                return null;
+            }
+            String response = readStream(stream);
+            JSONObject authorObject = new JSONObject(response);
+            String name = authorObject.optString("name", null);
+            if (TextUtils.isEmpty(name)) {
+                name = authorObject.optString("personal_name", null);
+            }
+            if (TextUtils.isEmpty(name)) {
+                return null;
+            }
+            return name.trim();
+        } catch (IOException | JSONException ignored) {
+            return null;
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+    }
+
+    private boolean addOpenLibraryCoverPhoto(int coverId, @NonNull List<String> destination) {
+        if (coverId <= 0 || destination.size() >= MAX_FORM_PHOTOS) {
+            return false;
+        }
+        String url = "https://covers.openlibrary.org/b/id/" + coverId + "-L.jpg";
+        String photo = downloadImageAsBase64(url);
+        if (photo == null || destination.contains(photo)) {
+            return false;
+        }
+        destination.add(photo);
+        return true;
+    }
+
+    @Nullable
+    private String resolveDescription(@Nullable Object descriptionValue) {
+        if (descriptionValue instanceof JSONObject) {
+            JSONObject object = (JSONObject) descriptionValue;
+            String value = object.optString("value", null);
+            return sanitizeDescription(value);
+        }
+        if (descriptionValue instanceof String) {
+            return sanitizeDescription((String) descriptionValue);
+        }
+        return null;
+    }
+
+    @Nullable
+    private String sanitizeDescription(@Nullable String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        String withoutHtml = trimmed.replaceAll("<[^>]+>", "").replace("\r", "").trim();
+        return withoutHtml.isEmpty() ? null : withoutHtml;
     }
 
     private boolean isIsbnCandidate(@NonNull String barcode) {
@@ -1848,6 +2262,15 @@ public class RoomContentActivity extends Activity {
         if (!TextUtils.isEmpty(result.number) && context.numberInput != null) {
             context.numberInput.setText(result.number);
         }
+        if (!TextUtils.isEmpty(result.edition) && context.editionInput != null) {
+            context.editionInput.setText(result.edition);
+        }
+        if (!TextUtils.isEmpty(result.publishDate) && context.publicationDateInput != null) {
+            context.publicationDateInput.setText(result.publishDate);
+        }
+        if (!TextUtils.isEmpty(result.summary) && context.summaryInput != null) {
+            context.summaryInput.setText(result.summary);
+        }
         if (!TextUtils.isEmpty(result.typeLabel)) {
             context.selectedTypeHolder[0] = result.typeLabel;
             updateTypeSpecificFields(context.bookFields, context.trackFields, context.trackTitle,
@@ -1882,7 +2305,10 @@ public class RoomContentActivity extends Activity {
                                                         @Nullable EditText seriesInput,
                                                         @Nullable EditText numberInput,
                                                         @Nullable EditText authorInput,
-                                                        @Nullable EditText publisherInput) {
+                                                        @Nullable EditText publisherInput,
+                                                        @Nullable EditText editionInput,
+                                                        @Nullable EditText publicationDateInput,
+                                                        @Nullable EditText summaryInput) {
         return new BarcodeScanContext(formState,
                 nameInput,
                 barcodeValueView,
@@ -1894,7 +2320,10 @@ public class RoomContentActivity extends Activity {
                 seriesInput,
                 numberInput,
                 authorInput,
-                publisherInput);
+                publisherInput,
+                editionInput,
+                publicationDateInput,
+                summaryInput);
     }
 
     private PendingBarcodeResult capturePendingBarcodeResult(boolean isEditing,
@@ -1908,6 +2337,9 @@ public class RoomContentActivity extends Activity {
                                                              @Nullable EditText numberInput,
                                                              @Nullable EditText authorInput,
                                                              @Nullable EditText publisherInput,
+                                                             @Nullable EditText editionInput,
+                                                             @Nullable EditText publicationDateInput,
+                                                             @Nullable EditText summaryInput,
                                                              @NonNull FormState formState) {
         PendingBarcodeResult result = new PendingBarcodeResult(isEditing, positionToEdit);
         result.name = extractText(nameInput);
@@ -1916,6 +2348,9 @@ public class RoomContentActivity extends Activity {
         result.number = extractText(numberInput);
         result.author = extractText(authorInput);
         result.publisher = extractText(publisherInput);
+        result.edition = extractText(editionInput);
+        result.publicationDate = extractText(publicationDateInput);
+        result.summary = extractText(summaryInput);
         result.selectedType = selectedTypeHolder[0];
         result.selectedCategory = selectedCategoryHolder[0];
         result.barcode = extractBarcodeValue(barcodeValueView);

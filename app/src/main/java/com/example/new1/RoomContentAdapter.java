@@ -86,6 +86,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (publisher != null && !publisher.trim().isEmpty()) {
             metadataLines.add(context.getString(R.string.room_content_metadata_publisher, publisher));
         }
+        String edition = item.getEdition();
+        if (edition != null && !edition.trim().isEmpty()) {
+            metadataLines.add(context.getString(R.string.room_content_metadata_edition, edition));
+        }
+        String publicationDate = item.getPublicationDate();
+        if (publicationDate != null && !publicationDate.trim().isEmpty()) {
+            metadataLines.add(context.getString(R.string.room_content_metadata_publication_date, publicationDate));
+        }
+        String summary = item.getSummary();
+        if (summary != null && !summary.trim().isEmpty()) {
+            metadataLines.add(context.getString(R.string.room_content_metadata_summary, summary));
+        }
         String barcode = item.getBarcode();
         if (barcode != null && !barcode.trim().isEmpty()) {
             metadataLines.add(context.getString(R.string.room_content_metadata_barcode, barcode));
