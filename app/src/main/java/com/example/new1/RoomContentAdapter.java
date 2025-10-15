@@ -5,7 +5,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.text.TextUtils;
 import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -94,7 +93,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         boolean hasMetadata = !metadataLines.isEmpty();
         if (hasMetadata) {
             holder.metadataView.setVisibility(View.VISIBLE);
-            holder.metadataView.setText(TextUtils.join("\n", metadataLines));
+            holder.metadataView.setText(formatMetadataLines(metadataLines));
         } else {
             holder.metadataView.setVisibility(View.GONE);
             holder.metadataView.setText(null);
@@ -106,6 +105,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    @NonNull
+    private CharSequence formatMetadataLines(@NonNull List<String> metadataLines) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < metadataLines.size(); i++) {
+            if (i > 0) {
+                builder.append('\n');
+            }
+            builder.append('\u2022').append(' ').append(metadataLines.get(i));
+        }
+        return builder.toString();
     }
 
     private void applyBannerColor(@NonNull View bannerView, @Nullable String type) {
