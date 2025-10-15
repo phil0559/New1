@@ -11,6 +11,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -148,7 +149,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         SpannableStringBuilder builder = new SpannableStringBuilder();
-        builder.append('\u2022').append(' ');
         int labelStart = builder.length();
         builder.append(labelPart);
         int labelEnd = builder.length();
@@ -264,6 +264,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
             deleteView = itemView.findViewById(R.id.image_room_content_delete);
             this.interactionListener = interactionListener;
+            if (metadataView != null) {
+                float spacingPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2,
+                        itemView.getResources().getDisplayMetrics());
+                metadataView.setLineSpacing(spacingPx, 1f);
+            }
             bannerContainer.setOnClickListener(view -> notifyEdit());
             if (photoView != null) {
                 photoView.setOnClickListener(view -> notifyEdit());
