@@ -185,6 +185,18 @@ public class RoomContentActivity extends Activity {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
         }
 
+        List<String> typeOptions = new ArrayList<>(Arrays.asList(
+                getResources().getStringArray(R.array.room_content_type_options)));
+        final String[] selectedTypeHolder = new String[1];
+        selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
+
+        List<String> categoryOptions = new ArrayList<>(Arrays.asList(
+                getResources().getStringArray(R.array.room_content_category_options)));
+        final String[] selectedCategoryHolder = new String[1];
+        selectedCategoryHolder[0] = null;
+
+        final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
+
         if (confirmButton != null) {
             confirmButton.setOnClickListener(v -> {
                 String trimmedName = "";
@@ -268,17 +280,6 @@ public class RoomContentActivity extends Activity {
             addTrackListButton.setOnClickListener(comingSoonListener);
         }
 
-        List<String> typeOptions = new ArrayList<>(Arrays.asList(
-                getResources().getStringArray(R.array.room_content_type_options)));
-        final String[] selectedTypeHolder = new String[1];
-        selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
-
-        List<String> categoryOptions = new ArrayList<>(Arrays.asList(
-                getResources().getStringArray(R.array.room_content_category_options)));
-        final String[] selectedCategoryHolder = new String[1];
-        selectedCategoryHolder[0] = null;
-
-        final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
         if (categorySpinner != null) {
             ArrayAdapter<String> categoryAdapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_spinner_item,
