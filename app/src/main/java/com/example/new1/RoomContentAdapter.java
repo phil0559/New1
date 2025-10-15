@@ -1,18 +1,25 @@
 package com.example.new1;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
+import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.ColorRes;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -23,26 +30,34 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final List<RoomContentItem> items;
     private final LayoutInflater inflater;
     private final Context context;
+    @Nullable
+    private final OnRoomContentInteractionListener interactionListener;
 
-    public RoomContentAdapter(@NonNull Context context, @NonNull List<RoomContentItem> items) {
+    public RoomContentAdapter(@NonNull Context context,
+            @NonNull List<RoomContentItem> items) {
+        this(context, items, null);
+    }
+
+    public RoomContentAdapter(@NonNull Context context,
+            @NonNull List<RoomContentItem> items,
+            @Nullable OnRoomContentInteractionListener interactionListener) {
         this.context = context;
         this.items = items;
         this.inflater = LayoutInflater.from(context);
+        this.interactionListener = interactionListener;
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = inflater.inflate(R.layout.item_room_content, parent, false);
-        return new ViewHolder(view);
+        return new ViewHolder(view, interactionListener);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         RoomContentItem item = items.get(position);
-        holder.nameView.setText(item.getName());
-
-        applyBannerColor(holder.bannerContainer, item.getType());
+        holder.bind(item);
 
         String comment = item.getComment();
         boolean hasComment = comment != null && !comment.trim().isEmpty();
@@ -119,20 +134,147 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return R.color.room_content_banner_default;
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    interface OnRoomContentInteractionListener {
+        void onEditRoomContent(@NonNull RoomContentItem item, int position);
+
+        void onDeleteRoomContent(@NonNull RoomContentItem item, int position);
+    }
+
+    class ViewHolder extends RecyclerView.ViewHolder {
         final View bannerContainer;
         final View detailsContainer;
         final TextView nameView;
         final TextView commentView;
         final TextView metadataView;
+        @Nullable
+        final ImageView menuView;
+        @Nullable
+        final OnRoomContentInteractionListener interactionListener;
+        @Nullable
+        private PopupWindow popupWindow;
+        @Nullable
+        private RoomContentItem currentItem;
 
-        ViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull View itemView,
+                @Nullable OnRoomContentInteractionListener interactionListener) {
             super(itemView);
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
             detailsContainer = itemView.findViewById(R.id.container_room_content_details);
             nameView = itemView.findViewById(R.id.text_room_content_name);
             commentView = itemView.findViewById(R.id.text_room_content_comment);
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
+            menuView = itemView.findViewById(R.id.image_room_content_menu);
+            this.interactionListener = interactionListener;
+            if (menuView != null) {
+                menuView.setOnClickListener(view -> togglePopup());
+            }
+        }
+
+        void bind(@NonNull RoomContentItem item) {
+            if (popupWindow != null && popupWindow.isShowing()) {
+                popupWindow.dismiss();
+            }
+            currentItem = item;
+            nameView.setText(item.getName());
+            applyBannerColor(bannerContainer, item.getType());
+            if (menuView != null) {
+                menuView.setContentDescription(itemView.getContext()
+                        .getString(R.string.content_description_room_content_menu));
+            }
+        }
+
+        private void togglePopup() {
+            if (menuView == null) {
+                return;
+            }
+            if (popupWindow != null && popupWindow.isShowing()) {
+                popupWindow.dismiss();
+                return;
+            }
+
+            View popupContent = LayoutInflater.from(itemView.getContext())
+                    .inflate(R.layout.popup_room_content_menu, null);
+            TextView titleView = popupContent.findViewById(R.id.text_popup_room_content_title);
+            if (titleView != null) {
+                String name = currentItem != null ? currentItem.getName() : "";
+                if (name == null || name.trim().isEmpty()) {
+                    name = itemView.getContext()
+                            .getString(R.string.dialog_room_content_item_placeholder);
+                }
+                titleView.setText(name);
+            }
+
+            popupWindow = new PopupWindow(
+                    popupContent,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
+            );
+            popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            popupWindow.setOutsideTouchable(true);
+            popupWindow.setOnDismissListener(() -> popupWindow = null);
+
+            View editButton = popupContent.findViewById(R.id.button_popup_room_content_edit);
+            if (editButton != null) {
+                editButton.setOnClickListener(view -> {
+                    if (popupWindow != null) {
+                        popupWindow.dismiss();
+                    }
+                    notifyEdit();
+                });
+            }
+
+            View deleteButton = popupContent.findViewById(R.id.button_popup_room_content_delete);
+            if (deleteButton != null) {
+                deleteButton.setOnClickListener(view -> {
+                    if (popupWindow != null) {
+                        popupWindow.dismiss();
+                    }
+                    notifyDelete();
+                });
+            }
+
+            popupContent.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int popupHeight = popupContent.getMeasuredHeight();
+            int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
+
+            Rect displayFrame = new Rect();
+            menuView.getWindowVisibleDisplayFrame(displayFrame);
+            int[] location = new int[2];
+            menuView.getLocationOnScreen(location);
+            int anchorBottom = location[1] + menuView.getHeight();
+            int spaceBelow = displayFrame.bottom - anchorBottom;
+            int spaceAbove = location[1] - displayFrame.top;
+
+            int yOffset = verticalOffset;
+            if (spaceBelow < popupHeight + verticalOffset && spaceAbove >= popupHeight + verticalOffset) {
+                yOffset = -(menuView.getHeight() + popupHeight + verticalOffset);
+            }
+
+            PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, yOffset, Gravity.END);
+        }
+
+        private void notifyEdit() {
+            if (interactionListener == null || currentItem == null) {
+                return;
+            }
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            interactionListener.onEditRoomContent(currentItem, position);
+        }
+
+        private void notifyDelete() {
+            if (interactionListener == null || currentItem == null) {
+                return;
+            }
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            interactionListener.onDeleteRoomContent(currentItem, position);
         }
     }
 }

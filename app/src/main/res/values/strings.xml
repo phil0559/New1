@@ -35,6 +35,8 @@
     <string name="popup_establishment_title">Établissement</string>
     <string name="popup_establishment_edit">Modifier</string>
     <string name="popup_establishment_delete">Supprimer</string>
+    <string name="popup_room_content_edit">Modifier</string>
+    <string name="popup_room_content_delete">Supprimer</string>
     <string name="dialog_delete_establishment_title">Supprimer l’établissement</string>
     <string name="dialog_delete_establishment_message">Voulez-vous supprimer l’établissement %1$s ?</string>
     <string name="dialog_add_establishment_title">Ajouter un établissement</string>
@@ -71,11 +73,16 @@
     <string name="content_description_room_menu">Options de %1$s</string>
     <string name="content_description_room_content_menu">Plus d’options pour cet élément</string>
     <string name="room_content_added_confirmation">Élément ajouté à la pièce.</string>
+    <string name="room_content_updated_confirmation">Élément mis à jour.</string>
+    <string name="room_content_deleted_confirmation">Élément supprimé.</string>
     <string name="room_content_metadata_type">Type : %1$s</string>
     <string name="room_content_metadata_category">Catégorie : %1$s</string>
     <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="dialog_room_content_item_placeholder">- Élément</string>
+    <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
+    <string name="dialog_delete_room_content_message">Voulez-vous supprimer l’élément %1$s ?</string>
     <string name="dialog_add_room_content_title">Ajouter un élément</string>
+    <string name="dialog_edit_room_content_title">Modifier l’élément</string>
     <string name="dialog_label_room_content_name">Nom de l’élément</string>
     <string name="dialog_label_room_content_comment">Commentaire</string>
     <string name="dialog_label_room_content_photos_default">Photos de l’élément (0)</string>
