@@ -22,7 +22,6 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="20dp"
         android:hint="@string/dialog_add_category_name_hint"
-        app:expandedHintEnabled="false"
         app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
         <com.google.android.material.textfield.TextInputEditText

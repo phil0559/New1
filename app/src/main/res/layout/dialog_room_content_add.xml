@@ -33,7 +33,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="12dp"
                 android:hint="@string/dialog_label_room_content_name"
-                app:expandedHintEnabled="false"
                 app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -52,7 +51,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:hint="@string/dialog_label_room_content_comment"
-                app:expandedHintEnabled="false"
                 app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -360,7 +358,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:hint="@string/dialog_label_series"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -379,7 +376,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:hint="@string/dialog_label_number"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -398,7 +394,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
                     android:hint="@string/dialog_label_author"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -416,7 +411,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/dialog_label_publisher"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -435,7 +429,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:hint="@string/dialog_label_edition"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -454,7 +447,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:hint="@string/dialog_label_publication_date"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -473,7 +465,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:hint="@string/dialog_label_summary"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -513,7 +504,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:hint="@string/dialog_track_placeholder"
-                    app:expandedHintEnabled="false"
                     app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -596,7 +586,6 @@
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
                         android:hint="@string/dialog_custom_field_label_1"
-                        app:expandedHintEnabled="false"
                         app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                         <com.google.android.material.textfield.TextInputEditText
@@ -642,7 +631,6 @@
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
                         android:hint="@string/dialog_custom_field_label_2"
-                        app:expandedHintEnabled="false"
                         app:hintTextAppearance="@style/TextInputLayoutHint.Small">
 
                         <com.google.android.material.textfield.TextInputEditText
