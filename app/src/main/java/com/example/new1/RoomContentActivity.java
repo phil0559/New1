@@ -29,7 +29,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class RoomContentActivity extends Activity {
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
@@ -208,9 +210,10 @@ public class RoomContentActivity extends Activity {
             addTrackListButton.setOnClickListener(comingSoonListener);
         }
 
-        String[] typeOptions = getResources().getStringArray(R.array.room_content_type_options);
+        List<String> typeOptions = new ArrayList<>(Arrays.asList(
+                getResources().getStringArray(R.array.room_content_type_options)));
         final String[] selectedTypeHolder = new String[1];
-        selectedTypeHolder[0] = typeOptions.length > 0 ? typeOptions[0] : null;
+        selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
 
         updateTypeSpecificFields(bookFields, trackFields, trackTitle, selectedTypeHolder[0]);
         updateSelectionButtonText(selectTypeButton, selectedTypeHolder[0],
@@ -223,9 +226,10 @@ public class RoomContentActivity extends Activity {
 
             RecyclerView recyclerView = sheetView.findViewById(R.id.recycler_type_options);
             Button addTypeButtonSheet = sheetView.findViewById(R.id.button_add_type);
+            final TypeSelectorAdapter[] adapterHolder = new TypeSelectorAdapter[1];
 
             if (recyclerView != null) {
-                TypeSelectorAdapter adapter = new TypeSelectorAdapter(Arrays.asList(typeOptions),
+                TypeSelectorAdapter adapter = new TypeSelectorAdapter(typeOptions,
                         new TypeSelectorAdapter.TypeActionListener() {
                             @Override
                             public void onTypeSelected(String type) {
@@ -257,10 +261,12 @@ public class RoomContentActivity extends Activity {
                 adapter.setSelectedType(selectedTypeHolder[0]);
                 recyclerView.setLayoutManager(new LinearLayoutManager(this));
                 recyclerView.setAdapter(adapter);
+                adapterHolder[0] = adapter;
             }
 
             if (addTypeButtonSheet != null) {
-                addTypeButtonSheet.setOnClickListener(comingSoonListener);
+                addTypeButtonSheet.setOnClickListener(view ->
+                        showAddTypeDialog(typeOptions, adapterHolder[0], recyclerView));
             }
 
             bottomSheetDialog.show();
@@ -337,6 +343,71 @@ public class RoomContentActivity extends Activity {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void showAddTypeDialog(List<String> typeOptions,
+                                   @Nullable TypeSelectorAdapter adapter,
+                                   @Nullable RecyclerView recyclerView) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_type, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        EditText typeNameInput = dialogView.findViewById(R.id.input_new_type_name);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                if (typeNameInput == null) {
+                    dialog.dismiss();
+                    return;
+                }
+                CharSequence nameValue = typeNameInput.getText();
+                String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
+                if (trimmedName.isEmpty()) {
+                    typeNameInput.setError(getString(R.string.error_type_name_required));
+                    typeNameInput.requestFocus();
+                    return;
+                }
+                typeOptions.add(trimmedName);
+                if (adapter != null) {
+                    adapter.addType(trimmedName);
+                    if (recyclerView != null) {
+                        recyclerView.post(() ->
+                                recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1));
+                    }
+                }
+                dialog.dismiss();
+            });
+        }
+
+        if (typeNameInput != null) {
+            typeNameInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    typeNameInput.setError(null);
+                }
+            });
+        }
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
     }
 
