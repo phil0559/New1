@@ -95,6 +95,7 @@
     <string name="dialog_custom_field_label_1">Field 1</string>
     <string name="dialog_custom_field_label_2">Field 2</string>
     <string name="dialog_custom_field_value_hint">Enter a value</string>
+    <string name="dialog_content_description_edit_custom_field_label">Edit the custom field label</string>
     <string name="error_room_content_name_required">The item name is required</string>
     <string name="content_description_previous_photo">Show previous photo</string>
     <string name="content_description_next_photo">Show next photo</string>
