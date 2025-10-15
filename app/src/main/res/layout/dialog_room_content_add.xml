@@ -366,11 +366,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_label_series"
                     android:inputType="textCapWords"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -386,11 +384,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_label_number"
                     android:inputType="text"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -406,11 +402,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_label_author"
                     android:inputType="textCapWords"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -426,11 +420,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_label_publisher"
                     android:inputType="textCapWords"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -446,11 +438,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_label_edition"
                     android:inputType="textCapWords"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -466,11 +456,9 @@
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_label_publication_date"
                     android:inputType="text"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -487,13 +475,11 @@
                     android:layout_marginBottom="0dp"
                     android:background="@drawable/bg_input_field_white"
                     android:gravity="top|start"
-                    android:hint="@string/dialog_label_summary"
                     android:inputType="textMultiLine"
                     android:maxLines="5"
                     android:minLines="3"
                     android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:textColor="@android:color/black" />
             </LinearLayout>
 
             <LinearLayout
