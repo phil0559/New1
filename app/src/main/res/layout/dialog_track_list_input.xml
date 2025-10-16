@@ -55,14 +55,14 @@
                 android:id="@+id/button_cancel_track_list"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_button_outline"
+                android:background="@drawable/bg_button_white_outline"
                 android:paddingStart="16dp"
                 android:paddingTop="8dp"
                 android:paddingEnd="16dp"
                 android:paddingBottom="8dp"
                 android:text="@string/action_cancel"
                 android:textAllCaps="false"
-                android:textColor="@android:color/white"
+                android:textColor="@color/icon_brown"
                 android:textStyle="bold" />
 
             <Button
@@ -70,14 +70,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:background="@drawable/bg_button_outline"
+                android:background="@drawable/bg_button_white_outline"
                 android:paddingStart="16dp"
                 android:paddingTop="8dp"
                 android:paddingEnd="16dp"
                 android:paddingBottom="8dp"
                 android:text="@string/action_confirm"
                 android:textAllCaps="false"
-                android:textColor="@android:color/white"
+                android:textColor="@color/icon_brown"
                 android:textStyle="bold" />
             </LinearLayout>
 
