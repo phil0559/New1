@@ -28,6 +28,7 @@ public class RoomContentItem {
     private static final String KEY_SUMMARY = "summary";
     private static final String KEY_TRACKS = "tracks";
     private static final String KEY_PHOTOS = "photos";
+    private static final String KEY_ATTACHED_COUNT = "attachedCount";
 
     private final String name;
     private final String comment;
@@ -56,6 +57,7 @@ public class RoomContentItem {
     @NonNull
     private final List<String> photos;
     private final boolean container;
+    private final int attachedItemCount;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
@@ -72,6 +74,26 @@ public class RoomContentItem {
                            @Nullable List<String> tracks,
                            @Nullable List<String> photos,
                            boolean isContainer) {
+        this(name, comment, type, category, barcode, series, number, author, publisher,
+                edition, publicationDate, summary, tracks, photos, isContainer, 0);
+    }
+
+    public RoomContentItem(@NonNull String name,
+                           @Nullable String comment,
+                           @Nullable String type,
+                           @Nullable String category,
+                           @Nullable String barcode,
+                           @Nullable String series,
+                           @Nullable String number,
+                           @Nullable String author,
+                           @Nullable String publisher,
+                           @Nullable String edition,
+                           @Nullable String publicationDate,
+                           @Nullable String summary,
+                           @Nullable List<String> tracks,
+                           @Nullable List<String> photos,
+                           boolean isContainer,
+                           int attachedItemCount) {
         this.name = name;
         this.comment = comment != null ? comment : "";
         this.type = isNullOrEmpty(type) ? null : type;
@@ -100,6 +122,7 @@ public class RoomContentItem {
             this.photos = new ArrayList<>(photos);
         }
         this.container = isContainer;
+        this.attachedItemCount = Math.max(0, attachedItemCount);
     }
 
     @NonNull
@@ -176,12 +199,23 @@ public class RoomContentItem {
         return container;
     }
 
+    public int getAttachedItemCount() {
+        return attachedItemCount;
+    }
+
+    public boolean hasAttachedItems() {
+        return attachedItemCount > 0;
+    }
+
     public JSONObject toJson() {
         JSONObject object = new JSONObject();
         try {
             object.put(KEY_NAME, name);
             object.put(KEY_COMMENT, comment);
             object.put(KEY_CONTAINER, container);
+            if (attachedItemCount > 0) {
+                object.put(KEY_ATTACHED_COUNT, attachedItemCount);
+            }
             if (type != null) {
                 object.put(KEY_TYPE, type);
             }
@@ -293,6 +327,10 @@ public class RoomContentItem {
             }
         }
         boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
+        int attachedItemCount = object.optInt(KEY_ATTACHED_COUNT, 0);
+        if (attachedItemCount < 0) {
+            attachedItemCount = 0;
+        }
         return new RoomContentItem(name,
                 comment,
                 type,
@@ -307,7 +345,8 @@ public class RoomContentItem {
                 summary,
                 tracks,
                 photos,
-                isContainer);
+                isContainer,
+                attachedItemCount);
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {

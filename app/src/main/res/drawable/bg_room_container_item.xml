@@ -2,7 +2,12 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <solid android:color="@android:color/white" />
     <corners android:radius="8dp" />
+    <padding
+        android:left="2dp"
+        android:top="2dp"
+        android:right="2dp"
+        android:bottom="2dp" />
     <stroke
         android:width="3dp"
-        android:color="@color/room_container_border" />
+        android:color="@color/room_container_border_dark" />
 </shape>
