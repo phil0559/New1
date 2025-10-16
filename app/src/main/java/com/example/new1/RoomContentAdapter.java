@@ -281,6 +281,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     interface OnRoomContentInteractionListener {
+        void onCopyRoomContent(@NonNull RoomContentItem item, int position);
+
         void onEditRoomContent(@NonNull RoomContentItem item, int position);
 
         void onDeleteRoomContent(@NonNull RoomContentItem item, int position);
@@ -436,6 +438,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             interactionListener.onDeleteRoomContent(currentItem, position);
         }
 
+        private void notifyCopy() {
+            if (interactionListener == null || currentItem == null) {
+                return;
+            }
+            dismissOptionsMenu();
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            interactionListener.onCopyRoomContent(currentItem, position);
+        }
+
         private void toggleExpansion() {
             int position = getBindingAdapterPosition();
             if (position == RecyclerView.NO_POSITION) {
@@ -466,9 +480,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             View copyButton = popupView.findViewById(R.id.button_popup_room_content_copy);
             if (copyButton != null) {
                 copyButton.setOnClickListener(view -> {
-                    Toast.makeText(itemView.getContext(), R.string.feature_coming_soon,
-                            Toast.LENGTH_SHORT).show();
                     popupWindow.dismiss();
+                    notifyCopy();
                 });
             }
             View moveButton = popupView.findViewById(R.id.button_popup_room_content_move);
