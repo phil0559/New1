@@ -13,4 +13,9 @@
         <item>@string/dialog_category_placeholder_one</item>
         <item>@string/dialog_category_placeholder_two</item>
     </string-array>
+
+    <string-array name="room_container_type_defaults">
+        <item>@string/dialog_container_type_box</item>
+        <item>@string/dialog_container_type_bag</item>
+    </string-array>
 </resources>

@@ -228,6 +228,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
     }
 
+    private void applyContainerBannerColor(@NonNull View bannerView) {
+        int color = ContextCompat.getColor(context, R.color.room_content_banner_container);
+        Drawable background = bannerView.getBackground();
+        if (background instanceof GradientDrawable) {
+            GradientDrawable drawable = (GradientDrawable) background.mutate();
+            drawable.setColor(color);
+        } else {
+            bannerView.setBackgroundColor(color);
+        }
+    }
+
     @ColorRes
     private int resolveBannerColor(@Nullable String type) {
         if (type == null) {
@@ -313,7 +324,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         void bind(@NonNull RoomContentItem item) {
             currentItem = item;
             nameView.setText(item.getName());
-            applyBannerColor(bannerContainer, item.getType());
+            if (item.isContainer()) {
+                itemView.setBackgroundResource(R.drawable.bg_room_container_item);
+                applyContainerBannerColor(bannerContainer);
+            } else {
+                itemView.setBackgroundResource(R.drawable.bg_input_field_white);
+                applyBannerColor(bannerContainer, item.getType());
+            }
             updatePhoto(item);
             if (deleteView != null) {
                 deleteView.setContentDescription(itemView.getContext()

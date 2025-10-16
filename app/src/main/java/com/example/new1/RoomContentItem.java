@@ -17,6 +17,7 @@ public class RoomContentItem {
     private static final String KEY_COMMENT = "comment";
     private static final String KEY_TYPE = "type";
     private static final String KEY_CATEGORY = "category";
+    private static final String KEY_CONTAINER = "container";
     private static final String KEY_BARCODE = "barcode";
     private static final String KEY_SERIES = "series";
     private static final String KEY_NUMBER = "number";
@@ -54,6 +55,7 @@ public class RoomContentItem {
     private final List<String> tracks;
     @NonNull
     private final List<String> photos;
+    private final boolean container;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
@@ -68,7 +70,8 @@ public class RoomContentItem {
                            @Nullable String publicationDate,
                            @Nullable String summary,
                            @Nullable List<String> tracks,
-                           @Nullable List<String> photos) {
+                           @Nullable List<String> photos,
+                           boolean isContainer) {
         this.name = name;
         this.comment = comment != null ? comment : "";
         this.type = isNullOrEmpty(type) ? null : type;
@@ -96,6 +99,7 @@ public class RoomContentItem {
         } else {
             this.photos = new ArrayList<>(photos);
         }
+        this.container = isContainer;
     }
 
     @NonNull
@@ -168,11 +172,16 @@ public class RoomContentItem {
         return Collections.unmodifiableList(photos);
     }
 
+    public boolean isContainer() {
+        return container;
+    }
+
     public JSONObject toJson() {
         JSONObject object = new JSONObject();
         try {
             object.put(KEY_NAME, name);
             object.put(KEY_COMMENT, comment);
+            object.put(KEY_CONTAINER, container);
             if (type != null) {
                 object.put(KEY_TYPE, type);
             }
@@ -283,6 +292,7 @@ public class RoomContentItem {
                 }
             }
         }
+        boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
         return new RoomContentItem(name,
                 comment,
                 type,
@@ -296,7 +306,8 @@ public class RoomContentItem {
                 publicationDate,
                 summary,
                 tracks,
-                photos);
+                photos,
+                isContainer);
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {
