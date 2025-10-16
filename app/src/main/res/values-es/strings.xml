@@ -110,6 +110,9 @@
     <string name="dialog_track_field_hint">Pista %1$d</string>
     <string name="dialog_button_add_track">Añadir una pista</string>
     <string name="dialog_button_add_track_list">Añadir una lista de pistas</string>
+    <string name="dialog_track_list_title">Añadir una lista de pistas</string>
+    <string name="dialog_track_list_instructions">Pega o escribe una pista por línea</string>
+    <string name="dialog_track_list_error_empty">Añade al menos una pista.</string>
     <string name="dialog_custom_field_section_title">Campos personalizados</string>
     <string name="dialog_custom_field_label_hint">Nombre del campo</string>
     <string name="dialog_custom_field_label_1">Campo 1</string>

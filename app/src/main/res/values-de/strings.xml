@@ -109,6 +109,9 @@
     <string name="dialog_track_field_hint">Titel %1$d</string>
     <string name="dialog_button_add_track">Titel hinzufügen</string>
     <string name="dialog_button_add_track_list">Titelliste hinzufügen</string>
+    <string name="dialog_track_list_title">Titelliste hinzufügen</string>
+    <string name="dialog_track_list_instructions">Fügen Sie pro Zeile einen Titel ein oder geben Sie ihn ein</string>
+    <string name="dialog_track_list_error_empty">Fügen Sie mindestens einen Titel hinzu.</string>
     <string name="dialog_custom_field_section_title">Benutzerdefinierte Felder</string>
     <string name="dialog_custom_field_label_hint">Feldname</string>
     <string name="dialog_custom_field_label_1">Feld 1</string>
