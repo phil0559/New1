@@ -92,7 +92,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         List<String> tracks = item.getTracks();
         if (!tracks.isEmpty()) {
             addMetadataLine(metadataLines, R.string.room_content_metadata_tracks,
-                    TextUtils.join(", ", tracks));
+                    TextUtils.join("\n", tracks));
         }
         addMetadataLine(metadataLines, R.string.room_content_metadata_barcode, item.getBarcode());
         CharSequence metadataText = formatMetadataLines(metadataLines);
@@ -168,9 +168,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         int labelEnd = builder.length();
         applyLabelStyle(builder, labelStart, labelEnd);
         if (!valuePart.isEmpty()) {
-            builder.append(valuePart);
+            appendValueWithLineBreaks(builder, valuePart);
         }
         return builder;
+    }
+
+    private void appendValueWithLineBreaks(@NonNull SpannableStringBuilder builder,
+            @NonNull String valuePart) {
+        String[] lines = valuePart.split("\r?\n", -1);
+        if (lines.length == 0) {
+            return;
+        }
+        builder.append(lines[0]);
+        for (int i = 1; i < lines.length; i++) {
+            builder.append('\n');
+            builder.append("    ");
+            builder.append(lines[i]);
+        }
     }
 
     @Nullable
