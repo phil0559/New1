@@ -64,6 +64,7 @@
     <string name="room_content_metadata_number">Number: %1$s</string>
     <string name="room_content_metadata_author">Author: %1$s</string>
     <string name="room_content_metadata_publisher">Publisher: %1$s</string>
+    <string name="room_content_metadata_tracks">Tracks: %1$s</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
     <string name="content_description_photo_preview">Photo preview</string>
     <string name="dialog_room_content_item_placeholder">- Item</string>
@@ -105,6 +106,7 @@
     <string name="dialog_tracks_cd_title">CD tracks</string>
     <string name="dialog_tracks_disc_title">Record tracks</string>
     <string name="dialog_track_placeholder">Track 1</string>
+    <string name="dialog_track_field_hint">Track %1$d</string>
     <string name="dialog_button_add_track">Add a track</string>
     <string name="dialog_button_add_track_list">Add a track list</string>
     <string name="dialog_custom_field_section_title">Custom fields</string>

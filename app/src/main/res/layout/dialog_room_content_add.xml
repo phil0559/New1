@@ -499,17 +499,11 @@
                     android:textColor="@android:color/black"
                     android:textStyle="bold" />
 
-                <EditText
-                    android:id="@+id/input_track_1"
+                <LinearLayout
+                    android:id="@+id/container_track_list"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_track_placeholder"
-                    android:inputType="textCapSentences"
-                    android:padding="12dp"
-                    android:textColor="@android:color/black"
-                    android:textColorHint="@color/icon_brown" />
+                    android:orientation="vertical" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
