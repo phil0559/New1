@@ -3,6 +3,7 @@ package com.example.new1;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -24,6 +25,7 @@ public class RoomContentItem {
     private static final String KEY_EDITION = "edition";
     private static final String KEY_PUBLICATION_DATE = "publicationDate";
     private static final String KEY_SUMMARY = "summary";
+    private static final String KEY_TRACKS = "tracks";
     private static final String KEY_PHOTOS = "photos";
 
     private final String name;
@@ -49,6 +51,8 @@ public class RoomContentItem {
     @Nullable
     private final String summary;
     @NonNull
+    private final List<String> tracks;
+    @NonNull
     private final List<String> photos;
 
     public RoomContentItem(@NonNull String name,
@@ -63,6 +67,7 @@ public class RoomContentItem {
                            @Nullable String edition,
                            @Nullable String publicationDate,
                            @Nullable String summary,
+                           @Nullable List<String> tracks,
                            @Nullable List<String> photos) {
         this.name = name;
         this.comment = comment != null ? comment : "";
@@ -76,6 +81,16 @@ public class RoomContentItem {
         this.edition = isNullOrEmpty(edition) ? null : edition;
         this.publicationDate = isNullOrEmpty(publicationDate) ? null : publicationDate;
         this.summary = isNullOrEmpty(summary) ? null : summary;
+        if (tracks == null) {
+            this.tracks = new ArrayList<>();
+        } else {
+            this.tracks = new ArrayList<>();
+            for (String track : tracks) {
+                if (!isNullOrEmpty(track)) {
+                    this.tracks.add(track);
+                }
+            }
+        }
         if (photos == null) {
             this.photos = new ArrayList<>();
         } else {
@@ -144,6 +159,11 @@ public class RoomContentItem {
     }
 
     @NonNull
+    public List<String> getTracks() {
+        return Collections.unmodifiableList(tracks);
+    }
+
+    @NonNull
     public List<String> getPhotos() {
         return Collections.unmodifiableList(photos);
     }
@@ -183,8 +203,15 @@ public class RoomContentItem {
             if (summary != null) {
                 object.put(KEY_SUMMARY, summary);
             }
+            if (!tracks.isEmpty()) {
+                JSONArray tracksArray = new JSONArray();
+                for (String track : tracks) {
+                    tracksArray.put(track);
+                }
+                object.put(KEY_TRACKS, tracksArray);
+            }
             if (!photos.isEmpty()) {
-                org.json.JSONArray photosArray = new org.json.JSONArray();
+                JSONArray photosArray = new JSONArray();
                 for (String photo : photos) {
                     photosArray.put(photo);
                 }
@@ -229,9 +256,24 @@ public class RoomContentItem {
         String summary = object.has(KEY_SUMMARY) && !object.isNull(KEY_SUMMARY)
                 ? object.optString(KEY_SUMMARY)
                 : null;
+        List<String> tracks = new ArrayList<>();
+        if (object.has(KEY_TRACKS) && !object.isNull(KEY_TRACKS)) {
+            JSONArray tracksArray = object.optJSONArray(KEY_TRACKS);
+            if (tracksArray != null) {
+                for (int i = 0; i < tracksArray.length(); i++) {
+                    String value = tracksArray.optString(i, null);
+                    if (value != null) {
+                        String trimmed = value.trim();
+                        if (!trimmed.isEmpty()) {
+                            tracks.add(trimmed);
+                        }
+                    }
+                }
+            }
+        }
         List<String> photos = new ArrayList<>();
         if (object.has(KEY_PHOTOS) && !object.isNull(KEY_PHOTOS)) {
-            org.json.JSONArray photosArray = object.optJSONArray(KEY_PHOTOS);
+            JSONArray photosArray = object.optJSONArray(KEY_PHOTOS);
             if (photosArray != null) {
                 for (int i = 0; i < photosArray.length(); i++) {
                     String value = photosArray.optString(i, null);
@@ -253,6 +295,7 @@ public class RoomContentItem {
                 edition,
                 publicationDate,
                 summary,
+                tracks,
                 photos);
     }
 

@@ -8,6 +8,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
+import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
@@ -88,6 +89,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         addMetadataLine(metadataLines, R.string.room_content_metadata_publication_date,
                 item.getPublicationDate());
         addMetadataLine(metadataLines, R.string.room_content_metadata_summary, item.getSummary());
+        List<String> tracks = item.getTracks();
+        if (!tracks.isEmpty()) {
+            addMetadataLine(metadataLines, R.string.room_content_metadata_tracks,
+                    TextUtils.join(", ", tracks));
+        }
         addMetadataLine(metadataLines, R.string.room_content_metadata_barcode, item.getBarcode());
         CharSequence metadataText = formatMetadataLines(metadataLines);
         boolean hasMetadata = metadataText != null;

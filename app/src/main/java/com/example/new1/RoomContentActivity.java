@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -79,7 +80,10 @@ public class RoomContentActivity extends Activity {
         LinearLayout photoContainer;
         @Nullable
         View addPhotoButton;
+        @Nullable
+        LinearLayout trackContainer;
         final List<String> photos = new ArrayList<>();
+        final List<String> tracks = new ArrayList<>();
     }
 
     private static class DialogController {
@@ -235,6 +239,7 @@ public class RoomContentActivity extends Activity {
         String publicationDate;
         @Nullable
         String summary;
+        final ArrayList<String> tracks = new ArrayList<>();
         final ArrayList<String> photos = new ArrayList<>();
         boolean resumeLookup;
         boolean reopenDialog;
@@ -409,6 +414,10 @@ public class RoomContentActivity extends Activity {
         if (photos != null) {
             restored.photos.addAll(photos);
         }
+        ArrayList<String> tracks = savedInstanceState.getStringArrayList("pending_barcode_tracks");
+        if (tracks != null) {
+            restored.tracks.addAll(tracks);
+        }
         restored.resumeLookup = savedInstanceState.getBoolean("pending_barcode_resume_lookup", false);
         restored.reopenDialog = savedInstanceState.getBoolean("pending_barcode_reopen", false);
         pendingBarcodeResult = restored;
@@ -485,6 +494,7 @@ public class RoomContentActivity extends Activity {
             outState.putString("pending_barcode_publication_date", pendingBarcodeResult.publicationDate);
             outState.putString("pending_barcode_summary", pendingBarcodeResult.summary);
             outState.putStringArrayList("pending_barcode_photos", new ArrayList<>(pendingBarcodeResult.photos));
+            outState.putStringArrayList("pending_barcode_tracks", new ArrayList<>(pendingBarcodeResult.tracks));
             outState.putBoolean("pending_barcode_resume_lookup", pendingBarcodeResult.resumeLookup);
             outState.putBoolean("pending_barcode_waiting", barcodeScanAwaitingResult);
             outState.putBoolean("pending_barcode_reopen", pendingBarcodeResult.reopenDialog);
@@ -551,6 +561,7 @@ public class RoomContentActivity extends Activity {
         View bookFields = dialogView.findViewById(R.id.container_book_fields);
         View trackFields = dialogView.findViewById(R.id.container_track_fields);
         TextView trackTitle = dialogView.findViewById(R.id.text_track_title);
+        LinearLayout trackListContainer = dialogView.findViewById(R.id.container_track_list);
         EditText seriesInput = dialogView.findViewById(R.id.input_series);
         EditText numberInput = dialogView.findViewById(R.id.input_number);
         EditText authorInput = dialogView.findViewById(R.id.input_author);
@@ -718,14 +729,19 @@ public class RoomContentActivity extends Activity {
         formState.photoLabel = dialogView.findViewById(R.id.text_room_content_photos_label);
         formState.photoContainer = photoContainer;
         formState.addPhotoButton = addPhotoButton;
+        formState.trackContainer = trackListContainer;
         currentFormState = formState;
         if (isEditing && itemToEdit != null) {
             formState.photos.addAll(itemToEdit.getPhotos());
+            formState.tracks.addAll(itemToEdit.getTracks());
         }
         if (restoreData != null) {
             formState.photos.clear();
             formState.photos.addAll(restoreData.photos);
+            formState.tracks.clear();
+            formState.tracks.addAll(restoreData.tracks);
         }
+        refreshTrackInputs(formState);
 
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
@@ -880,6 +896,8 @@ public class RoomContentActivity extends Activity {
                     return;
                 }
 
+                List<String> trackValues = collectTracks(formState);
+
                 RoomContentItem item = new RoomContentItem(trimmedName,
                         trimmedComment,
                         selectedTypeHolder[0],
@@ -892,6 +910,7 @@ public class RoomContentActivity extends Activity {
                         editionValue,
                         publicationDateValue,
                         summaryValue,
+                        trackValues,
                         new ArrayList<>(formState.photos));
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
@@ -1018,7 +1037,10 @@ public class RoomContentActivity extends Activity {
         }
 
         if (addTrackButton != null) {
-            addTrackButton.setOnClickListener(comingSoonListener);
+            addTrackButton.setOnClickListener(v -> {
+                formState.tracks.add("");
+                appendTrackInput(formState, formState.tracks.size() - 1, true);
+            });
         }
 
         if (addTrackListButton != null) {
@@ -1409,6 +1431,56 @@ public class RoomContentActivity extends Activity {
             final int index = i;
             thumbnail.setOnClickListener(view -> showPhotoPreview(formState, index));
             formState.photoContainer.addView(thumbnail);
+        }
+    }
+
+    private void refreshTrackInputs(@NonNull FormState formState) {
+        LinearLayout container = formState.trackContainer;
+        if (container == null) {
+            return;
+        }
+        container.removeAllViews();
+        for (int i = 0; i < formState.tracks.size(); i++) {
+            appendTrackInput(formState, i, false);
+        }
+    }
+
+    private void appendTrackInput(@NonNull FormState formState, int index, boolean requestFocus) {
+        LinearLayout container = formState.trackContainer;
+        if (container == null) {
+            return;
+        }
+        View view = LayoutInflater.from(container.getContext())
+                .inflate(R.layout.item_track_input, container, false);
+        if (!(view instanceof EditText)) {
+            return;
+        }
+        EditText input = (EditText) view;
+        input.setHint(getString(R.string.dialog_track_field_hint, index + 1));
+        String value = formState.tracks.get(index);
+        if (value != null && !value.isEmpty()) {
+            input.setText(value);
+            input.setSelection(value.length());
+        }
+        final int trackIndex = index;
+        input.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                String text = editable != null ? editable.toString() : "";
+                formState.tracks.set(trackIndex, text);
+            }
+        });
+        container.addView(input);
+        if (requestFocus) {
+            input.requestFocus();
         }
     }
 
@@ -2355,6 +2427,8 @@ public class RoomContentActivity extends Activity {
         result.selectedType = selectedTypeHolder[0];
         result.selectedCategory = selectedCategoryHolder[0];
         result.barcode = extractBarcodeValue(barcodeValueView);
+        result.tracks.clear();
+        result.tracks.addAll(collectTracks(formState));
         result.photos.addAll(formState.photos);
         result.resumeLookup = false;
         return result;
@@ -2370,6 +2444,21 @@ public class RoomContentActivity extends Activity {
             return null;
         }
         return text.toString();
+    }
+
+    @NonNull
+    private List<String> collectTracks(@NonNull FormState formState) {
+        List<String> result = new ArrayList<>();
+        for (String track : formState.tracks) {
+            if (track == null) {
+                continue;
+            }
+            String trimmed = track.trim();
+            if (!trimmed.isEmpty()) {
+                result.add(trimmed);
+            }
+        }
+        return result;
     }
 
     @Nullable
