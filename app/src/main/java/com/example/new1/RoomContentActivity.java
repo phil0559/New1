@@ -394,6 +394,11 @@ public class RoomContentActivity extends Activity {
             roomContentAdapter = new RoomContentAdapter(this, roomContentItems,
                     new RoomContentAdapter.OnRoomContentInteractionListener() {
                         @Override
+                        public void onCopyRoomContent(@NonNull RoomContentItem item, int position) {
+                            showCopyRoomContentDialog(item);
+                        }
+
+                        @Override
                         public void onEditRoomContent(@NonNull RoomContentItem item, int position) {
                             showEditRoomContentDialog(item, position);
                         }
@@ -464,7 +469,7 @@ public class RoomContentActivity extends Activity {
                 positionToEdit = -1;
             }
         }
-        showRoomContentDialog(itemToEdit, positionToEdit);
+        showRoomContentDialog(itemToEdit, positionToEdit, pendingBarcodeResult.editing);
         if (pendingBarcodeResult != null) {
             pendingBarcodeResult.reopenDialog = false;
         }
@@ -555,10 +560,14 @@ public class RoomContentActivity extends Activity {
         }
     }
 
-    private void showRoomContentDialog(@Nullable RoomContentItem itemToEdit, int positionToEdit) {
-        final boolean isEditing = itemToEdit != null
+    private void showRoomContentDialog(@Nullable RoomContentItem initialItem,
+            int positionToEdit,
+            boolean shouldEditExisting) {
+        final boolean isEditing = shouldEditExisting
+                && initialItem != null
                 && positionToEdit >= 0
                 && positionToEdit < roomContentItems.size();
+        final RoomContentItem prefillItem = initialItem;
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_room_content_add, null);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -618,65 +627,65 @@ public class RoomContentActivity extends Activity {
         String initialBarcode = null;
         if (restoreData != null) {
             initialBarcode = restoreData.barcode;
-        } else if (isEditing && itemToEdit != null) {
-            initialBarcode = itemToEdit.getBarcode();
+        } else if (prefillItem != null) {
+            initialBarcode = prefillItem.getBarcode();
         }
 
-        if (isEditing && itemToEdit != null) {
+        if (prefillItem != null) {
             if (nameInput != null) {
-                String name = itemToEdit.getName();
+                String name = prefillItem.getName();
                 nameInput.setText(name);
                 if (name != null) {
                     nameInput.setSelection(name.length());
                 }
             }
             if (commentInput != null) {
-                commentInput.setText(itemToEdit.getComment());
+                commentInput.setText(prefillItem.getComment());
             }
             if (seriesInput != null) {
-                String series = itemToEdit.getSeries();
+                String series = prefillItem.getSeries();
                 seriesInput.setText(series);
                 if (series != null) {
                     seriesInput.setSelection(series.length());
                 }
             }
             if (numberInput != null) {
-                String number = itemToEdit.getNumber();
+                String number = prefillItem.getNumber();
                 numberInput.setText(number);
                 if (number != null) {
                     numberInput.setSelection(number.length());
                 }
             }
             if (authorInput != null) {
-                String author = itemToEdit.getAuthor();
+                String author = prefillItem.getAuthor();
                 authorInput.setText(author);
                 if (author != null) {
                     authorInput.setSelection(author.length());
                 }
             }
             if (publisherInput != null) {
-                String publisher = itemToEdit.getPublisher();
+                String publisher = prefillItem.getPublisher();
                 publisherInput.setText(publisher);
                 if (publisher != null) {
                     publisherInput.setSelection(publisher.length());
                 }
             }
             if (editionInput != null) {
-                String edition = itemToEdit.getEdition();
+                String edition = prefillItem.getEdition();
                 editionInput.setText(edition);
                 if (edition != null) {
                     editionInput.setSelection(edition.length());
                 }
             }
             if (publicationDateInput != null) {
-                String publicationDate = itemToEdit.getPublicationDate();
+                String publicationDate = prefillItem.getPublicationDate();
                 publicationDateInput.setText(publicationDate);
                 if (publicationDate != null) {
                     publicationDateInput.setSelection(publicationDate.length());
                 }
             }
             if (summaryInput != null) {
-                String summary = itemToEdit.getSummary();
+                String summary = prefillItem.getSummary();
                 summaryInput.setText(summary);
                 if (summary != null) {
                     summaryInput.setSelection(summary.length());
@@ -747,9 +756,9 @@ public class RoomContentActivity extends Activity {
         formState.addPhotoButton = addPhotoButton;
         formState.trackContainer = trackListContainer;
         currentFormState = formState;
-        if (isEditing && itemToEdit != null) {
-            formState.photos.addAll(itemToEdit.getPhotos());
-            formState.tracks.addAll(itemToEdit.getTracks());
+        if (prefillItem != null) {
+            formState.photos.addAll(prefillItem.getPhotos());
+            formState.tracks.addAll(prefillItem.getTracks());
         }
         if (restoreData != null) {
             formState.photos.clear();
@@ -765,16 +774,16 @@ public class RoomContentActivity extends Activity {
 
         List<String> typeOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_type_options)));
-        if (isEditing && itemToEdit != null) {
-            String existingType = itemToEdit.getType();
+        if (prefillItem != null) {
+            String existingType = prefillItem.getType();
             if (existingType != null && !existingType.trim().isEmpty()
                     && !typeOptions.contains(existingType)) {
                 typeOptions.add(existingType);
             }
         }
         final String[] selectedTypeHolder = new String[1];
-        if (isEditing && itemToEdit != null) {
-            String existingType = itemToEdit.getType();
+        if (prefillItem != null) {
+            String existingType = prefillItem.getType();
             selectedTypeHolder[0] = existingType != null && !existingType.trim().isEmpty()
                     ? existingType
                     : (!typeOptions.isEmpty() ? typeOptions.get(0) : null);
@@ -790,16 +799,16 @@ public class RoomContentActivity extends Activity {
 
         List<String> categoryOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_category_options)));
-        if (isEditing && itemToEdit != null) {
-            String existingCategory = itemToEdit.getCategory();
+        if (prefillItem != null) {
+            String existingCategory = prefillItem.getCategory();
             if (existingCategory != null && !existingCategory.trim().isEmpty()
                     && !categoryOptions.contains(existingCategory)) {
                 categoryOptions.add(existingCategory);
             }
         }
         final String[] selectedCategoryHolder = new String[1];
-        if (isEditing && itemToEdit != null) {
-            String existingCategory = itemToEdit.getCategory();
+        if (prefillItem != null) {
+            String existingCategory = prefillItem.getCategory();
             selectedCategoryHolder[0] = existingCategory != null && !existingCategory.trim().isEmpty()
                     ? existingCategory
                     : null;
@@ -1771,18 +1780,26 @@ public class RoomContentActivity extends Activity {
     }
 
     private void showAddRoomContentDialog() {
-        showRoomContentDialog(null, -1);
+        showRoomContentDialog(null, -1, false);
     }
 
     private void showAddContainerDialog() {
         showContainerDialog(null, -1);
     }
 
+    private void showCopyRoomContentDialog(@NonNull RoomContentItem item) {
+        if (item.isContainer()) {
+            showContainerDialog(item, -1);
+        } else {
+            showRoomContentDialog(item, -1, false);
+        }
+    }
+
     private void showEditRoomContentDialog(@NonNull RoomContentItem item, int position) {
         if (item.isContainer()) {
             showContainerDialog(item, position);
         } else {
-            showRoomContentDialog(item, position);
+            showRoomContentDialog(item, position, true);
         }
     }
 
@@ -2263,9 +2280,10 @@ public class RoomContentActivity extends Activity {
                             && pendingBarcodeResult.positionToEdit < roomContentItems.size()) {
                         itemToEdit = roomContentItems.get(pendingBarcodeResult.positionToEdit);
                     }
-                    showRoomContentDialog(itemToEdit, pendingBarcodeResult.positionToEdit);
+                    showRoomContentDialog(itemToEdit, pendingBarcodeResult.positionToEdit,
+                            pendingBarcodeResult.editing);
                 } else {
-                    showRoomContentDialog(null, -1);
+                    showRoomContentDialog(null, -1, false);
                 }
             } else {
                 Toast.makeText(this, R.string.dialog_barcode_scan_lost_context, Toast.LENGTH_SHORT).show();
