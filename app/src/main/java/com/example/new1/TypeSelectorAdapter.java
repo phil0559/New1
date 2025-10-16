@@ -12,7 +12,10 @@ import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapter.TypeViewHolder> {
 
@@ -28,11 +31,20 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
     private final List<String> types = new ArrayList<>();
     private final TypeActionListener actionListener;
     private int selectedPosition = RecyclerView.NO_POSITION;
+    @NonNull
+    private final Set<String> lockedTypes = new HashSet<>();
 
     public TypeSelectorAdapter(@NonNull List<String> typeValues,
                                @NonNull TypeActionListener actionListener) {
+        this(typeValues, actionListener, Collections.emptySet());
+    }
+
+    public TypeSelectorAdapter(@NonNull List<String> typeValues,
+                               @NonNull TypeActionListener actionListener,
+                               @NonNull Set<String> lockedTypes) {
         this.actionListener = actionListener;
         types.addAll(typeValues);
+        this.lockedTypes.addAll(lockedTypes);
     }
 
     public void setSelectedType(@Nullable String selectedType) {
@@ -78,12 +90,18 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
         if (position < 0 || position >= types.size()) {
             return;
         }
+        if (lockedTypes.contains(types.get(position))) {
+            return;
+        }
         types.set(position, newLabel);
         notifyItemChanged(position);
     }
 
     public void removeType(int position) {
         if (position < 0 || position >= types.size()) {
+            return;
+        }
+        if (lockedTypes.contains(types.get(position))) {
             return;
         }
         types.remove(position);
@@ -125,6 +143,10 @@ public class TypeSelectorAdapter extends RecyclerView.Adapter<TypeSelectorAdapte
         void bind(@NonNull String typeLabel, boolean isSelected) {
             labelView.setText(typeLabel);
             radioButton.setChecked(isSelected);
+
+            boolean locked = lockedTypes.contains(typeLabel);
+            editButton.setVisibility(locked ? View.GONE : View.VISIBLE);
+            deleteButton.setVisibility(locked ? View.GONE : View.VISIBLE);
 
             View.OnClickListener selectListener = view -> {
                 int adapterPosition = getBindingAdapterPosition();

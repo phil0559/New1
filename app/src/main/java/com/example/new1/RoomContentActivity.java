@@ -26,6 +26,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringRes;
 
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -98,6 +99,8 @@ public class RoomContentActivity extends Activity {
         LinearLayout trackContainer;
         final List<String> photos = new ArrayList<>();
         final List<String> tracks = new ArrayList<>();
+        @StringRes
+        int photoLabelTemplateRes = R.string.dialog_label_room_content_photos_template;
     }
 
     private static class DialogController {
@@ -924,7 +927,8 @@ public class RoomContentActivity extends Activity {
                         publicationDateValue,
                         summaryValue,
                         trackValues,
-                        new ArrayList<>(formState.photos));
+                        new ArrayList<>(formState.photos),
+                        false);
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
                         dialog.dismiss();
@@ -1127,7 +1131,8 @@ public class RoomContentActivity extends Activity {
                                         selectedTypeHolder,
                                         bookFields,
                                         trackFields,
-                                        trackTitle);
+                                        trackTitle,
+                                        Collections.emptySet());
                             }
 
                             @Override
@@ -1139,7 +1144,8 @@ public class RoomContentActivity extends Activity {
                                         selectedTypeHolder,
                                         bookFields,
                                         trackFields,
-                                        trackTitle);
+                                        trackTitle,
+                                        Collections.emptySet());
                             }
                         });
                 adapter.setSelectedType(selectedTypeHolder[0]);
@@ -1302,6 +1308,287 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private void showContainerDialog(@Nullable RoomContentItem itemToEdit, int positionToEdit) {
+        RoomContentItem containerToEdit = itemToEdit != null && itemToEdit.isContainer()
+                ? itemToEdit
+                : null;
+        final boolean isEditing = containerToEdit != null
+                && positionToEdit >= 0
+                && positionToEdit < roomContentItems.size();
+
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_room_container_add, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        dialog.show();
+
+        TextView titleView = dialogView.findViewById(R.id.text_dialog_container_title);
+        EditText nameInput = dialogView.findViewById(R.id.input_container_name);
+        EditText commentInput = dialogView.findViewById(R.id.input_container_comment);
+        Button selectTypeButton = dialogView.findViewById(R.id.button_select_container_type);
+        ImageButton openTypeListButton = dialogView.findViewById(R.id.button_open_container_type_list);
+        Button addPhotoButton = dialogView.findViewById(R.id.button_add_container_photo);
+        LinearLayout photoContainer = dialogView.findViewById(R.id.container_container_photos);
+        TextView photoLabel = dialogView.findViewById(R.id.text_container_photos_label);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+
+        if (titleView != null) {
+            titleView.setText(isEditing
+                    ? R.string.dialog_edit_container_title
+                    : R.string.dialog_add_container_title);
+        }
+
+        final FormState formState = new FormState();
+        formState.photoLabel = photoLabel;
+        formState.photoContainer = photoContainer;
+        formState.addPhotoButton = addPhotoButton;
+        formState.photoLabelTemplateRes = R.string.dialog_label_container_photos_template;
+        currentFormState = formState;
+
+        if (containerToEdit != null) {
+            if (nameInput != null) {
+                String name = containerToEdit.getName();
+                nameInput.setText(name);
+                if (name != null) {
+                    nameInput.setSelection(name.length());
+                }
+            }
+            if (commentInput != null) {
+                String comment = containerToEdit.getComment();
+                commentInput.setText(comment);
+                if (comment != null) {
+                    commentInput.setSelection(comment.length());
+                }
+            }
+            formState.photos.addAll(containerToEdit.getPhotos());
+        }
+
+        refreshPhotoSection(formState);
+
+        if (addPhotoButton != null) {
+            addPhotoButton.setOnClickListener(v -> {
+                if (currentFormState == null || currentFormState != formState) {
+                    return;
+                }
+                if (formState.photos.size() >= MAX_FORM_PHOTOS) {
+                    Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (cameraIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(cameraIntent, REQUEST_TAKE_PHOTO);
+                }
+            });
+        }
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        List<String> typeOptions = new ArrayList<>();
+        Set<String> lockedTypes = new LinkedHashSet<>();
+        String[] defaults = getResources().getStringArray(R.array.room_container_type_defaults);
+        for (String value : defaults) {
+            if (value != null && !value.trim().isEmpty()) {
+                typeOptions.add(value);
+                lockedTypes.add(value);
+            }
+        }
+
+        final String[] selectedTypeHolder = new String[1];
+        if (containerToEdit != null && !TextUtils.isEmpty(containerToEdit.getType())) {
+            String existingType = containerToEdit.getType();
+            if (!containsIgnoreCase(typeOptions, existingType)) {
+                typeOptions.add(existingType);
+            }
+            selectedTypeHolder[0] = existingType;
+        } else {
+            selectedTypeHolder[0] = !typeOptions.isEmpty() ? typeOptions.get(0) : null;
+        }
+
+        updateSelectionButtonText(selectTypeButton, selectedTypeHolder[0],
+                R.string.dialog_button_choose_container_type);
+
+        View.OnClickListener typeDialogLauncher = v -> {
+            BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+            View sheetView = getLayoutInflater().inflate(R.layout.dialog_type_selector, null);
+            bottomSheetDialog.setContentView(sheetView);
+
+            if (sheetView != null) {
+                sheetView.setBackgroundResource(R.drawable.bg_room_container_popup);
+                TextView sheetTitle = sheetView.findViewById(R.id.text_type_selector_title);
+                if (sheetTitle != null) {
+                    sheetTitle.setText(R.string.dialog_container_type_selector_title);
+                }
+            }
+
+            RecyclerView recyclerView = sheetView.findViewById(R.id.recycler_type_options);
+            Button addTypeButtonSheet = sheetView.findViewById(R.id.button_add_type);
+            final TypeSelectorAdapter[] adapterHolder = new TypeSelectorAdapter[1];
+
+            if (recyclerView != null) {
+                TypeSelectorAdapter adapter = new TypeSelectorAdapter(typeOptions,
+                        new TypeSelectorAdapter.TypeActionListener() {
+                            @Override
+                            public void onTypeSelected(String type) {
+                                selectedTypeHolder[0] = type;
+                                updateSelectionButtonText(selectTypeButton, type,
+                                        R.string.dialog_button_choose_container_type);
+                                bottomSheetDialog.dismiss();
+                            }
+
+                            @Override
+                            public void onEditType(String type, int position) {
+                                showEditTypeDialog(typeOptions,
+                                        adapterHolder[0],
+                                        position,
+                                        type,
+                                        selectTypeButton,
+                                        selectedTypeHolder,
+                                        null,
+                                        null,
+                                        null,
+                                        lockedTypes);
+                            }
+
+                            @Override
+                            public void onDeleteType(String type, int position) {
+                                showDeleteTypeConfirmation(typeOptions,
+                                        adapterHolder[0],
+                                        position,
+                                        selectTypeButton,
+                                        selectedTypeHolder,
+                                        null,
+                                        null,
+                                        null,
+                                        lockedTypes);
+                            }
+                        },
+                        lockedTypes);
+                adapter.setSelectedType(selectedTypeHolder[0]);
+                recyclerView.setLayoutManager(new LinearLayoutManager(this));
+                recyclerView.setAdapter(adapter);
+                adapterHolder[0] = adapter;
+            }
+
+            if (addTypeButtonSheet != null) {
+                addTypeButtonSheet.setOnClickListener(view ->
+                        showAddTypeDialog(typeOptions, adapterHolder[0], recyclerView));
+            }
+
+            bottomSheetDialog.show();
+        };
+
+        if (selectTypeButton != null) {
+            selectTypeButton.setOnClickListener(typeDialogLauncher);
+        }
+
+        if (openTypeListButton != null) {
+            openTypeListButton.setOnClickListener(typeDialogLauncher);
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                if (nameInput == null) {
+                    dialog.dismiss();
+                    return;
+                }
+                CharSequence nameValue = nameInput.getText();
+                String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
+                if (trimmedName.isEmpty()) {
+                    nameInput.setError(getString(R.string.error_room_content_name_required));
+                    nameInput.requestFocus();
+                    return;
+                }
+                String trimmedComment = "";
+                if (commentInput != null) {
+                    CharSequence commentValue = commentInput.getText();
+                    trimmedComment = commentValue != null ? commentValue.toString().trim() : "";
+                }
+                String selectedType = selectedTypeHolder[0];
+                if (TextUtils.isEmpty(selectedType) && !typeOptions.isEmpty()) {
+                    selectedType = typeOptions.get(0);
+                }
+                if (currentFormState != null && currentFormState != formState) {
+                    dialog.dismiss();
+                    return;
+                }
+                RoomContentItem newItem = new RoomContentItem(trimmedName,
+                        trimmedComment,
+                        selectedType,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        new ArrayList<>(formState.photos),
+                        true);
+                if (isEditing) {
+                    if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
+                        dialog.dismiss();
+                        return;
+                    }
+                    roomContentItems.remove(positionToEdit);
+                }
+                roomContentItems.add(newItem);
+                sortRoomContentItems();
+                if (roomContentAdapter != null) {
+                    roomContentAdapter.notifyDataSetChanged();
+                }
+                if (contentList != null) {
+                    int targetPosition = roomContentItems.indexOf(newItem);
+                    if (targetPosition >= 0) {
+                        final int scrollPosition = targetPosition;
+                        contentList.post(() -> contentList.smoothScrollToPosition(scrollPosition));
+                    }
+                }
+                saveRoomContent();
+                updateEmptyState();
+                int messageRes = isEditing
+                        ? R.string.room_container_updated_confirmation
+                        : R.string.room_container_added_confirmation;
+                Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        }
+
+        if (nameInput != null) {
+            nameInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    nameInput.setError(null);
+                }
+            });
+        }
+
+        dialog.setOnDismissListener(d -> {
+            if (currentFormState == formState) {
+                currentFormState = null;
+            }
+        });
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
     private void showBarcodeCreationDialog(@Nullable TextView barcodeValueView,
                                            @Nullable ImageView barcodePreviewView) {
         if (barcodeValueView == null && barcodePreviewView == null) {
@@ -1446,7 +1733,7 @@ public class RoomContentActivity extends Activity {
                 if (addMenuPopup != null) {
                     addMenuPopup.dismiss();
                 }
-                Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
+                showAddContainerDialog();
             });
         }
 
@@ -1487,8 +1774,16 @@ public class RoomContentActivity extends Activity {
         showRoomContentDialog(null, -1);
     }
 
+    private void showAddContainerDialog() {
+        showContainerDialog(null, -1);
+    }
+
     private void showEditRoomContentDialog(@NonNull RoomContentItem item, int position) {
-        showRoomContentDialog(item, position);
+        if (item.isContainer()) {
+            showContainerDialog(item, position);
+        } else {
+            showRoomContentDialog(item, position);
+        }
     }
 
     private void showDeleteRoomContentConfirmation(@NonNull RoomContentItem item, int position) {
@@ -1497,9 +1792,12 @@ public class RoomContentActivity extends Activity {
             name = getString(R.string.dialog_room_content_item_placeholder);
         }
         final int targetPosition = position;
+        int messageRes = item.isContainer()
+                ? R.string.dialog_delete_room_container_message
+                : R.string.dialog_delete_room_content_message;
         new AlertDialog.Builder(this)
                 .setTitle(R.string.dialog_delete_room_content_title)
-                .setMessage(getString(R.string.dialog_delete_room_content_message, name))
+                .setMessage(getString(messageRes, name))
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton(R.string.action_delete, (dialog, which) ->
                         deleteRoomContent(targetPosition))
@@ -1510,14 +1808,18 @@ public class RoomContentActivity extends Activity {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
-        roomContentItems.remove(position);
+        RoomContentItem removedItem = roomContentItems.remove(position);
+        boolean wasContainer = removedItem != null && removedItem.isContainer();
         sortRoomContentItems();
         if (roomContentAdapter != null) {
             roomContentAdapter.notifyDataSetChanged();
         }
         saveRoomContent();
         updateEmptyState();
-        Toast.makeText(this, R.string.room_content_deleted_confirmation, Toast.LENGTH_SHORT).show();
+        int messageRes = wasContainer
+                ? R.string.room_container_deleted_confirmation
+                : R.string.room_content_deleted_confirmation;
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
     }
 
     private void loadRoomContent() {
@@ -1603,8 +1905,10 @@ public class RoomContentActivity extends Activity {
 
     private void refreshPhotoSection(@NonNull FormState formState) {
         if (formState.photoLabel != null) {
-            formState.photoLabel.setText(getString(R.string.dialog_label_room_content_photos_template,
-                    formState.photos.size()));
+            int templateRes = formState.photoLabelTemplateRes != 0
+                    ? formState.photoLabelTemplateRes
+                    : R.string.dialog_label_room_content_photos_template;
+            formState.photoLabel.setText(getString(templateRes, formState.photos.size()));
         }
 
         if (formState.addPhotoButton != null) {
@@ -3063,7 +3367,8 @@ public class RoomContentActivity extends Activity {
                                     @NonNull String[] selectedTypeHolder,
                                     @Nullable View bookFields,
                                     @Nullable View trackFields,
-                                    @Nullable TextView trackTitle) {
+                                    @Nullable TextView trackTitle,
+                                    @NonNull Set<String> lockedTypes) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_type, null);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -3075,6 +3380,11 @@ public class RoomContentActivity extends Activity {
         EditText typeNameInput = dialogView.findViewById(R.id.input_new_type_name);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+
+        if (lockedTypes.contains(currentLabel)) {
+            dialog.dismiss();
+            return;
+        }
 
         if (titleView != null) {
             titleView.setText(R.string.dialog_edit_type_title);
@@ -3099,6 +3409,11 @@ public class RoomContentActivity extends Activity {
                 String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
                 if (trimmedName.isEmpty()) {
                     typeNameInput.setError(getString(R.string.error_type_name_required));
+                    typeNameInput.requestFocus();
+                    return;
+                }
+                if (containsIgnoreCase(typeOptions, trimmedName, position)) {
+                    typeNameInput.setError(getString(R.string.error_type_name_duplicate));
                     typeNameInput.requestFocus();
                     return;
                 }
@@ -3149,11 +3464,15 @@ public class RoomContentActivity extends Activity {
                                             @NonNull String[] selectedTypeHolder,
                                             @Nullable View bookFields,
                                             @Nullable View trackFields,
-                                            @Nullable TextView trackTitle) {
+                                            @Nullable TextView trackTitle,
+                                            @NonNull Set<String> lockedTypes) {
         if (position < 0 || position >= typeOptions.size()) {
             return;
         }
         String typeLabel = typeOptions.get(position);
+        if (lockedTypes.contains(typeLabel)) {
+            return;
+        }
         new AlertDialog.Builder(this)
                 .setMessage(getString(R.string.dialog_delete_type_message, typeLabel))
                 .setNegativeButton(R.string.action_cancel, (dialog, which) -> dialog.dismiss())
@@ -3276,6 +3595,11 @@ public class RoomContentActivity extends Activity {
                     typeNameInput.requestFocus();
                     return;
                 }
+                if (containsIgnoreCase(typeOptions, trimmedName)) {
+                    typeNameInput.setError(getString(R.string.error_type_name_duplicate));
+                    typeNameInput.requestFocus();
+                    return;
+                }
                 typeOptions.add(trimmedName);
                 if (adapter != null) {
                     adapter.addType(trimmedName);
@@ -3354,5 +3678,32 @@ public class RoomContentActivity extends Activity {
                 trackFields.setVisibility(View.GONE);
             }
         }
+    }
+
+    private boolean containsIgnoreCase(@NonNull List<String> values,
+                                       @Nullable String candidate) {
+        return containsIgnoreCase(values, candidate, -1);
+    }
+
+    private boolean containsIgnoreCase(@NonNull List<String> values,
+                                       @Nullable String candidate,
+                                       int ignoreIndex) {
+        if (candidate == null) {
+            return false;
+        }
+        String target = candidate.trim();
+        if (target.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < values.size(); i++) {
+            if (i == ignoreIndex) {
+                continue;
+            }
+            String value = values.get(i);
+            if (value != null && value.trim().equalsIgnoreCase(target)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
