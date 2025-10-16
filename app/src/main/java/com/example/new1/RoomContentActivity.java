@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,6 +37,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
@@ -96,6 +101,8 @@ public class RoomContentActivity extends Activity {
         @Nullable
         final TextView barcodeValueView;
         @Nullable
+        final ImageView barcodePreviewView;
+        @Nullable
         final EditText seriesInput;
         @Nullable
         final EditText numberInput;
@@ -119,6 +126,7 @@ public class RoomContentActivity extends Activity {
                          @Nullable EditText nameInput,
                          @Nullable EditText commentInput,
                          @Nullable TextView barcodeValueView,
+                         @Nullable ImageView barcodePreviewView,
                          @Nullable EditText seriesInput,
                          @Nullable EditText numberInput,
                          @Nullable EditText authorInput,
@@ -135,6 +143,7 @@ public class RoomContentActivity extends Activity {
             this.nameInput = nameInput;
             this.commentInput = commentInput;
             this.barcodeValueView = barcodeValueView;
+            this.barcodePreviewView = barcodePreviewView;
             this.seriesInput = seriesInput;
             this.numberInput = numberInput;
             this.authorInput = authorInput;
@@ -155,6 +164,8 @@ public class RoomContentActivity extends Activity {
         final EditText nameInput;
         @Nullable
         final TextView barcodeValueView;
+        @Nullable
+        final ImageView barcodePreviewView;
         @Nullable
         final Button selectTypeButton;
         @Nullable
@@ -182,6 +193,7 @@ public class RoomContentActivity extends Activity {
         BarcodeScanContext(@NonNull FormState formState,
                             @Nullable EditText nameInput,
                             @Nullable TextView barcodeValueView,
+                            @Nullable ImageView barcodePreviewView,
                             @Nullable Button selectTypeButton,
                             @Nullable View bookFields,
                             @Nullable View trackFields,
@@ -197,6 +209,7 @@ public class RoomContentActivity extends Activity {
             this.formState = formState;
             this.nameInput = nameInput;
             this.barcodeValueView = barcodeValueView;
+            this.barcodePreviewView = barcodePreviewView;
             this.selectTypeButton = selectTypeButton;
             this.bookFields = bookFields;
             this.trackFields = trackFields;
@@ -542,11 +555,13 @@ public class RoomContentActivity extends Activity {
         EditText nameInput = dialogView.findViewById(R.id.input_room_content_name);
         EditText commentInput = dialogView.findViewById(R.id.input_room_content_comment);
         TextView barcodeValueView = dialogView.findViewById(R.id.text_barcode_value);
+        ImageView barcodePreviewView = dialogView.findViewById(R.id.image_barcode_preview);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button addPhotoButton = dialogView.findViewById(R.id.button_add_room_content_photo);
         LinearLayout photoContainer = dialogView.findViewById(R.id.container_room_content_photos);
         Button barcodeButton = dialogView.findViewById(R.id.button_barcode);
+        Button generateBarcodeButton = dialogView.findViewById(R.id.button_generate_barcode);
         Button addTrackButton = dialogView.findViewById(R.id.button_add_track);
         Button addTrackListButton = dialogView.findViewById(R.id.button_add_track_list);
         Spinner categorySpinner = dialogView.findViewById(R.id.spinner_category);
@@ -586,19 +601,11 @@ public class RoomContentActivity extends Activity {
                     : R.string.dialog_add_room_content_title);
         }
 
-        if (barcodeValueView != null) {
-            if (restoreData != null && !TextUtils.isEmpty(restoreData.barcode)) {
-                barcodeValueView.setText(restoreData.barcode);
-            } else if (isEditing && itemToEdit != null) {
-                String barcode = itemToEdit.getBarcode();
-                if (barcode != null && !barcode.trim().isEmpty()) {
-                    barcodeValueView.setText(barcode);
-                } else {
-                    barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
-                }
-            } else {
-                barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
-            }
+        String initialBarcode = null;
+        if (restoreData != null) {
+            initialBarcode = restoreData.barcode;
+        } else if (isEditing && itemToEdit != null) {
+            initialBarcode = itemToEdit.getBarcode();
         }
 
         if (isEditing && itemToEdit != null) {
@@ -716,14 +723,9 @@ public class RoomContentActivity extends Activity {
                     summaryInput.setSelection(restoreData.summary.length());
                 }
             }
-            if (barcodeValueView != null) {
-                if (!TextUtils.isEmpty(restoreData.barcode)) {
-                    barcodeValueView.setText(restoreData.barcode);
-                } else {
-                    barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
-                }
-            }
         }
+
+        bindBarcodeValue(barcodeValueView, barcodePreviewView, initialBarcode);
 
         final FormState formState = new FormState();
         formState.photoLabel = dialogView.findViewById(R.id.text_room_content_photos_label);
@@ -996,6 +998,15 @@ public class RoomContentActivity extends Activity {
         View.OnClickListener comingSoonListener = v ->
                 Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
 
+        if (generateBarcodeButton != null) {
+            generateBarcodeButton.setOnClickListener(v -> {
+                if (currentFormState == null || currentFormState != formState) {
+                    return;
+                }
+                showBarcodeCreationDialog(barcodeValueView, barcodePreviewView);
+            });
+        }
+
         if (barcodeButton != null) {
             barcodeButton.setOnClickListener(v -> {
                 if (currentFormState == null || currentFormState != formState) {
@@ -1019,6 +1030,7 @@ public class RoomContentActivity extends Activity {
                 barcodeScanContext = createBarcodeScanContext(formState,
                         nameInput,
                         barcodeValueView,
+                        barcodePreviewView,
                         selectTypeButton,
                         bookFields,
                         trackFields,
@@ -1236,6 +1248,7 @@ public class RoomContentActivity extends Activity {
                 nameInput,
                 commentInput,
                 barcodeValueView,
+                barcodePreviewView,
                 seriesInput,
                 numberInput,
                 authorInput,
@@ -1259,6 +1272,7 @@ public class RoomContentActivity extends Activity {
             barcodeScanContext = createBarcodeScanContext(formState,
                     nameInput,
                     barcodeValueView,
+                    barcodePreviewView,
                     selectTypeButton,
                     bookFields,
                     trackFields,
@@ -1275,6 +1289,74 @@ public class RoomContentActivity extends Activity {
             fetchMetadataForBarcode(restoreData.barcode, barcodeScanContext);
             restoreData.resumeLookup = false;
         }
+    }
+
+    private void showBarcodeCreationDialog(@Nullable TextView barcodeValueView,
+                                           @Nullable ImageView barcodePreviewView) {
+        if (barcodeValueView == null && barcodePreviewView == null) {
+            return;
+        }
+        final EditText input = new EditText(this);
+        input.setHint(R.string.dialog_generate_barcode_hint);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setSingleLine(true);
+        String existing = extractBarcodeValue(barcodeValueView);
+        if (!TextUtils.isEmpty(existing)) {
+            input.setText(existing);
+            input.setSelection(existing.length());
+        }
+        input.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                input.setError(null);
+            }
+        });
+        int padding = getResources().getDimensionPixelSize(R.dimen.dialog_barcode_input_padding);
+        LinearLayout container = new LinearLayout(this);
+        container.setOrientation(LinearLayout.VERTICAL);
+        container.setPadding(padding, padding, padding, 0);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        container.addView(input, params);
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_generate_barcode_title)
+                .setView(container)
+                .setNegativeButton(android.R.string.cancel, (d, which) -> d.dismiss())
+                .setPositiveButton(R.string.dialog_generate_barcode_action, null)
+                .create();
+
+        dialog.setOnShowListener(dlg -> {
+            Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            if (positive != null) {
+                positive.setOnClickListener(v -> {
+                    CharSequence text = input.getText();
+                    String value = text != null ? text.toString().trim() : "";
+                    if (value.isEmpty()) {
+                        input.setError(getString(R.string.dialog_error_generate_barcode_empty));
+                        return;
+                    }
+                    if (!updateBarcodePreview(barcodePreviewView, value, true)) {
+                        return;
+                    }
+                    if (barcodeValueView != null) {
+                        barcodeValueView.setText(value);
+                    }
+                    dialog.dismiss();
+                });
+            }
+        });
+
+        dialog.show();
     }
 
     private void showAddRoomContentDialog() {
@@ -1770,6 +1852,7 @@ public class RoomContentActivity extends Activity {
         if (context.barcodeValueView != null) {
             context.barcodeValueView.setText(trimmed);
         }
+        updateBarcodePreview(context.barcodePreviewView, trimmed, false);
         Toast.makeText(this, R.string.dialog_barcode_lookup_in_progress, Toast.LENGTH_SHORT).show();
         fetchMetadataForBarcode(trimmed, context);
     }
@@ -2387,6 +2470,7 @@ public class RoomContentActivity extends Activity {
         if (context.barcodeValueView != null) {
             context.barcodeValueView.setText(barcode);
         }
+        updateBarcodePreview(context.barcodePreviewView, barcode, false);
         if (result.errorMessage != null) {
             Toast.makeText(this, result.errorMessage, Toast.LENGTH_LONG).show();
             barcodeScanContext = null;
@@ -2450,10 +2534,76 @@ public class RoomContentActivity extends Activity {
         pendingBarcodeResult = null;
     }
 
+    private void bindBarcodeValue(@Nullable TextView barcodeValueView,
+                                  @Nullable ImageView barcodePreviewView,
+                                  @Nullable String barcode) {
+        String trimmed = barcode != null ? barcode.trim() : "";
+        if (barcodeValueView != null) {
+            if (trimmed.isEmpty()) {
+                barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
+            } else {
+                barcodeValueView.setText(trimmed);
+            }
+        }
+        if (trimmed.isEmpty()) {
+            updateBarcodePreview(barcodePreviewView, null, false);
+        } else {
+            updateBarcodePreview(barcodePreviewView, trimmed, false);
+        }
+    }
+
+    private boolean updateBarcodePreview(@Nullable ImageView previewView,
+                                         @Nullable String barcodeValue,
+                                         boolean notifyOnError) {
+        if (previewView == null) {
+            return true;
+        }
+        String trimmed = barcodeValue != null ? barcodeValue.trim() : "";
+        if (trimmed.isEmpty()) {
+            previewView.setImageDrawable(null);
+            previewView.setVisibility(View.GONE);
+            previewView.setContentDescription(getString(R.string.dialog_barcode_preview_placeholder_description));
+            return true;
+        }
+        try {
+            Bitmap bitmap = createBarcodeBitmap(trimmed);
+            previewView.setImageBitmap(bitmap);
+            previewView.setVisibility(View.VISIBLE);
+            previewView.setContentDescription(getString(R.string.dialog_barcode_preview_content_description, trimmed));
+            return true;
+        } catch (WriterException | IllegalArgumentException e) {
+            previewView.setImageDrawable(null);
+            previewView.setVisibility(View.GONE);
+            previewView.setContentDescription(getString(R.string.dialog_barcode_preview_placeholder_description));
+            if (notifyOnError) {
+                Toast.makeText(this, R.string.dialog_error_generate_barcode_failed, Toast.LENGTH_SHORT).show();
+            }
+            return false;
+        }
+    }
+
+    @NonNull
+    private Bitmap createBarcodeBitmap(@NonNull String value) throws WriterException {
+        int width = getResources().getDimensionPixelSize(R.dimen.barcode_preview_width);
+        int height = getResources().getDimensionPixelSize(R.dimen.barcode_preview_height);
+        BitMatrix matrix = new MultiFormatWriter().encode(value,
+                BarcodeFormat.CODE_128,
+                width,
+                height);
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                bitmap.setPixel(x, y, matrix.get(x, y) ? Color.BLACK : Color.WHITE);
+            }
+        }
+        return bitmap;
+    }
+
     @NonNull
     private BarcodeScanContext createBarcodeScanContext(@NonNull FormState formState,
                                                         @Nullable EditText nameInput,
                                                         @Nullable TextView barcodeValueView,
+                                                        @Nullable ImageView barcodePreviewView,
                                                         @Nullable Button selectTypeButton,
                                                         @Nullable View bookFields,
                                                         @Nullable View trackFields,
@@ -2469,6 +2619,7 @@ public class RoomContentActivity extends Activity {
         return new BarcodeScanContext(formState,
                 nameInput,
                 barcodeValueView,
+                barcodePreviewView,
                 selectTypeButton,
                 bookFields,
                 trackFields,

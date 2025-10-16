@@ -99,6 +99,7 @@
     <string name="dialog_label_room_content_photos_default">Photos de l’élément (0)</string>
     <string name="dialog_label_room_content_photos_template">Photos de l’élément (%1$d)</string>
     <string name="dialog_button_barcode">Code barre</string>
+    <string name="dialog_button_generate_barcode">Créer un code-barres</string>
     <string name="dialog_label_barcode_placeholder">Aucun code</string>
     <string name="dialog_barcode_prompt">Cadrez le code-barres dans le viseur</string>
     <string name="dialog_barcode_scan_cancelled">Lecture du code-barres annulée.</string>
@@ -108,6 +109,13 @@
     <string name="dialog_barcode_lookup_error">Impossible de récupérer les informations pour ce code-barres.</string>
     <string name="dialog_barcode_lookup_not_found">Aucune donnée trouvée pour le code-barres %1$s.</string>
     <string name="dialog_barcode_lookup_success">Informations trouvées à partir du code-barres.</string>
+    <string name="dialog_generate_barcode_title">Créer un code-barres</string>
+    <string name="dialog_generate_barcode_hint">Valeur du code-barres</string>
+    <string name="dialog_generate_barcode_action">Générer</string>
+    <string name="dialog_error_generate_barcode_empty">Saisissez une valeur de code-barres.</string>
+    <string name="dialog_error_generate_barcode_failed">Impossible de générer le code-barres.</string>
+    <string name="dialog_barcode_preview_placeholder_description">Aucun aperçu du code-barres</string>
+    <string name="dialog_barcode_preview_content_description">Code-barres généré : %1$s</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Autre</string>
     <string name="dialog_type_key">Clé</string>
