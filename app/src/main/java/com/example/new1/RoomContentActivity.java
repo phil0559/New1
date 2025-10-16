@@ -1507,6 +1507,11 @@ public class RoomContentActivity extends Activity {
         Button cancelButton = dialogView.findViewById(R.id.button_cancel_track_list);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm_track_list);
 
+        if (trackListInput != null && !formState.tracks.isEmpty()) {
+            trackListInput.setText(TextUtils.join("\n", formState.tracks));
+            trackListInput.setSelection(trackListInput.getText().length());
+        }
+
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
         }
@@ -1516,6 +1521,20 @@ public class RoomContentActivity extends Activity {
                 String rawText = trackListInput != null && trackListInput.getText() != null
                         ? trackListInput.getText().toString()
                         : "";
+                String trimmedText = rawText.trim();
+                if (trimmedText.isEmpty()) {
+                    if (trackListInput != null) {
+                        trackListInput.setError(null);
+                    }
+                    formState.tracks.clear();
+                    refreshTrackInputs(formState);
+                    if (formState.trackContainer != null) {
+                        formState.trackContainer.setVisibility(View.GONE);
+                    }
+                    dialog.dismiss();
+                    return;
+                }
+
                 String[] lines = rawText.split("\r?\n");
                 List<String> parsedTracks = new ArrayList<>();
                 for (String line : lines) {
@@ -1538,6 +1557,9 @@ public class RoomContentActivity extends Activity {
                 refreshTrackInputs(formState);
                 if (formState.trackContainer != null) {
                     formState.trackContainer.setVisibility(View.VISIBLE);
+                }
+                if (trackListInput != null) {
+                    trackListInput.setError(null);
                 }
                 dialog.dismiss();
             });
