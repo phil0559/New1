@@ -58,6 +58,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -74,6 +75,9 @@ public class RoomContentActivity extends Activity {
     private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
+
+    private static final int GENERATED_BARCODE_LENGTH = 13;
+    private static final SecureRandom BARCODE_RANDOM = new SecureRandom();
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
     public static final String EXTRA_ROOM_NAME = "extra_room_name";
@@ -1333,30 +1337,77 @@ public class RoomContentActivity extends Activity {
                 .setView(container)
                 .setNegativeButton(android.R.string.cancel, (d, which) -> d.dismiss())
                 .setPositiveButton(R.string.dialog_generate_barcode_action, null)
+                .setNeutralButton(R.string.dialog_generate_barcode_random, null)
                 .create();
 
         dialog.setOnShowListener(dlg -> {
             Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (positive != null) {
                 positive.setOnClickListener(v -> {
-                    CharSequence text = input.getText();
-                    String value = text != null ? text.toString().trim() : "";
-                    if (value.isEmpty()) {
-                        input.setError(getString(R.string.dialog_error_generate_barcode_empty));
-                        return;
+                    if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView)) {
+                        dialog.dismiss();
                     }
-                    if (!updateBarcodePreview(barcodePreviewView, value, true)) {
-                        return;
+                });
+            }
+            Button neutral = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+            if (neutral != null) {
+                neutral.setOnClickListener(v -> {
+                    String generated = generateRandomBarcodeValue();
+                    input.setText(generated);
+                    input.setSelection(generated.length());
+                    if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView)) {
+                        dialog.dismiss();
                     }
-                    if (barcodeValueView != null) {
-                        barcodeValueView.setText(value);
-                    }
-                    dialog.dismiss();
                 });
             }
         });
 
         dialog.show();
+    }
+
+    private boolean applyBarcodeValue(@NonNull EditText input,
+                                      @Nullable TextView barcodeValueView,
+                                      @Nullable ImageView barcodePreviewView) {
+        CharSequence text = input.getText();
+        String value = text != null ? text.toString().trim() : "";
+        if (value.isEmpty()) {
+            input.setError(getString(R.string.dialog_error_generate_barcode_empty));
+            return false;
+        }
+        if (!updateBarcodePreview(barcodePreviewView, value, true)) {
+            input.setError(getString(R.string.dialog_error_generate_barcode_failed));
+            return false;
+        }
+        if (barcodeValueView != null) {
+            barcodeValueView.setText(value);
+        }
+        input.setError(null);
+        return true;
+    }
+
+    @NonNull
+    private String generateRandomBarcodeValue() {
+        int[] digits = new int[GENERATED_BARCODE_LENGTH - 1];
+        for (int i = 0; i < digits.length; i++) {
+            digits[i] = BARCODE_RANDOM.nextInt(10);
+        }
+        int checksum = computeEan13CheckDigit(digits);
+        StringBuilder builder = new StringBuilder(GENERATED_BARCODE_LENGTH);
+        for (int digit : digits) {
+            builder.append(digit);
+        }
+        builder.append(checksum);
+        return builder.toString();
+    }
+
+    private int computeEan13CheckDigit(@NonNull int[] digits) {
+        int sum = 0;
+        for (int i = 0; i < digits.length; i++) {
+            int digit = digits[i];
+            sum += (i % 2 == 0) ? digit : digit * 3;
+        }
+        int mod = sum % 10;
+        return (10 - mod) % 10;
     }
 
     private void showAddRoomContentDialog() {

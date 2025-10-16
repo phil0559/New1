@@ -88,6 +88,7 @@
     <string name="dialog_generate_barcode_title">Barcode erstellen</string>
     <string name="dialog_generate_barcode_hint">Barcode-Wert</string>
     <string name="dialog_generate_barcode_action">Generieren</string>
+    <string name="dialog_generate_barcode_random">Automatisch erzeugen</string>
     <string name="dialog_error_generate_barcode_empty">Geben Sie einen Barcode-Wert ein.</string>
     <string name="dialog_error_generate_barcode_failed">Der Barcode konnte nicht erzeugt werden.</string>
     <string name="dialog_barcode_preview_placeholder_description">Kein Barcode-Vorschaubild</string>
