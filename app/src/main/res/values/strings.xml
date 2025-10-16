@@ -98,8 +98,9 @@
     <string name="dialog_label_room_content_comment">Commentaire</string>
     <string name="dialog_label_room_content_photos_default">Photos de l’élément (0)</string>
     <string name="dialog_label_room_content_photos_template">Photos de l’élément (%1$d)</string>
-    <string name="dialog_button_barcode">Code barre</string>
-    <string name="dialog_button_generate_barcode">Créer un code-barres</string>
+    <string name="dialog_barcode_section_title">Code-barres</string>
+    <string name="dialog_button_barcode">Flasher</string>
+    <string name="dialog_button_generate_barcode">Créer</string>
     <string name="dialog_label_barcode_placeholder">Aucun code</string>
     <string name="dialog_barcode_prompt">Cadrez le code-barres dans le viseur</string>
     <string name="dialog_barcode_scan_cancelled">Lecture du code-barres annulée.</string>

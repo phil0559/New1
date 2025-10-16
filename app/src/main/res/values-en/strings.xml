@@ -73,8 +73,9 @@
     <string name="dialog_label_room_content_comment">Comment</string>
     <string name="dialog_label_room_content_photos_default">Item photos (0)</string>
     <string name="dialog_label_room_content_photos_template">Item photos (%1$d)</string>
-    <string name="dialog_button_barcode">Barcode</string>
-    <string name="dialog_button_generate_barcode">Create barcode</string>
+    <string name="dialog_barcode_section_title">Barcode</string>
+    <string name="dialog_button_barcode">Scan</string>
+    <string name="dialog_button_generate_barcode">Create</string>
     <string name="dialog_label_barcode_placeholder">No barcode</string>
     <string name="dialog_barcode_prompt">Place the barcode inside the frame</string>
     <string name="dialog_barcode_scan_cancelled">Barcode scan cancelled.</string>

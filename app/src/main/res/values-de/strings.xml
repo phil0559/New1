@@ -73,8 +73,9 @@
     <string name="dialog_label_room_content_comment">Kommentar</string>
     <string name="dialog_label_room_content_photos_default">Fotos des Elements (0)</string>
     <string name="dialog_label_room_content_photos_template">Fotos des Elements (%1$d)</string>
-    <string name="dialog_button_barcode">Barcode</string>
-    <string name="dialog_button_generate_barcode">Barcode erstellen</string>
+    <string name="dialog_barcode_section_title">Barcode</string>
+    <string name="dialog_button_barcode">Scannen</string>
+    <string name="dialog_button_generate_barcode">Erstellen</string>
     <string name="dialog_label_barcode_placeholder">Kein Barcode</string>
     <string name="dialog_barcode_prompt">Positionieren Sie den Barcode im Sucher</string>
     <string name="dialog_barcode_scan_cancelled">Barcode-Scan abgebrochen.</string>
