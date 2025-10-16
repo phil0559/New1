@@ -238,7 +238,39 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     @NonNull
     private String buildRankLabel(int position) {
-        return String.valueOf(position + 1);
+        if (position < 0 || position >= items.size()) {
+            return "";
+        }
+        // La numérotation ne concerne que les contenants et les éléments qui leur sont rattachés.
+        int containerIndex = 0;
+        int remainingAttachedItems = 0;
+        int currentContentIndex = 0;
+        for (int i = 0; i <= position && i < items.size(); i++) {
+            RoomContentItem item = items.get(i);
+            if (item.isContainer()) {
+                containerIndex++;
+                remainingAttachedItems = Math.max(0, item.getAttachedItemCount());
+                currentContentIndex = 0;
+                if (i == position) {
+                    return String.valueOf(containerIndex);
+                }
+                continue;
+            }
+            if (remainingAttachedItems > 0) {
+                currentContentIndex++;
+                remainingAttachedItems--;
+                if (i == position) {
+                    return containerIndex > 0
+                            ? containerIndex + "." + currentContentIndex
+                            : "";
+                }
+                continue;
+            }
+            if (i == position) {
+                return "";
+            }
+        }
+        return "";
     }
 
     private void applyLabelStyle(@NonNull Spannable spannable, int start, int end) {
