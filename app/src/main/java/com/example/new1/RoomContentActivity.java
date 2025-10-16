@@ -1044,7 +1044,12 @@ public class RoomContentActivity extends Activity {
         }
 
         if (addTrackListButton != null) {
-            addTrackListButton.setOnClickListener(comingSoonListener);
+            addTrackListButton.setOnClickListener(v -> {
+                if (currentFormState == null || currentFormState != formState) {
+                    return;
+                }
+                showTrackListDialog(formState);
+            });
         }
 
         if (categorySpinner != null) {
@@ -1486,6 +1491,59 @@ public class RoomContentActivity extends Activity {
         if (requestFocus) {
             input.requestFocus();
         }
+    }
+
+    private void showTrackListDialog(@NonNull FormState formState) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_track_list_input, null);
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        EditText trackListInput = dialogView.findViewById(R.id.input_track_list);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel_track_list);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm_track_list);
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                String rawText = trackListInput != null && trackListInput.getText() != null
+                        ? trackListInput.getText().toString()
+                        : "";
+                String[] lines = rawText.split("\r?\n");
+                List<String> parsedTracks = new ArrayList<>();
+                for (String line : lines) {
+                    String trimmed = line != null ? line.trim() : "";
+                    if (!trimmed.isEmpty()) {
+                        parsedTracks.add(trimmed);
+                    }
+                }
+
+                if (parsedTracks.isEmpty()) {
+                    if (trackListInput != null) {
+                        trackListInput.setError(getString(R.string.dialog_track_list_error_empty));
+                        trackListInput.requestFocus();
+                    }
+                    return;
+                }
+
+                formState.tracks.clear();
+                formState.tracks.addAll(parsedTracks);
+                refreshTrackInputs(formState);
+                if (formState.trackContainer != null) {
+                    formState.trackContainer.setVisibility(View.VISIBLE);
+                }
+                dialog.dismiss();
+            });
+        }
+
+        dialog.show();
     }
 
     private void showPhotoPreview(@NonNull FormState formState, int startIndex) {
