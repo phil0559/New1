@@ -24,4 +24,5 @@
     <color name="room_content_banner_cd">#D0E4C2</color>
     <color name="room_content_banner_disc">#C5DBF5</color>
     <color name="room_content_banner_comic">#F7C2D7</color>
+    <color name="button_light_blue">#B3E5FC</color>
 </resources>
