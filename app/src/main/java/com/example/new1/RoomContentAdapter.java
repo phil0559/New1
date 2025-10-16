@@ -11,6 +11,7 @@ import android.text.Spanned;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +39,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final int labelColor;
     @Nullable
     private final OnRoomContentInteractionListener interactionListener;
+    private final SparseBooleanArray expandedStates = new SparseBooleanArray();
 
     public RoomContentAdapter(@NonNull Context context,
             @NonNull List<RoomContentItem> items) {
@@ -97,7 +99,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             holder.metadataView.setText(null);
         }
 
-        holder.detailsContainer.setVisibility(hasComment || hasMetadata ? View.VISIBLE : View.GONE);
+        boolean hasDetails = hasComment || hasMetadata;
+        if (!hasDetails) {
+            expandedStates.delete(position);
+        }
+        boolean isExpanded = hasDetails && expandedStates.get(position, false);
+        holder.detailsContainer.setVisibility(hasDetails && isExpanded ? View.VISIBLE : View.GONE);
+        holder.updateToggle(hasDetails, isExpanded, item.getName());
     }
 
     @Override
@@ -243,6 +251,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final TextView metadataView;
         @Nullable
         final ImageView deleteView;
+        final ImageView toggleView;
         @Nullable
         final OnRoomContentInteractionListener interactionListener;
         @Nullable
@@ -262,6 +271,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             commentView = itemView.findViewById(R.id.text_room_content_comment);
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
             deleteView = itemView.findViewById(R.id.image_room_content_delete);
+            toggleView = itemView.findViewById(R.id.image_room_content_toggle);
             this.interactionListener = interactionListener;
             bannerContainer.setOnClickListener(view -> notifyEdit());
             if (photoView != null) {
@@ -270,6 +280,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (deleteView != null) {
                 deleteView.setOnClickListener(view -> notifyDelete());
             }
+            toggleView.setOnClickListener(view -> toggleExpansion());
             defaultPaddingStart = photoView != null ? photoView.getPaddingStart() : 0;
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
@@ -289,6 +300,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 photoView.setContentDescription(itemView.getContext()
                         .getString(R.string.content_description_room_content_photos, item.getName()));
             }
+        }
+
+        void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
+            if (!hasDetails) {
+                toggleView.setVisibility(View.GONE);
+                toggleView.setContentDescription(null);
+                toggleView.setEnabled(false);
+                toggleView.setRotation(0f);
+                return;
+            }
+            toggleView.setVisibility(View.VISIBLE);
+            toggleView.setEnabled(true);
+            toggleView.setRotation(isExpanded ? 180f : 0f);
+            int descriptionRes = isExpanded
+                    ? R.string.content_description_room_content_collapse
+                    : R.string.content_description_room_content_expand;
+            toggleView.setContentDescription(itemView.getContext().getString(descriptionRes, name));
         }
 
         private void updatePhoto(@NonNull RoomContentItem item) {
@@ -350,6 +378,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             interactionListener.onDeleteRoomContent(currentItem, position);
+        }
+
+        private void toggleExpansion() {
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            boolean isExpanded = expandedStates.get(position, false);
+            if (isExpanded) {
+                expandedStates.delete(position);
+            } else {
+                expandedStates.put(position, true);
+            }
+            notifyItemChanged(position);
         }
     }
 }
