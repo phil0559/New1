@@ -85,6 +85,7 @@
     <string name="dialog_barcode_lookup_success">Information retrieved from the barcode.</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Other</string>
+    <string name="dialog_type_key">Key</string>
     <string name="dialog_type_book">Book</string>
     <string name="dialog_type_cd">CD</string>
     <string name="dialog_type_disc">Record</string>

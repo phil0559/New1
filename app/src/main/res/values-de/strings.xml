@@ -85,6 +85,7 @@
     <string name="dialog_barcode_lookup_success">Informationen wurden über den Barcode gefunden.</string>
     <string name="dialog_label_type">Typ</string>
     <string name="dialog_type_other">Andere</string>
+    <string name="dialog_type_key">Schlüssel</string>
     <string name="dialog_type_book">Buch</string>
     <string name="dialog_type_cd">CD</string>
     <string name="dialog_type_disc">Schallplatte</string>
