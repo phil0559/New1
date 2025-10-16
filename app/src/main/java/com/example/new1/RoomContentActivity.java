@@ -1524,6 +1524,9 @@ public class RoomContentActivity extends Activity {
                     dialog.dismiss();
                     return;
                 }
+                int attachedItemCount = isEditing && containerToEdit != null
+                        ? containerToEdit.getAttachedItemCount()
+                        : 0;
                 RoomContentItem newItem = new RoomContentItem(trimmedName,
                         trimmedComment,
                         selectedType,
@@ -1538,7 +1541,8 @@ public class RoomContentActivity extends Activity {
                         null,
                         null,
                         new ArrayList<>(formState.photos),
-                        true);
+                        true,
+                        attachedItemCount);
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
                         dialog.dismiss();
