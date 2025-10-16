@@ -85,6 +85,7 @@
     <string name="dialog_barcode_lookup_success">Información obtenida a partir del código de barras.</string>
     <string name="dialog_label_type">Tipo</string>
     <string name="dialog_type_other">Otro</string>
+    <string name="dialog_type_key">Llave</string>
     <string name="dialog_type_book">Libro</string>
     <string name="dialog_type_cd">CD</string>
     <string name="dialog_type_disc">Disco</string>

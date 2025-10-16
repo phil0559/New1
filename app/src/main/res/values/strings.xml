@@ -110,6 +110,7 @@
     <string name="dialog_barcode_lookup_success">Informations trouvées à partir du code-barres.</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Autre</string>
+    <string name="dialog_type_key">Clé</string>
     <string name="dialog_type_book">Livre</string>
     <string name="dialog_type_cd">CD</string>
     <string name="dialog_type_disc">Disque</string>

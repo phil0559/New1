@@ -2,6 +2,7 @@
 <resources>
     <string-array name="room_content_type_options">
         <item>@string/dialog_type_other</item>
+        <item>@string/dialog_type_key</item>
         <item>@string/dialog_type_book</item>
         <item>@string/dialog_type_cd</item>
         <item>@string/dialog_type_disc</item>

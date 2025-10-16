@@ -252,6 +252,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (trimmedType.equalsIgnoreCase(context.getString(R.string.dialog_type_other))) {
             return R.color.room_content_banner_other;
         }
+        if (trimmedType.equalsIgnoreCase(context.getString(R.string.dialog_type_key))) {
+            return R.color.room_content_banner_other;
+        }
         return R.color.room_content_banner_default;
     }
 
