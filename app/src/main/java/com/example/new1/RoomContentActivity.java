@@ -1452,10 +1452,14 @@ public class RoomContentActivity extends Activity {
         }
         View view = LayoutInflater.from(container.getContext())
                 .inflate(R.layout.item_track_input, container, false);
-        if (!(view instanceof EditText)) {
+        TextView numberView = view.findViewById(R.id.text_track_number);
+        if (numberView != null) {
+            numberView.setText(getString(R.string.dialog_track_field_label, index + 1));
+        }
+        EditText input = view.findViewById(R.id.edit_track_name);
+        if (input == null) {
             return;
         }
-        EditText input = (EditText) view;
         input.setHint(getString(R.string.dialog_track_field_hint, index + 1));
         String value = formState.tracks.get(index);
         if (value != null && !value.isEmpty()) {
@@ -1478,7 +1482,7 @@ public class RoomContentActivity extends Activity {
                 formState.tracks.set(trackIndex, text);
             }
         });
-        container.addView(input);
+        container.addView(view);
         if (requestFocus) {
             input.requestFocus();
         }

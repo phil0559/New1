@@ -152,6 +152,7 @@
     <string name="dialog_tracks_cd_title">Pistes du CD</string>
     <string name="dialog_tracks_disc_title">Pistes du Disque</string>
     <string name="dialog_track_placeholder">Piste 1</string>
+    <string name="dialog_track_field_label">Piste %1$d</string>
     <string name="dialog_track_field_hint">Piste %1$d</string>
     <string name="dialog_button_add_track">Ajouter une piste</string>
     <string name="dialog_button_add_track_list">Ajouter une liste de pistes</string>
