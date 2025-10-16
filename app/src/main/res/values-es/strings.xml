@@ -62,6 +62,7 @@
     <string name="room_container_added_confirmation">Contenedor añadido a la habitación.</string>
     <string name="room_container_updated_confirmation">Contenedor actualizado.</string>
     <string name="room_container_deleted_confirmation">Contenedor eliminado.</string>
+    <string name="room_container_attached_summary">Elementos asociados: %1$d</string>
     <string name="room_content_metadata_type">Tipo: %1$s</string>
     <string name="room_content_metadata_category">Categoría: %1$s</string>
     <string name="room_content_metadata_series">Serie: %1$s</string>

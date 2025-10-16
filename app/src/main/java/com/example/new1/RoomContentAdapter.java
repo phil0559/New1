@@ -110,13 +110,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             holder.metadataView.setText(null);
         }
 
-        boolean hasDetails = hasComment || hasMetadata;
-        if (!hasDetails) {
+        boolean hasContainerAttachedSummary = item.isContainer() && item.hasAttachedItems();
+        if (!hasComment && !hasMetadata && hasContainerAttachedSummary) {
+            CharSequence attachedSummary = context.getString(
+                    R.string.room_container_attached_summary, item.getAttachedItemCount());
+            holder.metadataView.setVisibility(View.VISIBLE);
+            holder.metadataView.setText(attachedSummary);
+        }
+
+        boolean hasExpandableContent = hasComment || hasMetadata || hasContainerAttachedSummary;
+        if (!hasExpandableContent) {
             expandedStates.delete(position);
         }
-        boolean isExpanded = hasDetails && expandedStates.get(position, false);
-        holder.detailsContainer.setVisibility(hasDetails && isExpanded ? View.VISIBLE : View.GONE);
-        holder.updateToggle(hasDetails, isExpanded, item.getName());
+        boolean isExpanded = hasExpandableContent && expandedStates.get(position, false);
+        holder.detailsContainer
+                .setVisibility(hasExpandableContent && isExpanded ? View.VISIBLE : View.GONE);
+        holder.updateToggle(hasExpandableContent, isExpanded, item.getName());
     }
 
     @Override
