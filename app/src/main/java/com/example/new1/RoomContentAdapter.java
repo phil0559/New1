@@ -76,13 +76,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         CharSequence commentText = formatComment(item.getComment());
         boolean hasComment = commentText != null;
-        if (hasComment) {
-            holder.commentView.setVisibility(View.VISIBLE);
-            holder.commentView.setText(commentText);
-        } else {
-            holder.commentView.setVisibility(View.GONE);
-            holder.commentView.setText(null);
-        }
 
         List<CharSequence> metadataLines = new ArrayList<>();
         addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
@@ -102,23 +95,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         addMetadataLine(metadataLines, R.string.room_content_metadata_barcode, item.getBarcode());
         CharSequence metadataText = formatMetadataLines(metadataLines);
         boolean hasMetadata = metadataText != null;
-        if (hasMetadata) {
-            holder.metadataView.setVisibility(View.VISIBLE);
-            holder.metadataView.setText(metadataText);
-        } else {
-            holder.metadataView.setVisibility(View.GONE);
-            holder.metadataView.setText(null);
+
+        boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
+        CharSequence attachedSummary = null;
+        CharSequence attachedDetails = null;
+        if (hasAttachedItems) {
+            attachedSummary = context.getString(R.string.room_container_attached_summary,
+                    item.getAttachedItemCount());
+            attachedDetails = formatAttachedItems(position, item.getAttachedItemCount());
         }
 
-        boolean hasContainerAttachedSummary = item.isContainer() && item.hasAttachedItems();
-        if (!hasComment && !hasMetadata && hasContainerAttachedSummary) {
-            CharSequence attachedSummary = context.getString(
-                    R.string.room_container_attached_summary, item.getAttachedItemCount());
-            holder.metadataView.setVisibility(View.VISIBLE);
-            holder.metadataView.setText(attachedSummary);
-        }
-
-        boolean hasExpandableContent = hasComment || hasMetadata || hasContainerAttachedSummary;
+        boolean hasExpandableContent = hasComment || hasMetadata || hasAttachedItems;
         if (!hasExpandableContent) {
             expandedStates.delete(position);
         }
@@ -126,6 +113,41 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         holder.detailsContainer
                 .setVisibility(hasExpandableContent && isExpanded ? View.VISIBLE : View.GONE);
         holder.updateToggle(hasExpandableContent, isExpanded, item.getName());
+
+        if (isExpanded) {
+            if (hasComment) {
+                holder.commentView.setVisibility(View.VISIBLE);
+                holder.commentView.setText(commentText);
+            } else {
+                holder.commentView.setVisibility(View.GONE);
+                holder.commentView.setText(null);
+            }
+
+            CharSequence combinedMetadata = metadataText;
+            if (hasAttachedItems) {
+                CharSequence attachmentText = attachedDetails != null ? attachedDetails : attachedSummary;
+                if (attachmentText != null) {
+                    if (combinedMetadata != null && combinedMetadata.length() > 0) {
+                        combinedMetadata = TextUtils.concat(combinedMetadata, "\n\n", attachmentText);
+                    } else {
+                        combinedMetadata = attachmentText;
+                    }
+                }
+            }
+
+            if (combinedMetadata != null) {
+                holder.metadataView.setVisibility(View.VISIBLE);
+                holder.metadataView.setText(combinedMetadata);
+            } else {
+                holder.metadataView.setVisibility(View.GONE);
+                holder.metadataView.setText(null);
+            }
+        } else {
+            holder.commentView.setVisibility(View.GONE);
+            holder.commentView.setText(null);
+            holder.metadataView.setVisibility(View.GONE);
+            holder.metadataView.setText(null);
+        }
     }
 
     @Override
@@ -205,6 +227,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             builder.append("    ");
             builder.append(lines[i]);
         }
+    }
+
+    @Nullable
+    private CharSequence formatAttachedItems(int containerPosition, int attachedItemCount) {
+        if (attachedItemCount <= 0) {
+            return null;
+        }
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append(context.getString(R.string.room_container_attached_summary, attachedItemCount));
+        int startIndex = containerPosition + 1;
+        int endIndex = Math.min(startIndex + attachedItemCount, items.size());
+        for (int i = startIndex; i < endIndex; i++) {
+            RoomContentItem candidate = items.get(i);
+            if (candidate.isContainer()) {
+                break;
+            }
+            builder.append('\n');
+            builder.append('•').append(' ');
+            builder.append(resolveItemName(candidate));
+        }
+        return builder;
     }
 
     @Nullable
