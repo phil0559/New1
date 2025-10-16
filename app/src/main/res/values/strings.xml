@@ -113,6 +113,7 @@
     <string name="dialog_generate_barcode_title">Créer un code-barres</string>
     <string name="dialog_generate_barcode_hint">Valeur du code-barres</string>
     <string name="dialog_generate_barcode_action">Générer</string>
+    <string name="dialog_generate_barcode_random">Générer automatiquement</string>
     <string name="dialog_error_generate_barcode_empty">Saisissez une valeur de code-barres.</string>
     <string name="dialog_error_generate_barcode_failed">Impossible de générer le code-barres.</string>
     <string name="dialog_barcode_preview_placeholder_description">Aucun aperçu du code-barres</string>
