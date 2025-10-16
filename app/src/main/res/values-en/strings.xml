@@ -74,6 +74,7 @@
     <string name="dialog_label_room_content_photos_default">Item photos (0)</string>
     <string name="dialog_label_room_content_photos_template">Item photos (%1$d)</string>
     <string name="dialog_button_barcode">Barcode</string>
+    <string name="dialog_button_generate_barcode">Create barcode</string>
     <string name="dialog_label_barcode_placeholder">No barcode</string>
     <string name="dialog_barcode_prompt">Place the barcode inside the frame</string>
     <string name="dialog_barcode_scan_cancelled">Barcode scan cancelled.</string>
@@ -83,6 +84,13 @@
     <string name="dialog_barcode_lookup_error">Unable to retrieve information for this barcode.</string>
     <string name="dialog_barcode_lookup_not_found">No data found for barcode %1$s.</string>
     <string name="dialog_barcode_lookup_success">Information retrieved from the barcode.</string>
+    <string name="dialog_generate_barcode_title">Create a barcode</string>
+    <string name="dialog_generate_barcode_hint">Barcode value</string>
+    <string name="dialog_generate_barcode_action">Generate</string>
+    <string name="dialog_error_generate_barcode_empty">Enter a barcode value.</string>
+    <string name="dialog_error_generate_barcode_failed">Unable to generate the barcode.</string>
+    <string name="dialog_barcode_preview_placeholder_description">No barcode preview</string>
+    <string name="dialog_barcode_preview_content_description">Generated barcode: %1$s</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Other</string>
     <string name="dialog_type_key">Key</string>

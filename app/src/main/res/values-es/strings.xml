@@ -74,6 +74,7 @@
     <string name="dialog_label_room_content_photos_default">Fotos del elemento (0)</string>
     <string name="dialog_label_room_content_photos_template">Fotos del elemento (%1$d)</string>
     <string name="dialog_button_barcode">Código de barras</string>
+    <string name="dialog_button_generate_barcode">Crear código de barras</string>
     <string name="dialog_label_barcode_placeholder">Sin código</string>
     <string name="dialog_barcode_prompt">Coloque el código de barras en el visor</string>
     <string name="dialog_barcode_scan_cancelled">Lectura de código de barras cancelada.</string>
@@ -83,6 +84,13 @@
     <string name="dialog_barcode_lookup_error">No se pudo recuperar la información de este código de barras.</string>
     <string name="dialog_barcode_lookup_not_found">No se encontraron datos para el código de barras %1$s.</string>
     <string name="dialog_barcode_lookup_success">Información obtenida a partir del código de barras.</string>
+    <string name="dialog_generate_barcode_title">Crear un código de barras</string>
+    <string name="dialog_generate_barcode_hint">Valor del código de barras</string>
+    <string name="dialog_generate_barcode_action">Generar</string>
+    <string name="dialog_error_generate_barcode_empty">Introduce un valor de código de barras.</string>
+    <string name="dialog_error_generate_barcode_failed">No se pudo generar el código de barras.</string>
+    <string name="dialog_barcode_preview_placeholder_description">Sin vista previa del código de barras</string>
+    <string name="dialog_barcode_preview_content_description">Código de barras generado: %1$s</string>
     <string name="dialog_label_type">Tipo</string>
     <string name="dialog_type_other">Otro</string>
     <string name="dialog_type_key">Llave</string>

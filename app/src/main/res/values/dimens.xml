@@ -2,4 +2,7 @@
 <resources>
     <dimen name="dialog_photo_thumbnail_size">56dp</dimen>
     <dimen name="dialog_photo_thumbnail_spacing">8dp</dimen>
+    <dimen name="barcode_preview_width">280dp</dimen>
+    <dimen name="barcode_preview_height">120dp</dimen>
+    <dimen name="dialog_barcode_input_padding">24dp</dimen>
 </resources>
