@@ -19,6 +19,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -27,12 +28,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
 
+import android.view.Gravity;
+
+import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -327,6 +332,8 @@ public class RoomContentActivity extends Activity {
     @Nullable
     private PendingBarcodeResult pendingBarcodeResult;
     private boolean barcodeScanAwaitingResult;
+    @Nullable
+    private PopupWindow addMenuPopup;
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -401,7 +408,7 @@ public class RoomContentActivity extends Activity {
 
         View addButton = findViewById(R.id.button_add_room_content);
         if (addButton != null) {
-            addButton.setOnClickListener(view -> showAddRoomContentDialog());
+            addButton.setOnClickListener(this::toggleAddRoomContentMenu);
         }
 
         restorePendingBarcodeResult(savedInstanceState);
@@ -1408,6 +1415,72 @@ public class RoomContentActivity extends Activity {
         }
         int mod = sum % 10;
         return (10 - mod) % 10;
+    }
+
+    private void toggleAddRoomContentMenu(@NonNull View anchor) {
+        if (addMenuPopup != null && addMenuPopup.isShowing()) {
+            addMenuPopup.dismiss();
+            return;
+        }
+
+        View popupContent = LayoutInflater.from(this)
+                .inflate(R.layout.popup_add_room_content_menu, null);
+        TextView titleView = popupContent.findViewById(R.id.text_popup_add_room_content_title);
+        if (titleView != null) {
+            titleView.setText(R.string.popup_add_room_content_title);
+        }
+
+        View elementButton = popupContent.findViewById(R.id.button_popup_add_room_content_element);
+        if (elementButton != null) {
+            elementButton.setOnClickListener(view -> {
+                if (addMenuPopup != null) {
+                    addMenuPopup.dismiss();
+                }
+                showAddRoomContentDialog();
+            });
+        }
+
+        View containerButton = popupContent.findViewById(R.id.button_popup_add_room_content_container);
+        if (containerButton != null) {
+            containerButton.setOnClickListener(view -> {
+                if (addMenuPopup != null) {
+                    addMenuPopup.dismiss();
+                }
+                Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
+            });
+        }
+
+        addMenuPopup = new PopupWindow(
+                popupContent,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+        addMenuPopup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        addMenuPopup.setOutsideTouchable(true);
+        addMenuPopup.setOnDismissListener(() -> addMenuPopup = null);
+
+        popupContent.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        int popupHeight = popupContent.getMeasuredHeight();
+        int verticalOffset = (int) (getResources().getDisplayMetrics().density * 12);
+
+        Rect displayFrame = new Rect();
+        anchor.getWindowVisibleDisplayFrame(displayFrame);
+        int[] location = new int[2];
+        anchor.getLocationOnScreen(location);
+        int anchorBottom = location[1] + anchor.getHeight();
+        int spaceBelow = displayFrame.bottom - anchorBottom;
+        int spaceAbove = location[1] - displayFrame.top;
+
+        int yOffset = -anchor.getHeight() - popupHeight - verticalOffset;
+        if (spaceBelow >= popupHeight + verticalOffset) {
+            yOffset = verticalOffset;
+        } else if (spaceAbove < popupHeight + verticalOffset) {
+            yOffset = -anchor.getHeight() - popupHeight;
+        }
+
+        PopupWindowCompat.showAsDropDown(addMenuPopup, anchor, 0, yOffset, Gravity.END);
     }
 
     private void showAddRoomContentDialog() {
@@ -2932,6 +3005,10 @@ public class RoomContentActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (addMenuPopup != null) {
+            addMenuPopup.dismiss();
+            addMenuPopup = null;
+        }
         barcodeLookupExecutor.shutdownNow();
     }
 
