@@ -3,6 +3,8 @@ package com.example.new1;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.text.Spannable;
@@ -13,11 +15,14 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
 import android.util.SparseBooleanArray;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.PopupWindow;
+import android.widget.Toast;
 
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
@@ -117,6 +122,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Override
     public int getItemCount() {
         return items.size();
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull ViewHolder holder) {
+        super.onViewRecycled(holder);
+        holder.dismissOptionsMenu();
     }
 
     private void addMetadataLine(@NonNull List<CharSequence> metadataLines, int templateRes,
@@ -283,9 +294,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final TextView nameView;
         final TextView commentView;
         final TextView metadataView;
-        @Nullable
-        final ImageView deleteView;
         final ImageView toggleView;
+        final ImageView menuView;
         @Nullable
         final OnRoomContentInteractionListener interactionListener;
         @Nullable
@@ -294,6 +304,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
         private final int defaultPaddingBottom;
+        @Nullable
+        private PopupWindow optionsPopup;
 
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
@@ -304,17 +316,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             nameView = itemView.findViewById(R.id.text_room_content_name);
             commentView = itemView.findViewById(R.id.text_room_content_comment);
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
-            deleteView = itemView.findViewById(R.id.image_room_content_delete);
             toggleView = itemView.findViewById(R.id.image_room_content_toggle);
+            menuView = itemView.findViewById(R.id.image_room_content_menu);
             this.interactionListener = interactionListener;
             bannerContainer.setOnClickListener(view -> notifyEdit());
             if (photoView != null) {
                 photoView.setOnClickListener(view -> notifyEdit());
             }
-            if (deleteView != null) {
-                deleteView.setOnClickListener(view -> notifyDelete());
-            }
             toggleView.setOnClickListener(view -> toggleExpansion());
+            menuView.setOnClickListener(view -> toggleOptionsMenu());
             defaultPaddingStart = photoView != null ? photoView.getPaddingStart() : 0;
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
@@ -323,6 +333,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         void bind(@NonNull RoomContentItem item) {
             currentItem = item;
+            dismissOptionsMenu();
             nameView.setText(item.getName());
             if (item.isContainer()) {
                 itemView.setBackgroundResource(R.drawable.bg_room_container_item);
@@ -332,14 +343,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 applyBannerColor(bannerContainer, item.getType());
             }
             updatePhoto(item);
-            if (deleteView != null) {
-                deleteView.setContentDescription(itemView.getContext()
-                        .getString(R.string.content_description_room_content_delete));
-            }
             if (photoView != null) {
                 photoView.setContentDescription(itemView.getContext()
                         .getString(R.string.content_description_room_content_photos, item.getName()));
             }
+            String name = item.getName();
+            String trimmedName = name != null ? name.trim() : "";
+            if (trimmedName.isEmpty()) {
+                trimmedName = itemView.getContext()
+                        .getString(R.string.dialog_room_content_item_placeholder);
+            }
+            menuView.setContentDescription(itemView.getContext()
+                    .getString(R.string.content_description_room_content_menu, trimmedName));
         }
 
         void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
@@ -413,6 +428,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (interactionListener == null || currentItem == null) {
                 return;
             }
+            dismissOptionsMenu();
             int position = getBindingAdapterPosition();
             if (position == RecyclerView.NO_POSITION) {
                 return;
@@ -432,6 +448,54 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 expandedStates.put(position, true);
             }
             notifyItemChanged(position);
+        }
+
+        private void toggleOptionsMenu() {
+            if (optionsPopup != null && optionsPopup.isShowing()) {
+                optionsPopup.dismiss();
+                return;
+            }
+            View popupView = RoomContentAdapter.this.inflater
+                    .inflate(R.layout.popup_room_content_menu, null);
+            PopupWindow popupWindow = new PopupWindow(popupView,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true);
+            popupWindow.setOutsideTouchable(true);
+            popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            View copyButton = popupView.findViewById(R.id.button_popup_room_content_copy);
+            if (copyButton != null) {
+                copyButton.setOnClickListener(view -> {
+                    Toast.makeText(itemView.getContext(), R.string.feature_coming_soon,
+                            Toast.LENGTH_SHORT).show();
+                    popupWindow.dismiss();
+                });
+            }
+            View moveButton = popupView.findViewById(R.id.button_popup_room_content_move);
+            if (moveButton != null) {
+                moveButton.setOnClickListener(view -> {
+                    Toast.makeText(itemView.getContext(), R.string.feature_coming_soon,
+                            Toast.LENGTH_SHORT).show();
+                    popupWindow.dismiss();
+                });
+            }
+            View deleteButton = popupView.findViewById(R.id.button_popup_room_content_delete);
+            if (deleteButton != null) {
+                deleteButton.setOnClickListener(view -> {
+                    popupWindow.dismiss();
+                    notifyDelete();
+                });
+            }
+            popupWindow.setOnDismissListener(() -> optionsPopup = null);
+            optionsPopup = popupWindow;
+            popupWindow.showAsDropDown(menuView, 0, 0, Gravity.END);
+        }
+
+        void dismissOptionsMenu() {
+            if (optionsPopup != null) {
+                optionsPopup.dismiss();
+                optionsPopup = null;
+            }
         }
     }
 }
