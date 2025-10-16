@@ -74,6 +74,15 @@
     <string name="dialog_room_content_item_placeholder">- Element</string>
     <string name="dialog_add_room_content_title">Element hinzufügen</string>
     <string name="dialog_delete_room_container_message">Möchten Sie den Behälter %1$s löschen?</string>
+    <string name="dialog_move_room_content_title">Element verschieben</string>
+    <string name="dialog_move_room_content_establishment_label">Einrichtung</string>
+    <string name="dialog_move_room_content_room_label">Raum</string>
+    <string name="dialog_move_room_content_container_label">Behälter</string>
+    <string name="dialog_move_room_content_no_container">Kein Behälter</string>
+    <string name="dialog_move_room_content_move_button">Verschieben</string>
+    <string name="dialog_move_room_content_empty_establishments">Keine Einrichtung verfügbar, um dieses Element zu verschieben.</string>
+    <string name="dialog_move_room_content_empty_rooms">In dieser Einrichtung ist kein Raum verfügbar.</string>
+    <string name="dialog_move_room_content_success">Element erfolgreich verschoben.</string>
     <string name="dialog_label_room_content_name">Name des Elements</string>
     <string name="dialog_label_room_content_comment">Kommentar</string>
     <string name="dialog_label_room_content_photos_default">Fotos des Elements (0)</string>

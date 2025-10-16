@@ -74,6 +74,15 @@
     <string name="dialog_room_content_item_placeholder">- Item</string>
     <string name="dialog_add_room_content_title">Add an item</string>
     <string name="dialog_delete_room_container_message">Do you want to delete the container %1$s?</string>
+    <string name="dialog_move_room_content_title">Move item</string>
+    <string name="dialog_move_room_content_establishment_label">Establishment</string>
+    <string name="dialog_move_room_content_room_label">Room</string>
+    <string name="dialog_move_room_content_container_label">Container</string>
+    <string name="dialog_move_room_content_no_container">No container</string>
+    <string name="dialog_move_room_content_move_button">Move</string>
+    <string name="dialog_move_room_content_empty_establishments">No establishment is available to move this item.</string>
+    <string name="dialog_move_room_content_empty_rooms">No room is available in this establishment.</string>
+    <string name="dialog_move_room_content_success">Item moved successfully.</string>
     <string name="dialog_label_room_content_name">Item name</string>
     <string name="dialog_label_room_content_comment">Comment</string>
     <string name="dialog_label_room_content_photos_default">Item photos (0)</string>

@@ -339,6 +339,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     interface OnRoomContentInteractionListener {
         void onCopyRoomContent(@NonNull RoomContentItem item, int position);
 
+        void onMoveRoomContent(@NonNull RoomContentItem item, int position);
+
         void onEditRoomContent(@NonNull RoomContentItem item, int position);
 
         void onDeleteRoomContent(@NonNull RoomContentItem item, int position);
@@ -523,6 +525,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             interactionListener.onCopyRoomContent(currentItem, position);
         }
 
+        private void notifyMove() {
+            if (interactionListener == null || currentItem == null) {
+                return;
+            }
+            dismissOptionsMenu();
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            interactionListener.onMoveRoomContent(currentItem, position);
+        }
+
         private void toggleExpansion() {
             int position = getBindingAdapterPosition();
             if (position == RecyclerView.NO_POSITION) {
@@ -560,9 +574,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             View moveButton = popupView.findViewById(R.id.button_popup_room_content_move);
             if (moveButton != null) {
                 moveButton.setOnClickListener(view -> {
-                    Toast.makeText(itemView.getContext(), R.string.feature_coming_soon,
-                            Toast.LENGTH_SHORT).show();
                     popupWindow.dismiss();
+                    notifyMove();
                 });
             }
             View deleteButton = popupView.findViewById(R.id.button_popup_room_content_delete);

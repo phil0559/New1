@@ -99,6 +99,15 @@
     <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
     <string name="dialog_delete_room_content_message">Voulez-vous supprimer l’élément %1$s ?</string>
     <string name="dialog_delete_room_container_message">Voulez-vous supprimer le contenant %1$s ?</string>
+    <string name="dialog_move_room_content_title">Déplacer l’élément</string>
+    <string name="dialog_move_room_content_establishment_label">Établissement</string>
+    <string name="dialog_move_room_content_room_label">Pièce</string>
+    <string name="dialog_move_room_content_container_label">Contenant</string>
+    <string name="dialog_move_room_content_no_container">Aucun contenant</string>
+    <string name="dialog_move_room_content_move_button">Déplacer</string>
+    <string name="dialog_move_room_content_empty_establishments">Aucun établissement disponible pour déplacer cet élément.</string>
+    <string name="dialog_move_room_content_empty_rooms">Aucune pièce disponible dans cet établissement.</string>
+    <string name="dialog_move_room_content_success">Élément déplacé avec succès.</string>
     <string name="dialog_add_room_content_title">Ajouter un élément</string>
     <string name="dialog_edit_room_content_title">Modifier l’élément</string>
     <string name="dialog_label_room_content_name">Nom de l’élément</string>

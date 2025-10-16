@@ -13,6 +13,7 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -81,6 +82,11 @@ public class RoomContentActivity extends Activity {
     private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
+
+    private static final String ESTABLISHMENTS_PREFS = "establishments_prefs";
+    private static final String KEY_ESTABLISHMENTS = "establishments";
+    private static final String ROOMS_PREFS = "rooms_prefs";
+    private static final String KEY_ROOMS = "rooms";
 
     private static final int GENERATED_BARCODE_LENGTH = 13;
     private static final SecureRandom BARCODE_RANDOM = new SecureRandom();
@@ -396,6 +402,11 @@ public class RoomContentActivity extends Activity {
                         @Override
                         public void onCopyRoomContent(@NonNull RoomContentItem item, int position) {
                             showCopyRoomContentDialog(item);
+                        }
+
+                        @Override
+                        public void onMoveRoomContent(@NonNull RoomContentItem item, int position) {
+                            showMoveRoomContentDialog(item, position);
                         }
 
                         @Override
@@ -1791,6 +1802,123 @@ public class RoomContentActivity extends Activity {
         showContainerDialog(null, -1);
     }
 
+    private void showMoveRoomContentDialog(@NonNull RoomContentItem item, int position) {
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_move_room_content, null);
+        Spinner establishmentSpinner = dialogView.findViewById(R.id.spinner_move_establishment);
+        Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
+        Spinner containerSpinner = dialogView.findViewById(R.id.spinner_move_container);
+
+        List<String> establishmentOptions = loadEstablishmentNames();
+        if (establishmentOptions.isEmpty()) {
+            Toast.makeText(this, R.string.dialog_move_room_content_empty_establishments,
+                    Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ArrayAdapter<String> establishmentAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, establishmentOptions);
+        establishmentAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        establishmentSpinner.setAdapter(establishmentAdapter);
+
+        int establishmentIndex = findIndexIgnoreCase(establishmentOptions, establishmentName);
+        if (establishmentIndex >= 0) {
+            establishmentSpinner.setSelection(establishmentIndex);
+        }
+
+        final List<RoomContentItem>[] containerTemplatesHolder = new List[1];
+        containerTemplatesHolder[0] = new ArrayList<>();
+        final String[] selectedEstablishmentHolder = new String[1];
+        final String[] selectedRoomHolder = new String[1];
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_move_room_content_title)
+                .setView(dialogView)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.dialog_move_room_content_move_button, null)
+                .create();
+
+        AdapterView.OnItemSelectedListener establishmentListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
+                Object value = parent.getItemAtPosition(spinnerPosition);
+                selectedEstablishmentHolder[0] = value != null ? value.toString() : null;
+                updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
+                        selectedEstablishmentHolder[0], selectedRoomHolder[0]);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedEstablishmentHolder[0] = null;
+                updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
+                        null, selectedRoomHolder[0]);
+            }
+        };
+        establishmentSpinner.setOnItemSelectedListener(establishmentListener);
+
+        AdapterView.OnItemSelectedListener roomListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
+                Object value = parent.getItemAtPosition(spinnerPosition);
+                selectedRoomHolder[0] = value != null ? value.toString() : null;
+                updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
+                        selectedEstablishmentHolder[0], selectedRoomHolder[0]);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                selectedRoomHolder[0] = null;
+                updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
+                        selectedEstablishmentHolder[0], null);
+            }
+        };
+        roomSpinner.setOnItemSelectedListener(roomListener);
+
+        selectedEstablishmentHolder[0] = establishmentSpinner.getSelectedItem() != null
+                ? establishmentSpinner.getSelectedItem().toString()
+                : null;
+        selectedRoomHolder[0] = roomName;
+
+        updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
+                selectedEstablishmentHolder[0], selectedRoomHolder[0]);
+
+        dialog.setOnShowListener(d -> {
+            updateMoveButtonState(dialog, roomSpinner);
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            if (positiveButton == null) {
+                return;
+            }
+            positiveButton.setOnClickListener(v -> {
+                String targetEstablishment = selectedEstablishmentHolder[0];
+                if (TextUtils.isEmpty(targetEstablishment) && establishmentSpinner.getSelectedItem() != null) {
+                    targetEstablishment = establishmentSpinner.getSelectedItem().toString();
+                }
+                String targetRoom = selectedRoomHolder[0];
+                if (TextUtils.isEmpty(targetRoom) && roomSpinner.getSelectedItem() != null) {
+                    targetRoom = roomSpinner.getSelectedItem().toString();
+                }
+                if (TextUtils.isEmpty(targetRoom)) {
+                    Toast.makeText(RoomContentActivity.this,
+                            R.string.dialog_move_room_content_empty_rooms,
+                            Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                RoomContentItem targetContainer = null;
+                int containerIndex = containerSpinner.getSelectedItemPosition();
+                if (containerIndex > 0) {
+                    List<RoomContentItem> templates = containerTemplatesHolder[0];
+                    int templateIndex = containerIndex - 1;
+                    if (templates != null && templateIndex >= 0 && templateIndex < templates.size()) {
+                        targetContainer = templates.get(templateIndex);
+                    }
+                }
+                if (moveRoomContentItem(item, position, targetEstablishment, targetRoom, targetContainer)) {
+                    dialog.dismiss();
+                }
+            });
+        });
+
+        dialog.show();
+    }
+
     private void showCopyRoomContentDialog(@NonNull RoomContentItem item) {
         if (item.isContainer()) {
             showContainerDialog(item, -1);
@@ -1843,6 +1971,411 @@ public class RoomContentActivity extends Activity {
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
     }
 
+    private boolean moveRoomContentItem(@NonNull RoomContentItem item, int position,
+            @Nullable String targetEstablishment,
+            @Nullable String targetRoom,
+            @Nullable RoomContentItem targetContainer) {
+        String normalizedTargetRoom = normalizeName(targetRoom);
+        if (normalizedTargetRoom.isEmpty()) {
+            return false;
+        }
+        String normalizedTargetEstablishment = normalizeName(targetEstablishment);
+        String normalizedSourceEstablishment = normalizeName(establishmentName);
+        String normalizedSourceRoom = normalizeName(roomName);
+        boolean movingWithinSameRoom = normalizedSourceEstablishment
+                .equalsIgnoreCase(normalizedTargetEstablishment)
+                && normalizedSourceRoom.equalsIgnoreCase(normalizedTargetRoom);
+        if (movingWithinSameRoom) {
+            moveWithinCurrentRoom(item, position, targetContainer);
+        } else {
+            moveToDifferentRoom(item, position, targetEstablishment, targetRoom, targetContainer);
+        }
+        Toast.makeText(this, R.string.dialog_move_room_content_success, Toast.LENGTH_SHORT).show();
+        return true;
+    }
+
+    private void moveWithinCurrentRoom(@NonNull RoomContentItem item, int position,
+            @Nullable RoomContentItem targetContainerTemplate) {
+        if (position < 0 || position >= roomContentItems.size()) {
+            return;
+        }
+        adjustContainerCountForRemoval(roomContentItems, position);
+        RoomContentItem removed = roomContentItems.remove(position);
+        RoomContentItem itemToInsert = removed != null ? removed : item;
+        if (targetContainerTemplate != null) {
+            insertIntoContainer(roomContentItems, itemToInsert, targetContainerTemplate);
+        } else {
+            roomContentItems.add(itemToInsert);
+            sortRoomContentItems();
+        }
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+        saveRoomContent();
+        updateEmptyState();
+    }
+
+    private void moveToDifferentRoom(@NonNull RoomContentItem item, int position,
+            @Nullable String targetEstablishment,
+            @Nullable String targetRoom,
+            @Nullable RoomContentItem targetContainerTemplate) {
+        if (position < 0 || position >= roomContentItems.size()) {
+            return;
+        }
+        adjustContainerCountForRemoval(roomContentItems, position);
+        roomContentItems.remove(position);
+        sortRoomContentItems();
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+        saveRoomContent();
+        updateEmptyState();
+
+        List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
+        RoomContentItem itemToInsert = item;
+        if (targetContainerTemplate != null) {
+            insertIntoContainer(targetItems, itemToInsert, targetContainerTemplate);
+        } else {
+            targetItems.add(itemToInsert);
+            sortRoomContentItems(targetItems);
+        }
+        saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
+    }
+
+    private void adjustContainerCountForRemoval(@NonNull List<RoomContentItem> items, int position) {
+        int containerIndex = findContainerIndexForItem(items, position);
+        if (containerIndex < 0 || containerIndex >= items.size()) {
+            return;
+        }
+        RoomContentItem container = items.get(containerIndex);
+        int currentCount = Math.max(0, container.getAttachedItemCount());
+        if (currentCount <= 0) {
+            return;
+        }
+        RoomContentItem updatedContainer = recreateContainerWithNewCount(container, currentCount - 1);
+        items.set(containerIndex, updatedContainer);
+    }
+
+    private void insertIntoContainer(@NonNull List<RoomContentItem> items,
+            @NonNull RoomContentItem item,
+            @NonNull RoomContentItem containerTemplate) {
+        int containerIndex = findContainerIndex(items, containerTemplate);
+        if (containerIndex < 0) {
+            items.add(item);
+            sortRoomContentItems(items);
+            return;
+        }
+        RoomContentItem container = items.get(containerIndex);
+        int attachedCount = Math.max(0, container.getAttachedItemCount());
+        int insertionIndex = Math.min(containerIndex + attachedCount + 1, items.size());
+        items.add(insertionIndex, item);
+        RoomContentItem updatedContainer = recreateContainerWithNewCount(container, attachedCount + 1);
+        items.set(containerIndex, updatedContainer);
+    }
+
+    private int findContainerIndexForItem(@NonNull List<RoomContentItem> items, int position) {
+        if (position < 0 || position >= items.size()) {
+            return -1;
+        }
+        int currentContainerIndex = -1;
+        int remainingAttached = 0;
+        for (int i = 0; i < items.size(); i++) {
+            RoomContentItem candidate = items.get(i);
+            if (candidate.isContainer()) {
+                if (i == position) {
+                    return -1;
+                }
+                currentContainerIndex = i;
+                remainingAttached = Math.max(0, candidate.getAttachedItemCount());
+                continue;
+            }
+            if (remainingAttached > 0) {
+                if (i == position) {
+                    return currentContainerIndex;
+                }
+                remainingAttached--;
+                continue;
+            }
+            if (i == position) {
+                return -1;
+            }
+        }
+        return -1;
+    }
+
+    private int findContainerIndex(@NonNull List<RoomContentItem> items,
+            @NonNull RoomContentItem template) {
+        for (int i = 0; i < items.size(); i++) {
+            RoomContentItem candidate = items.get(i);
+            if (!candidate.isContainer()) {
+                continue;
+            }
+            if (areContainersEquivalent(candidate, template)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private boolean areContainersEquivalent(@NonNull RoomContentItem first,
+            @NonNull RoomContentItem second) {
+        return TextUtils.equals(first.getName(), second.getName())
+                && TextUtils.equals(first.getComment(), second.getComment())
+                && TextUtils.equals(first.getType(), second.getType())
+                && TextUtils.equals(first.getCategory(), second.getCategory())
+                && TextUtils.equals(first.getBarcode(), second.getBarcode())
+                && TextUtils.equals(first.getSeries(), second.getSeries())
+                && TextUtils.equals(first.getNumber(), second.getNumber())
+                && TextUtils.equals(first.getAuthor(), second.getAuthor())
+                && TextUtils.equals(first.getPublisher(), second.getPublisher())
+                && TextUtils.equals(first.getEdition(), second.getEdition())
+                && TextUtils.equals(first.getPublicationDate(), second.getPublicationDate())
+                && TextUtils.equals(first.getSummary(), second.getSummary())
+                && first.getTracks().equals(second.getTracks())
+                && first.getPhotos().equals(second.getPhotos());
+    }
+
+    @NonNull
+    private RoomContentItem recreateContainerWithNewCount(@NonNull RoomContentItem container,
+            int newCount) {
+        return new RoomContentItem(container.getName(),
+                container.getComment(),
+                container.getType(),
+                container.getCategory(),
+                container.getBarcode(),
+                container.getSeries(),
+                container.getNumber(),
+                container.getAuthor(),
+                container.getPublisher(),
+                container.getEdition(),
+                container.getPublicationDate(),
+                container.getSummary(),
+                new ArrayList<>(container.getTracks()),
+                new ArrayList<>(container.getPhotos()),
+                true,
+                Math.max(0, newCount));
+    }
+
+    @NonNull
+    private String resolveContainerDisplayName(@NonNull RoomContentItem container) {
+        String name = container.getName();
+        if (name == null || name.trim().isEmpty()) {
+            return getString(R.string.dialog_room_content_item_placeholder);
+        }
+        return name.trim();
+    }
+
+    @NonNull
+    private List<String> loadEstablishmentNames() {
+        SharedPreferences preferences = getSharedPreferences(ESTABLISHMENTS_PREFS, MODE_PRIVATE);
+        String storedValue = preferences.getString(KEY_ESTABLISHMENTS, null);
+        List<String> result = new ArrayList<>();
+        if (storedValue != null && !storedValue.trim().isEmpty()) {
+            try {
+                JSONArray array = new JSONArray(storedValue);
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject item = array.optJSONObject(i);
+                    if (item == null) {
+                        continue;
+                    }
+                    String name = item.optString("name", "").trim();
+                    if (name.isEmpty()) {
+                        continue;
+                    }
+                    if (findIndexIgnoreCase(result, name) < 0) {
+                        result.add(name);
+                    }
+                }
+            } catch (JSONException ignored) {
+            }
+        }
+        String current = normalizeName(establishmentName);
+        if (!current.isEmpty() && findIndexIgnoreCase(result, current) < 0) {
+            result.add(0, current);
+        }
+        return result;
+    }
+
+    @NonNull
+    private List<String> loadRoomNames(@Nullable String establishment) {
+        SharedPreferences preferences = getSharedPreferences(ROOMS_PREFS, MODE_PRIVATE);
+        String key = buildRoomsKeyForEstablishment(establishment);
+        String storedValue = preferences.getString(key, null);
+        List<String> result = new ArrayList<>();
+        if (storedValue != null && !storedValue.trim().isEmpty()) {
+            try {
+                JSONArray array = new JSONArray(storedValue);
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject item = array.optJSONObject(i);
+                    if (item == null) {
+                        continue;
+                    }
+                    String name = item.optString("name", "").trim();
+                    if (name.isEmpty()) {
+                        continue;
+                    }
+                    if (findIndexIgnoreCase(result, name) < 0) {
+                        result.add(name);
+                    }
+                }
+            } catch (JSONException ignored) {
+            }
+        }
+        String normalizedSelected = normalizeName(establishment);
+        String normalizedCurrent = normalizeName(establishmentName);
+        if (!normalizedSelected.isEmpty()
+                && normalizedSelected.equalsIgnoreCase(normalizedCurrent)) {
+            String currentRoomName = normalizeName(roomName);
+            if (!currentRoomName.isEmpty() && findIndexIgnoreCase(result, currentRoomName) < 0) {
+                result.add(0, currentRoomName);
+            }
+        }
+        return result;
+    }
+
+    @NonNull
+    private List<RoomContentItem> loadContainerOptions(@Nullable String establishment,
+            @Nullable String room) {
+        List<RoomContentItem> content = loadRoomContentFor(establishment, room);
+        List<RoomContentItem> containers = new ArrayList<>();
+        for (RoomContentItem item : content) {
+            if (item.isContainer()) {
+                containers.add(item);
+            }
+        }
+        return containers;
+    }
+
+    @NonNull
+    private List<RoomContentItem> loadRoomContentFor(@Nullable String establishment,
+            @Nullable String room) {
+        List<RoomContentItem> result = new ArrayList<>();
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String key = buildRoomContentKeyFor(establishment, room);
+        String storedValue = preferences.getString(key, null);
+        if (storedValue == null || storedValue.trim().isEmpty()) {
+            return result;
+        }
+        try {
+            JSONArray array = new JSONArray(storedValue);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject itemObject = array.optJSONObject(i);
+                if (itemObject == null) {
+                    continue;
+                }
+                RoomContentItem parsed = RoomContentItem.fromJson(itemObject);
+                result.add(parsed);
+            }
+        } catch (JSONException exception) {
+            preferences.edit().remove(key).apply();
+        }
+        return result;
+    }
+
+    private void saveRoomContentFor(@Nullable String establishment,
+            @Nullable String room,
+            @NonNull List<RoomContentItem> items) {
+        JSONArray array = new JSONArray();
+        for (RoomContentItem item : items) {
+            array.put(item.toJson());
+        }
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        preferences.edit()
+                .putString(buildRoomContentKeyFor(establishment, room), array.toString())
+                .apply();
+    }
+
+    private String buildRoomContentKeyFor(@Nullable String establishment, @Nullable String room) {
+        return KEY_ROOM_CONTENT_PREFIX + sanitizeForKey(establishment) + "_" + sanitizeForKey(room);
+    }
+
+    private String buildRoomsKeyForEstablishment(@Nullable String establishment) {
+        String trimmed = establishment != null ? establishment.trim() : "";
+        if (trimmed.isEmpty()) {
+            return KEY_ROOMS + "_default";
+        }
+        return KEY_ROOMS + "_" + trimmed;
+    }
+
+    private int findIndexIgnoreCase(@NonNull List<String> values, @Nullable String target) {
+        if (target == null) {
+            return -1;
+        }
+        String normalizedTarget = target.trim();
+        for (int i = 0; i < values.size(); i++) {
+            String value = values.get(i);
+            if (value != null && value.trim().equalsIgnoreCase(normalizedTarget)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @NonNull
+    private String normalizeName(@Nullable String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private void updateMoveDialogRooms(@NonNull AlertDialog dialog,
+            @NonNull Spinner roomSpinner,
+            @NonNull Spinner containerSpinner,
+            @NonNull List<RoomContentItem>[] containerTemplatesHolder,
+            @Nullable String establishment,
+            @Nullable String preferredRoom) {
+        List<String> roomNames = loadRoomNames(establishment);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, roomNames);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        roomSpinner.setAdapter(adapter);
+        if (!roomNames.isEmpty()) {
+            int index = findIndexIgnoreCase(roomNames, preferredRoom);
+            roomSpinner.setSelection(index >= 0 ? index : 0);
+            roomSpinner.setEnabled(true);
+        } else {
+            roomSpinner.setEnabled(false);
+        }
+        String selectedRoom = roomSpinner.getSelectedItem() != null
+                ? roomSpinner.getSelectedItem().toString()
+                : null;
+        updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
+                establishment, selectedRoom);
+        if (dialog.isShowing()) {
+            updateMoveButtonState(dialog, roomSpinner);
+        }
+    }
+
+    private void updateMoveDialogContainers(@NonNull Spinner containerSpinner,
+            @NonNull List<RoomContentItem>[] containerTemplatesHolder,
+            @Nullable String establishment,
+            @Nullable String room) {
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.dialog_move_room_content_no_container));
+        List<RoomContentItem> containers;
+        if (room == null || room.trim().isEmpty()) {
+            containers = new ArrayList<>();
+        } else {
+            containers = loadContainerOptions(establishment, room);
+        }
+        containerTemplatesHolder[0] = containers;
+        for (RoomContentItem container : containers) {
+            labels.add(resolveContainerDisplayName(container));
+        }
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, labels);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        containerSpinner.setAdapter(adapter);
+    }
+
+    private void updateMoveButtonState(@NonNull AlertDialog dialog, @NonNull Spinner roomSpinner) {
+        Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positiveButton == null) {
+            return;
+        }
+        boolean hasRooms = roomSpinner.getAdapter() != null
+                && roomSpinner.getAdapter().getCount() > 0;
+        positiveButton.setEnabled(hasRooms);
+    }
+
     private void loadRoomContent() {
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         String storedValue = preferences.getString(buildRoomContentKey(), null);
@@ -1882,10 +2415,14 @@ public class RoomContentActivity extends Activity {
     }
 
     private void sortRoomContentItems() {
-        if (roomContentItems.size() <= 1) {
+        sortRoomContentItems(roomContentItems);
+    }
+
+    private void sortRoomContentItems(@NonNull List<RoomContentItem> items) {
+        if (items.size() <= 1) {
             return;
         }
-        Collections.sort(roomContentItems, new Comparator<RoomContentItem>() {
+        Collections.sort(items, new Comparator<RoomContentItem>() {
             @Override
             public int compare(RoomContentItem first, RoomContentItem second) {
                 String firstType = normalizeForSort(first.getType());
