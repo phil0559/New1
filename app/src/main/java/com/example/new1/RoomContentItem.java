@@ -58,6 +58,7 @@ public class RoomContentItem {
     private final List<String> photos;
     private final boolean container;
     private final int attachedItemCount;
+    private boolean displayed;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
@@ -123,6 +124,7 @@ public class RoomContentItem {
         }
         this.container = isContainer;
         this.attachedItemCount = Math.max(0, attachedItemCount);
+        this.displayed = true;
     }
 
     @NonNull
@@ -205,6 +207,14 @@ public class RoomContentItem {
 
     public boolean hasAttachedItems() {
         return attachedItemCount > 0;
+    }
+
+    public boolean isDisplayed() {
+        return displayed;
+    }
+
+    public void setDisplayed(boolean displayed) {
+        this.displayed = displayed;
     }
 
     public JSONObject toJson() {

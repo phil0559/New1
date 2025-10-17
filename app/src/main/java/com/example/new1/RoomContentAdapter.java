@@ -393,6 +393,31 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         } else {
             containerCollapsedStates.put(position, true);
         }
+        updateAttachedItemsDisplayState(position, expanded);
+    }
+
+    private void updateAttachedItemsDisplayState(int containerPosition, boolean expanded) {
+        if (containerPosition < 0 || containerPosition >= items.size()) {
+            return;
+        }
+        RoomContentItem container = items.get(containerPosition);
+        if (!container.isContainer()) {
+            return;
+        }
+        container.setDisplayed(true);
+        int attachedItemCount = Math.max(0, container.getAttachedItemCount());
+        if (attachedItemCount <= 0) {
+            return;
+        }
+        int start = containerPosition + 1;
+        int end = Math.min(items.size(), start + attachedItemCount);
+        for (int index = start; index < end; index++) {
+            RoomContentItem attachedItem = items.get(index);
+            if (attachedItem.isContainer()) {
+                break;
+            }
+            attachedItem.setDisplayed(expanded);
+        }
     }
 
     private void notifyAttachedItemsChanged(int containerPosition, int attachedItemCount) {
@@ -582,8 +607,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     addView.setVisibility(View.GONE);
                 }
             }
+            boolean containerCollapsed = RoomContentAdapter.this
+                    .isItemHiddenByCollapsedContainer(position);
             boolean hiddenByContainer = !item.isContainer()
-                    && RoomContentAdapter.this.isItemHiddenByCollapsedContainer(position);
+                    && (containerCollapsed || !item.isDisplayed());
+            if (!item.isContainer()) {
+                item.setDisplayed(!hiddenByContainer);
+            } else {
+                item.setDisplayed(true);
+            }
             itemView.setVisibility(hiddenByContainer ? View.GONE : View.VISIBLE);
             ViewGroup.LayoutParams layoutParams = itemView.getLayoutParams();
             if (layoutParams instanceof RecyclerView.LayoutParams) {
