@@ -9,5 +9,5 @@
         android:bottom="2dp" />
     <stroke
         android:width="3dp"
-        android:color="@color/room_container_border_dark" />
+        android:color="@color/room_container_border" />
 </shape>
