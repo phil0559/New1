@@ -96,23 +96,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         CharSequence metadataText = formatMetadataLines(metadataLines);
         boolean hasMetadata = metadataText != null;
 
-        boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
-        CharSequence attachedSummary = null;
-        CharSequence attachedDetails = null;
-        if (hasAttachedItems) {
-            attachedSummary = context.getString(R.string.room_container_attached_summary,
-                    item.getAttachedItemCount());
-            attachedDetails = formatAttachedItems(position, item.getAttachedItemCount());
-        }
-
-        boolean hasExpandableContent = hasComment || hasMetadata || hasAttachedItems;
+        boolean hasExpandableContent = hasComment || hasMetadata;
         if (!hasExpandableContent) {
             expandedStates.delete(position);
         }
         boolean isExpanded = hasExpandableContent && expandedStates.get(position, false);
         holder.detailsContainer
                 .setVisibility(hasExpandableContent && isExpanded ? View.VISIBLE : View.GONE);
-        holder.updateToggle(hasExpandableContent, isExpanded, item.getName());
+        CharSequence displayedName = holder.nameView.getText();
+        String toggleLabel = displayedName != null ? displayedName.toString() : resolveItemName(item);
+        holder.updateToggle(hasExpandableContent, isExpanded, toggleLabel);
 
         if (isExpanded) {
             if (hasComment) {
@@ -124,16 +117,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
 
             CharSequence combinedMetadata = metadataText;
-            if (hasAttachedItems) {
-                CharSequence attachmentText = attachedDetails != null ? attachedDetails : attachedSummary;
-                if (attachmentText != null) {
-                    if (combinedMetadata != null && combinedMetadata.length() > 0) {
-                        combinedMetadata = TextUtils.concat(combinedMetadata, "\n\n", attachmentText);
-                    } else {
-                        combinedMetadata = attachmentText;
-                    }
-                }
-            }
 
             if (combinedMetadata != null) {
                 holder.metadataView.setVisibility(View.VISIBLE);
@@ -229,28 +212,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
     }
 
-    @Nullable
-    private CharSequence formatAttachedItems(int containerPosition, int attachedItemCount) {
-        if (attachedItemCount <= 0) {
-            return null;
-        }
-        SpannableStringBuilder builder = new SpannableStringBuilder();
-        builder.append(context.getString(R.string.room_container_attached_summary, attachedItemCount));
-        int startIndex = containerPosition + 1;
-        int endIndex = Math.min(startIndex + attachedItemCount, items.size());
-        for (int i = startIndex; i < endIndex; i++) {
-            RoomContentItem candidate = items.get(i);
-            if (candidate.isContainer()) {
-                break;
-            }
-            builder.append('\n');
-            builder.append('•').append(' ');
-            builder.append(resolveItemName(candidate));
-        }
-        return builder;
-    }
-
-    @Nullable
     private CharSequence formatComment(@Nullable String comment) {
         if (comment == null) {
             return null;
@@ -277,6 +238,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return context.getString(R.string.dialog_room_content_item_placeholder);
         }
         return trimmedName;
+    }
+
+    @NonNull
+    private String appendAttachmentCount(@NonNull String displayName,
+            @NonNull RoomContentItem item) {
+        // Afficher systématiquement le nombre d’éléments rattachés après le nom du contenant.
+        int count = Math.max(0, item.getAttachedItemCount());
+        return displayName + " (" + count + ")";
     }
 
     @NonNull
@@ -457,7 +426,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             currentItem = item;
             dismissOptionsMenu();
             String baseName = resolveItemName(item);
-            nameView.setText(formatRankedName(baseName, position));
+            String rankedName = formatRankedName(baseName, position);
+            if (item.isContainer()) {
+                rankedName = appendAttachmentCount(rankedName, item);
+            }
+            nameView.setText(rankedName);
             if (item.isContainer()) {
                 itemView.setBackgroundResource(R.drawable.bg_room_container_item);
                 applyContainerBannerColor(bannerContainer);
@@ -481,10 +454,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             updatePhoto(item);
             if (photoView != null) {
                 photoView.setContentDescription(itemView.getContext()
-                        .getString(R.string.content_description_room_content_photos, baseName));
+                        .getString(R.string.content_description_room_content_photos, rankedName));
             }
             menuView.setContentDescription(itemView.getContext()
-                    .getString(R.string.content_description_room_content_menu, baseName));
+                    .getString(R.string.content_description_room_content_menu, rankedName));
         }
 
         void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
