@@ -147,6 +147,7 @@
     <string name="dialog_type_other">Autre</string>
     <string name="dialog_type_key">Clé</string>
     <string name="dialog_type_book">Livre</string>
+    <string name="dialog_type_magazine">Revue</string>
     <string name="dialog_type_cd">CD</string>
     <string name="dialog_type_disc">Disque</string>
     <string name="dialog_type_comic">BD</string>
@@ -162,6 +163,10 @@
     <string name="dialog_add_type_title">Nouveau type</string>
     <string name="dialog_edit_type_title">Modifier le type</string>
     <string name="dialog_add_type_name_hint">Nom du type</string>
+    <string name="dialog_add_type_fields_title">Champs inclus</string>
+    <string name="dialog_type_field_name">Nom</string>
+    <string name="dialog_type_field_comment">Commentaire</string>
+    <string name="dialog_type_field_photos">Appareil photo</string>
     <string name="dialog_delete_type_message">Voulez-vous supprimer le type %1$s ?</string>
     <string name="dialog_container_type_selector_title">Types de contenant</string>
     <string name="dialog_container_type_box">Boîte</string>
@@ -208,6 +213,7 @@
     <string name="error_room_content_name_required">Le nom de l’élément est obligatoire</string>
     <string name="error_type_name_required">Le nom du type est obligatoire</string>
     <string name="error_category_name_required">Le nom de la catégorie est obligatoire</string>
+    <string name="error_category_name_duplicate">Cette catégorie existe déjà.</string>
     <string name="popup_add_room_content_title">Choisir un type d’objet</string>
     <string name="popup_add_room_content_option_element">- Élément</string>
     <string name="popup_add_room_content_option_container">- Contenant</string>

@@ -16,6 +16,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -70,9 +71,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +86,14 @@ public class RoomContentActivity extends Activity {
     private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
+
+    private static final String KEY_CUSTOM_CATEGORIES = "custom_categories";
+    private static final String KEY_TYPE_FIELD_CONFIGS = "type_field_configs";
+    private static final String FIELD_NAME = "name";
+    private static final String FIELD_COMMENT = "comment";
+    private static final String FIELD_PHOTOS = "photos";
+    private static final String FIELD_CUSTOM_1 = "custom_field_1";
+    private static final String FIELD_CUSTOM_2 = "custom_field_2";
 
     private static final String ESTABLISHMENTS_PREFS = "establishments_prefs";
     private static final String KEY_ESTABLISHMENTS = "establishments";
@@ -176,6 +188,65 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private static class TypeFieldViews {
+        @Nullable
+        final TextView nameLabel;
+        @Nullable
+        final EditText nameInput;
+        @Nullable
+        final TextView commentLabel;
+        @Nullable
+        final EditText commentInput;
+        @Nullable
+        final View customSection;
+        @Nullable
+        final View customDivider;
+        @Nullable
+        final View customFieldOne;
+        @Nullable
+        final View customFieldTwo;
+        @Nullable
+        final EditText customValueOne;
+        @Nullable
+        final EditText customValueTwo;
+
+        TypeFieldViews(@Nullable TextView nameLabel,
+                       @Nullable EditText nameInput,
+                       @Nullable TextView commentLabel,
+                       @Nullable EditText commentInput,
+                       @Nullable View customSection,
+                       @Nullable View customDivider,
+                       @Nullable View customFieldOne,
+                       @Nullable View customFieldTwo,
+                       @Nullable EditText customValueOne,
+                       @Nullable EditText customValueTwo) {
+            this.nameLabel = nameLabel;
+            this.nameInput = nameInput;
+            this.commentLabel = commentLabel;
+            this.commentInput = commentInput;
+            this.customSection = customSection;
+            this.customDivider = customDivider;
+            this.customFieldOne = customFieldOne;
+            this.customFieldTwo = customFieldTwo;
+            this.customValueOne = customValueOne;
+            this.customValueTwo = customValueTwo;
+        }
+    }
+
+    private static class TypeFieldOption {
+        @NonNull
+        final String key;
+        @NonNull
+        final String label;
+        final boolean mandatory;
+
+        TypeFieldOption(@NonNull String key, @NonNull String label, boolean mandatory) {
+            this.key = key;
+            this.label = label;
+            this.mandatory = mandatory;
+        }
+    }
+
     private static class BarcodeScanContext {
         final FormState formState;
         @Nullable
@@ -193,6 +264,7 @@ public class RoomContentActivity extends Activity {
         @Nullable
         final TextView trackTitle;
         final String[] selectedTypeHolder;
+        final TypeFieldViews typeFieldViews;
         @Nullable
         final EditText seriesInput;
         @Nullable
@@ -217,6 +289,7 @@ public class RoomContentActivity extends Activity {
                             @Nullable View trackFields,
                             @Nullable TextView trackTitle,
                             @NonNull String[] selectedTypeHolder,
+                            @NonNull TypeFieldViews typeFieldViews,
                             @Nullable EditText seriesInput,
                             @Nullable EditText numberInput,
                             @Nullable EditText authorInput,
@@ -233,6 +306,7 @@ public class RoomContentActivity extends Activity {
             this.trackFields = trackFields;
             this.trackTitle = trackTitle;
             this.selectedTypeHolder = selectedTypeHolder;
+            this.typeFieldViews = typeFieldViews;
             this.seriesInput = seriesInput;
             this.numberInput = numberInput;
             this.authorInput = authorInput;
@@ -325,6 +399,7 @@ public class RoomContentActivity extends Activity {
     private String roomName;
 
     private final List<RoomContentItem> roomContentItems = new ArrayList<>();
+    private final Map<String, Set<String>> typeFieldConfigurations = new HashMap<>();
     @Nullable
     private RecyclerView contentList;
     @Nullable
@@ -370,6 +445,8 @@ public class RoomContentActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room_content);
+
+        loadTypeFieldConfigurationsFromPreferences();
 
         ImageView backButton = findViewById(R.id.button_back);
         if (backButton != null) {
@@ -618,7 +695,25 @@ public class RoomContentActivity extends Activity {
         EditText editionInput = dialogView.findViewById(R.id.input_edition);
         EditText publicationDateInput = dialogView.findViewById(R.id.input_publication_date);
         EditText summaryInput = dialogView.findViewById(R.id.input_summary);
+        TextView nameLabel = dialogView.findViewById(R.id.label_room_content_name);
+        TextView commentLabel = dialogView.findViewById(R.id.label_room_content_comment);
+        View customFieldsSection = dialogView.findViewById(R.id.container_custom_fields_section);
+        View customFieldDivider = dialogView.findViewById(R.id.divider_custom_fields);
+        View customFieldOne = dialogView.findViewById(R.id.container_custom_field_1);
+        View customFieldTwo = dialogView.findViewById(R.id.container_custom_field_2);
+        EditText customFieldValueOne = dialogView.findViewById(R.id.input_custom_field_value_1);
+        EditText customFieldValueTwo = dialogView.findViewById(R.id.input_custom_field_value_2);
         TextView dialogTitle = dialogView.findViewById(R.id.text_dialog_room_content_title);
+        final TypeFieldViews typeFieldViews = new TypeFieldViews(nameLabel,
+                nameInput,
+                commentLabel,
+                commentInput,
+                customFieldsSection,
+                customFieldDivider,
+                customFieldOne,
+                customFieldTwo,
+                customFieldValueOne,
+                customFieldValueTwo);
         PendingBarcodeResult restoreData = pendingBarcodeResult != null
                 && pendingBarcodeResult.matches(isEditing, positionToEdit)
                 ? pendingBarcodeResult
@@ -785,6 +880,12 @@ public class RoomContentActivity extends Activity {
 
         List<String> typeOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_type_options)));
+        final Set<String> lockedTypes = new LinkedHashSet<>();
+        String magazineTypeDefault = getString(R.string.dialog_type_magazine);
+        if (!containsIgnoreCase(typeOptions, magazineTypeDefault)) {
+            typeOptions.add(magazineTypeDefault);
+        }
+        lockedTypes.add(magazineTypeDefault);
         if (prefillItem != null) {
             String existingType = prefillItem.getType();
             if (existingType != null && !existingType.trim().isEmpty()
@@ -810,6 +911,12 @@ public class RoomContentActivity extends Activity {
 
         List<String> categoryOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_category_options)));
+        List<String> storedCategories = loadStoredCategories();
+        for (String value : storedCategories) {
+            if (!containsIgnoreCase(categoryOptions, value)) {
+                categoryOptions.add(value);
+            }
+        }
         if (prefillItem != null) {
             String existingCategory = prefillItem.getCategory();
             if (existingCategory != null && !existingCategory.trim().isEmpty()
@@ -837,18 +944,19 @@ public class RoomContentActivity extends Activity {
 
         if (confirmButton != null) {
             confirmButton.setOnClickListener(v -> {
+                Set<String> selectedFields = resolveFieldsForType(selectedTypeHolder[0]);
                 String trimmedName = "";
                 if (nameInput != null) {
                     CharSequence nameValue = nameInput.getText();
                     trimmedName = nameValue != null ? nameValue.toString().trim() : "";
-                    if (trimmedName.isEmpty()) {
+                    if (selectedFields.contains(FIELD_NAME) && trimmedName.isEmpty()) {
                         nameInput.setError(getString(R.string.error_room_content_name_required));
                         nameInput.requestFocus();
                         return;
                     }
                 }
                 String trimmedComment = "";
-                if (commentInput != null) {
+                if (commentInput != null && selectedFields.contains(FIELD_COMMENT)) {
                     CharSequence commentValue = commentInput.getText();
                     trimmedComment = commentValue != null ? commentValue.toString().trim() : "";
                 }
@@ -933,6 +1041,9 @@ public class RoomContentActivity extends Activity {
                 }
 
                 List<String> trackValues = collectTracks(formState);
+                List<String> photoValues = selectedFields.contains(FIELD_PHOTOS)
+                        ? new ArrayList<>(formState.photos)
+                        : new ArrayList<>();
 
                 RoomContentItem item = new RoomContentItem(trimmedName,
                         trimmedComment,
@@ -947,7 +1058,7 @@ public class RoomContentActivity extends Activity {
                         publicationDateValue,
                         summaryValue,
                         trackValues,
-                        new ArrayList<>(formState.photos),
+                        photoValues,
                         false);
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
@@ -1071,6 +1182,7 @@ public class RoomContentActivity extends Activity {
                         trackFields,
                         trackTitle,
                         selectedTypeHolder,
+                        typeFieldViews,
                         seriesInput,
                         numberInput,
                         authorInput,
@@ -1114,7 +1226,8 @@ public class RoomContentActivity extends Activity {
             categoryAdapterHolder[0] = categoryAdapter;
         }
 
-        updateTypeSpecificFields(bookFields, trackFields, trackTitle, selectedTypeHolder[0]);
+        applyTypeConfiguration(selectedTypeHolder[0], formState, bookFields, trackFields,
+                trackTitle, typeFieldViews);
         updateSelectionButtonText(selectTypeButton, selectedTypeHolder[0],
                 R.string.dialog_button_choose_type);
         updateSelectionButtonText(selectCategoryButton, selectedCategoryHolder[0],
@@ -1135,7 +1248,8 @@ public class RoomContentActivity extends Activity {
                             @Override
                             public void onTypeSelected(String type) {
                                 selectedTypeHolder[0] = type;
-                                updateTypeSpecificFields(bookFields, trackFields, trackTitle, type);
+                                applyTypeConfiguration(type, formState, bookFields, trackFields,
+                                        trackTitle, typeFieldViews);
                                 updateSelectionButtonText(selectTypeButton, type,
                                         R.string.dialog_button_choose_type);
                                 bottomSheetDialog.dismiss();
@@ -1149,10 +1263,12 @@ public class RoomContentActivity extends Activity {
                                         type,
                                         selectTypeButton,
                                         selectedTypeHolder,
+                                        formState,
                                         bookFields,
                                         trackFields,
                                         trackTitle,
-                                        Collections.emptySet());
+                                        lockedTypes,
+                                        typeFieldViews);
                             }
 
                             @Override
@@ -1162,12 +1278,14 @@ public class RoomContentActivity extends Activity {
                                         position,
                                         selectTypeButton,
                                         selectedTypeHolder,
+                                        formState,
                                         bookFields,
                                         trackFields,
                                         trackTitle,
-                                        Collections.emptySet());
+                                        lockedTypes,
+                                        typeFieldViews);
                             }
-                        });
+                        }, lockedTypes);
                 adapter.setSelectedType(selectedTypeHolder[0]);
                 recyclerView.setLayoutManager(new LinearLayoutManager(this));
                 recyclerView.setAdapter(adapter);
@@ -1258,7 +1376,10 @@ public class RoomContentActivity extends Activity {
                         showAddCategoryDialog(categoryOptions,
                                 adapterHolder[0],
                                 recyclerView,
-                                categoryAdapterHolder[0]));
+                                categoryAdapterHolder[0],
+                                selectCategoryButton,
+                                selectedCategoryHolder,
+                                categorySpinner));
             }
 
             bottomSheetDialog.show();
@@ -1315,6 +1436,7 @@ public class RoomContentActivity extends Activity {
                     trackFields,
                     trackTitle,
                     selectedTypeHolder,
+                    typeFieldViews,
                     seriesInput,
                     numberInput,
                     authorInput,
@@ -1344,7 +1466,9 @@ public class RoomContentActivity extends Activity {
         dialog.show();
 
         TextView titleView = dialogView.findViewById(R.id.text_dialog_container_title);
+        TextView nameLabel = dialogView.findViewById(R.id.label_container_name);
         EditText nameInput = dialogView.findViewById(R.id.input_container_name);
+        TextView commentLabel = dialogView.findViewById(R.id.label_container_comment);
         EditText commentInput = dialogView.findViewById(R.id.input_container_comment);
         Button selectTypeButton = dialogView.findViewById(R.id.button_select_container_type);
         ImageButton openTypeListButton = dialogView.findViewById(R.id.button_open_container_type_list);
@@ -1366,6 +1490,17 @@ public class RoomContentActivity extends Activity {
         formState.addPhotoButton = addPhotoButton;
         formState.photoLabelTemplateRes = R.string.dialog_label_container_photos_template;
         currentFormState = formState;
+
+        final TypeFieldViews typeFieldViews = new TypeFieldViews(nameLabel,
+                nameInput,
+                commentLabel,
+                commentInput,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
 
         if (containerToEdit != null) {
             if (nameInput != null) {
@@ -1430,6 +1565,8 @@ public class RoomContentActivity extends Activity {
 
         updateSelectionButtonText(selectTypeButton, selectedTypeHolder[0],
                 R.string.dialog_button_choose_container_type);
+        applyTypeConfiguration(selectedTypeHolder[0], formState, null, null, null,
+                typeFieldViews);
 
         View.OnClickListener typeDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
@@ -1454,6 +1591,8 @@ public class RoomContentActivity extends Activity {
                             @Override
                             public void onTypeSelected(String type) {
                                 selectedTypeHolder[0] = type;
+                                applyTypeConfiguration(type, formState, null, null, null,
+                                        typeFieldViews);
                                 updateSelectionButtonText(selectTypeButton, type,
                                         R.string.dialog_button_choose_container_type);
                                 bottomSheetDialog.dismiss();
@@ -1467,10 +1606,12 @@ public class RoomContentActivity extends Activity {
                                         type,
                                         selectTypeButton,
                                         selectedTypeHolder,
+                                        formState,
                                         null,
                                         null,
                                         null,
-                                        lockedTypes);
+                                        lockedTypes,
+                                        typeFieldViews);
                             }
 
                             @Override
@@ -1480,10 +1621,12 @@ public class RoomContentActivity extends Activity {
                                         position,
                                         selectTypeButton,
                                         selectedTypeHolder,
+                                        formState,
                                         null,
                                         null,
                                         null,
-                                        lockedTypes);
+                                        lockedTypes,
+                                        typeFieldViews);
                             }
                         },
                         lockedTypes);
@@ -1515,15 +1658,16 @@ public class RoomContentActivity extends Activity {
                     dialog.dismiss();
                     return;
                 }
+                Set<String> selectedFields = resolveFieldsForType(selectedTypeHolder[0]);
                 CharSequence nameValue = nameInput.getText();
                 String trimmedName = nameValue != null ? nameValue.toString().trim() : "";
-                if (trimmedName.isEmpty()) {
+                if (selectedFields.contains(FIELD_NAME) && trimmedName.isEmpty()) {
                     nameInput.setError(getString(R.string.error_room_content_name_required));
                     nameInput.requestFocus();
                     return;
                 }
                 String trimmedComment = "";
-                if (commentInput != null) {
+                if (commentInput != null && selectedFields.contains(FIELD_COMMENT)) {
                     CharSequence commentValue = commentInput.getText();
                     trimmedComment = commentValue != null ? commentValue.toString().trim() : "";
                 }
@@ -1538,6 +1682,10 @@ public class RoomContentActivity extends Activity {
                 int attachedItemCount = isEditing && containerToEdit != null
                         ? containerToEdit.getAttachedItemCount()
                         : 0;
+                List<String> photoValues = selectedFields.contains(FIELD_PHOTOS)
+                        ? new ArrayList<>(formState.photos)
+                        : new ArrayList<>();
+
                 RoomContentItem newItem = new RoomContentItem(trimmedName,
                         trimmedComment,
                         selectedType,
@@ -1551,7 +1699,7 @@ public class RoomContentActivity extends Activity {
                         null,
                         null,
                         null,
-                        new ArrayList<>(formState.photos),
+                        photoValues,
                         true,
                         attachedItemCount);
                 if (isEditing) {
@@ -3581,8 +3729,8 @@ public class RoomContentActivity extends Activity {
         }
         if (!TextUtils.isEmpty(result.typeLabel)) {
             context.selectedTypeHolder[0] = result.typeLabel;
-            updateTypeSpecificFields(context.bookFields, context.trackFields, context.trackTitle,
-                    result.typeLabel);
+            applyTypeConfiguration(result.typeLabel, context.formState, context.bookFields,
+                    context.trackFields, context.trackTitle, context.typeFieldViews);
             updateSelectionButtonText(context.selectTypeButton, result.typeLabel,
                     R.string.dialog_button_choose_type);
         }
@@ -3676,6 +3824,7 @@ public class RoomContentActivity extends Activity {
                                                         @Nullable View trackFields,
                                                         @Nullable TextView trackTitle,
                                                         @NonNull String[] selectedTypeHolder,
+                                                        @NonNull TypeFieldViews typeFieldViews,
                                                         @Nullable EditText seriesInput,
                                                         @Nullable EditText numberInput,
                                                         @Nullable EditText authorInput,
@@ -3692,6 +3841,7 @@ public class RoomContentActivity extends Activity {
                 trackFields,
                 trackTitle,
                 selectedTypeHolder,
+                typeFieldViews,
                 seriesInput,
                 numberInput,
                 authorInput,
@@ -3897,7 +4047,13 @@ public class RoomContentActivity extends Activity {
                     categoryNameInput.requestFocus();
                     return;
                 }
+                if (containsIgnoreCase(categoryOptions, trimmedName, position)) {
+                    categoryNameInput.setError(getString(R.string.error_category_name_duplicate));
+                    categoryNameInput.requestFocus();
+                    return;
+                }
                 categoryOptions.set(position, trimmedName);
+                persistCategoryOptions(categoryOptions);
                 if (adapter != null) {
                     adapter.updateCategory(position, trimmedName);
                 }
@@ -3971,6 +4127,7 @@ public class RoomContentActivity extends Activity {
                 .setNegativeButton(R.string.action_cancel, (dialog, which) -> dialog.dismiss())
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> {
                     String removed = categoryOptions.remove(position);
+                    persistCategoryOptions(categoryOptions);
                     if (adapter != null) {
                         adapter.removeCategory(position);
                     }
@@ -4004,10 +4161,12 @@ public class RoomContentActivity extends Activity {
                                     @NonNull String currentLabel,
                                     @Nullable Button selectTypeButton,
                                     @NonNull String[] selectedTypeHolder,
+                                    @NonNull FormState formState,
                                     @Nullable View bookFields,
                                     @Nullable View trackFields,
                                     @Nullable TextView trackTitle,
-                                    @NonNull Set<String> lockedTypes) {
+                                    @NonNull Set<String> lockedTypes,
+                                    @NonNull TypeFieldViews typeFieldViews) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_type, null);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -4019,6 +4178,8 @@ public class RoomContentActivity extends Activity {
         EditText typeNameInput = dialogView.findViewById(R.id.input_new_type_name);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+        final Map<String, CheckBox> fieldCheckboxes = buildTypeFieldCheckboxes(dialogView,
+                resolveFieldsForType(currentLabel));
 
         if (lockedTypes.contains(currentLabel)) {
             dialog.dismiss();
@@ -4056,7 +4217,9 @@ public class RoomContentActivity extends Activity {
                     typeNameInput.requestFocus();
                     return;
                 }
+                Set<String> selectedFields = collectSelectedFields(fieldCheckboxes);
                 typeOptions.set(position, trimmedName);
+                saveTypeFieldConfiguration(trimmedName, selectedFields);
                 if (adapter != null) {
                     adapter.updateType(position, trimmedName);
                 }
@@ -4068,7 +4231,12 @@ public class RoomContentActivity extends Activity {
                     }
                     updateSelectionButtonText(selectTypeButton, trimmedName,
                             R.string.dialog_button_choose_type);
-                    updateTypeSpecificFields(bookFields, trackFields, trackTitle, trimmedName);
+                    applyTypeConfiguration(trimmedName, formState, bookFields, trackFields,
+                            trackTitle, typeFieldViews);
+                } else if (selectedTypeHolder[0] != null
+                        && selectedTypeHolder[0].equals(trimmedName)) {
+                    applyTypeConfiguration(trimmedName, formState, bookFields, trackFields,
+                            trackTitle, typeFieldViews);
                 }
                 dialog.dismiss();
             });
@@ -4101,10 +4269,12 @@ public class RoomContentActivity extends Activity {
                                             int position,
                                             @Nullable Button selectTypeButton,
                                             @NonNull String[] selectedTypeHolder,
+                                            @NonNull FormState formState,
                                             @Nullable View bookFields,
                                             @Nullable View trackFields,
                                             @Nullable TextView trackTitle,
-                                            @NonNull Set<String> lockedTypes) {
+                                            @NonNull Set<String> lockedTypes,
+                                            @NonNull TypeFieldViews typeFieldViews) {
         if (position < 0 || position >= typeOptions.size()) {
             return;
         }
@@ -4117,6 +4287,7 @@ public class RoomContentActivity extends Activity {
                 .setNegativeButton(R.string.action_cancel, (dialog, which) -> dialog.dismiss())
                 .setPositiveButton(R.string.action_delete, (dialog, which) -> {
                     String removed = typeOptions.remove(position);
+                    removeTypeFieldConfiguration(removed);
                     if (adapter != null) {
                         adapter.removeType(position);
                     }
@@ -4127,7 +4298,8 @@ public class RoomContentActivity extends Activity {
                         }
                         updateSelectionButtonText(selectTypeButton, null,
                                 R.string.dialog_button_choose_type);
-                        updateTypeSpecificFields(bookFields, trackFields, trackTitle, null);
+                        applyTypeConfiguration(null, formState, bookFields, trackFields,
+                                trackTitle, typeFieldViews);
                     }
                 })
                 .create()
@@ -4137,7 +4309,10 @@ public class RoomContentActivity extends Activity {
     private void showAddCategoryDialog(List<String> categoryOptions,
                                        @Nullable CategorySelectorAdapter adapter,
                                        @Nullable RecyclerView recyclerView,
-                                       @Nullable ArrayAdapter<String> spinnerAdapter) {
+                                       @Nullable ArrayAdapter<String> spinnerAdapter,
+                                       @Nullable Button selectCategoryButton,
+                                       @NonNull String[] selectedCategoryHolder,
+                                       @Nullable Spinner categorySpinner) {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_category, null);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
@@ -4166,9 +4341,16 @@ public class RoomContentActivity extends Activity {
                     categoryNameInput.requestFocus();
                     return;
                 }
+                if (containsIgnoreCase(categoryOptions, trimmedName)) {
+                    categoryNameInput.setError(getString(R.string.error_category_name_duplicate));
+                    categoryNameInput.requestFocus();
+                    return;
+                }
                 categoryOptions.add(trimmedName);
+                persistCategoryOptions(categoryOptions);
                 if (adapter != null) {
                     adapter.addCategory(trimmedName);
+                    adapter.setSelectedCategory(trimmedName);
                     if (recyclerView != null) {
                         recyclerView.post(() ->
                                 recyclerView.smoothScrollToPosition(adapter.getItemCount() - 1));
@@ -4176,7 +4358,16 @@ public class RoomContentActivity extends Activity {
                 }
                 if (spinnerAdapter != null) {
                     spinnerAdapter.notifyDataSetChanged();
+                    if (categorySpinner != null) {
+                        int index = categoryOptions.indexOf(trimmedName);
+                        if (index >= 0) {
+                            categorySpinner.setSelection(index);
+                        }
+                    }
                 }
+                selectedCategoryHolder[0] = trimmedName;
+                updateSelectionButtonText(selectCategoryButton, trimmedName,
+                        R.string.dialog_button_choose_category);
                 dialog.dismiss();
             });
         }
@@ -4216,6 +4407,8 @@ public class RoomContentActivity extends Activity {
         EditText typeNameInput = dialogView.findViewById(R.id.input_new_type_name);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+        final Map<String, CheckBox> fieldCheckboxes = buildTypeFieldCheckboxes(dialogView,
+                getDefaultTypeFields());
 
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
@@ -4239,7 +4432,9 @@ public class RoomContentActivity extends Activity {
                     typeNameInput.requestFocus();
                     return;
                 }
+                Set<String> selectedFields = collectSelectedFields(fieldCheckboxes);
                 typeOptions.add(trimmedName);
+                saveTypeFieldConfiguration(trimmedName, selectedFields);
                 if (adapter != null) {
                     adapter.addType(trimmedName);
                     if (recyclerView != null) {
@@ -4273,6 +4468,369 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private void loadTypeFieldConfigurationsFromPreferences() {
+        typeFieldConfigurations.clear();
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String stored = preferences.getString(KEY_TYPE_FIELD_CONFIGS, null);
+        if (stored == null || stored.trim().isEmpty()) {
+            return;
+        }
+        try {
+            JSONObject root = new JSONObject(stored);
+            Iterator<String> keys = root.keys();
+            while (keys.hasNext()) {
+                String rawKey = keys.next();
+                if (rawKey == null) {
+                    continue;
+                }
+                String trimmedKey = rawKey.trim();
+                if (trimmedKey.isEmpty()) {
+                    continue;
+                }
+                JSONArray fieldsArray = root.optJSONArray(rawKey);
+                if (fieldsArray == null) {
+                    continue;
+                }
+                LinkedHashSet<String> fields = new LinkedHashSet<>();
+                for (int i = 0; i < fieldsArray.length(); i++) {
+                    String value = fieldsArray.optString(i, null);
+                    if (value != null && !value.trim().isEmpty()) {
+                        fields.add(value);
+                    }
+                }
+                typeFieldConfigurations.put(trimmedKey, sanitizeFieldSelection(fields));
+            }
+        } catch (JSONException exception) {
+            preferences.edit().remove(KEY_TYPE_FIELD_CONFIGS).apply();
+        }
+    }
+
+    private void persistTypeFieldConfigurations() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        JSONObject root = new JSONObject();
+        for (Map.Entry<String, Set<String>> entry : typeFieldConfigurations.entrySet()) {
+            String label = entry.getKey();
+            if (label == null || label.trim().isEmpty()) {
+                continue;
+            }
+            LinkedHashSet<String> fields = sanitizeFieldSelection(entry.getValue());
+            JSONArray array = new JSONArray();
+            for (String field : fields) {
+                array.put(field);
+            }
+            try {
+                root.put(label, array);
+            } catch (JSONException ignored) {
+            }
+        }
+        SharedPreferences.Editor editor = preferences.edit();
+        if (root.length() > 0) {
+            editor.putString(KEY_TYPE_FIELD_CONFIGS, root.toString());
+        } else {
+            editor.remove(KEY_TYPE_FIELD_CONFIGS);
+        }
+        editor.apply();
+    }
+
+    @NonNull
+    private LinkedHashSet<String> getDefaultTypeFields() {
+        LinkedHashSet<String> defaults = new LinkedHashSet<>();
+        defaults.add(FIELD_NAME);
+        defaults.add(FIELD_COMMENT);
+        defaults.add(FIELD_PHOTOS);
+        return defaults;
+    }
+
+    @NonNull
+    private LinkedHashSet<String> sanitizeFieldSelection(@Nullable Set<String> fields) {
+        if (fields == null) {
+            return getDefaultTypeFields();
+        }
+        LinkedHashSet<String> sanitized = new LinkedHashSet<>();
+        sanitized.add(FIELD_NAME);
+        for (String field : fields) {
+            if (field == null) {
+                continue;
+            }
+            String trimmed = field.trim();
+            if (trimmed.isEmpty() || FIELD_NAME.equals(trimmed)) {
+                continue;
+            }
+            if (FIELD_COMMENT.equals(trimmed)
+                    || FIELD_PHOTOS.equals(trimmed)
+                    || FIELD_CUSTOM_1.equals(trimmed)
+                    || FIELD_CUSTOM_2.equals(trimmed)) {
+                sanitized.add(trimmed);
+            }
+        }
+        return sanitized;
+    }
+
+    private boolean removeTypeFieldConfigurationInternal(@NonNull String typeLabel) {
+        String trimmed = typeLabel.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        Iterator<Map.Entry<String, Set<String>>> iterator = typeFieldConfigurations.entrySet().iterator();
+        boolean removed = false;
+        while (iterator.hasNext()) {
+            Map.Entry<String, Set<String>> entry = iterator.next();
+            String key = entry.getKey();
+            if (key != null && key.trim().equalsIgnoreCase(trimmed)) {
+                iterator.remove();
+                removed = true;
+            }
+        }
+        return removed;
+    }
+
+    private void removeTypeFieldConfiguration(@Nullable String typeLabel) {
+        if (typeLabel == null) {
+            return;
+        }
+        if (removeTypeFieldConfigurationInternal(typeLabel)) {
+            persistTypeFieldConfigurations();
+        }
+    }
+
+    private void saveTypeFieldConfiguration(@NonNull String typeLabel,
+                                            @NonNull Set<String> fields) {
+        String trimmed = typeLabel.trim();
+        if (trimmed.isEmpty()) {
+            return;
+        }
+        removeTypeFieldConfigurationInternal(trimmed);
+        typeFieldConfigurations.put(trimmed, sanitizeFieldSelection(fields));
+        persistTypeFieldConfigurations();
+    }
+
+    @NonNull
+    private Set<String> resolveFieldsForType(@Nullable String typeLabel) {
+        if (typeLabel == null) {
+            return getDefaultTypeFields();
+        }
+        String trimmed = typeLabel.trim();
+        if (trimmed.isEmpty()) {
+            return getDefaultTypeFields();
+        }
+        for (Map.Entry<String, Set<String>> entry : typeFieldConfigurations.entrySet()) {
+            String key = entry.getKey();
+            if (key != null && key.trim().equalsIgnoreCase(trimmed)) {
+                return new LinkedHashSet<>(sanitizeFieldSelection(entry.getValue()));
+            }
+        }
+        return getDefaultTypeFields();
+    }
+
+    @NonNull
+    private List<String> getCustomFieldLabels() {
+        List<String> labels = new ArrayList<>();
+        labels.add(getString(R.string.dialog_custom_field_label_1));
+        labels.add(getString(R.string.dialog_custom_field_label_2));
+        return labels;
+    }
+
+    @NonNull
+    private List<TypeFieldOption> getTypeFieldOptions() {
+        List<TypeFieldOption> options = new ArrayList<>();
+        options.add(new TypeFieldOption(FIELD_NAME, getString(R.string.dialog_type_field_name), true));
+        options.add(new TypeFieldOption(FIELD_COMMENT, getString(R.string.dialog_type_field_comment), false));
+        options.add(new TypeFieldOption(FIELD_PHOTOS, getString(R.string.dialog_type_field_photos), false));
+        List<String> customLabels = getCustomFieldLabels();
+        if (!customLabels.isEmpty()) {
+            options.add(new TypeFieldOption(FIELD_CUSTOM_1, customLabels.get(0), false));
+            if (customLabels.size() > 1) {
+                options.add(new TypeFieldOption(FIELD_CUSTOM_2, customLabels.get(1), false));
+            }
+        }
+        return options;
+    }
+
+    @NonNull
+    private Map<String, CheckBox> buildTypeFieldCheckboxes(@NonNull View dialogView,
+                                                           @NonNull Set<String> selectedFields) {
+        LinearLayout container = dialogView.findViewById(R.id.container_type_fields);
+        TextView titleView = dialogView.findViewById(R.id.text_type_fields_title);
+        Map<String, CheckBox> checkBoxes = new LinkedHashMap<>();
+        if (container == null) {
+            if (titleView != null) {
+                titleView.setVisibility(View.GONE);
+            }
+            return checkBoxes;
+        }
+        container.removeAllViews();
+        List<TypeFieldOption> options = getTypeFieldOptions();
+        for (TypeFieldOption option : options) {
+            CheckBox checkBox = new CheckBox(this);
+            checkBox.setText(option.label);
+            boolean checked = option.mandatory || selectedFields.contains(option.key);
+            checkBox.setChecked(checked);
+            checkBox.setEnabled(!option.mandatory);
+            checkBox.setTag(option.key);
+            container.addView(checkBox);
+            checkBoxes.put(option.key, checkBox);
+        }
+        if (titleView != null) {
+            titleView.setVisibility(options.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+        return checkBoxes;
+    }
+
+    @NonNull
+    private Set<String> collectSelectedFields(@NonNull Map<String, CheckBox> checkBoxes) {
+        LinkedHashSet<String> selected = new LinkedHashSet<>();
+        for (Map.Entry<String, CheckBox> entry : checkBoxes.entrySet()) {
+            CheckBox checkBox = entry.getValue();
+            if (checkBox != null && checkBox.isChecked()) {
+                selected.add(entry.getKey());
+            }
+        }
+        return selected;
+    }
+
+    private void applyTypeConfiguration(@Nullable String selectedType,
+                                        @NonNull FormState formState,
+                                        @Nullable View bookFields,
+                                        @Nullable View trackFields,
+                                        @Nullable TextView trackTitle,
+                                        @NonNull TypeFieldViews typeFieldViews) {
+        updateTypeSpecificFields(bookFields, trackFields, trackTitle, selectedType);
+        applyTypeFieldConfiguration(selectedType, formState, typeFieldViews);
+    }
+
+    private void applyTypeFieldConfiguration(@Nullable String selectedType,
+                                             @NonNull FormState formState,
+                                             @NonNull TypeFieldViews views) {
+        Set<String> selectedFields = resolveFieldsForType(selectedType);
+
+        boolean showName = selectedFields.contains(FIELD_NAME);
+        if (views.nameLabel != null) {
+            views.nameLabel.setVisibility(showName ? View.VISIBLE : View.GONE);
+        }
+        if (views.nameInput != null) {
+            views.nameInput.setVisibility(showName ? View.VISIBLE : View.GONE);
+            if (!showName) {
+                views.nameInput.setText("");
+                views.nameInput.setError(null);
+            }
+        }
+
+        boolean showComment = selectedFields.contains(FIELD_COMMENT);
+        if (views.commentLabel != null) {
+            views.commentLabel.setVisibility(showComment ? View.VISIBLE : View.GONE);
+        }
+        if (views.commentInput != null) {
+            views.commentInput.setVisibility(showComment ? View.VISIBLE : View.GONE);
+            if (!showComment) {
+                views.commentInput.setText("");
+                views.commentInput.setError(null);
+            }
+        }
+
+        boolean showPhotos = selectedFields.contains(FIELD_PHOTOS);
+        if (formState.photoLabel != null) {
+            formState.photoLabel.setVisibility(showPhotos ? View.VISIBLE : View.GONE);
+        }
+        if (formState.addPhotoButton != null) {
+            formState.addPhotoButton.setVisibility(showPhotos ? View.VISIBLE : View.GONE);
+            formState.addPhotoButton.setEnabled(showPhotos
+                    && formState.photos.size() < MAX_FORM_PHOTOS);
+        }
+        if (formState.photoContainer != null) {
+            if (showPhotos) {
+                formState.photoContainer.setVisibility(formState.photos.isEmpty()
+                        ? View.GONE
+                        : View.VISIBLE);
+            } else {
+                formState.photoContainer.setVisibility(View.GONE);
+            }
+        }
+
+        boolean showCustomFieldOne = selectedFields.contains(FIELD_CUSTOM_1);
+        if (views.customFieldOne != null) {
+            views.customFieldOne.setVisibility(showCustomFieldOne ? View.VISIBLE : View.GONE);
+        }
+        if (!showCustomFieldOne && views.customValueOne != null) {
+            views.customValueOne.setText("");
+        }
+
+        boolean showCustomFieldTwo = selectedFields.contains(FIELD_CUSTOM_2);
+        if (views.customFieldTwo != null) {
+            views.customFieldTwo.setVisibility(showCustomFieldTwo ? View.VISIBLE : View.GONE);
+        }
+        if (!showCustomFieldTwo && views.customValueTwo != null) {
+            views.customValueTwo.setText("");
+        }
+
+        if (views.customSection != null) {
+            views.customSection.setVisibility((showCustomFieldOne || showCustomFieldTwo)
+                    ? View.VISIBLE
+                    : View.GONE);
+        }
+        if (views.customDivider != null) {
+            views.customDivider.setVisibility(showCustomFieldOne && showCustomFieldTwo
+                    ? View.VISIBLE
+                    : View.GONE);
+        }
+    }
+
+    private void persistCategoryOptions(@NonNull List<String> categoryOptions) {
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        JSONArray array = new JSONArray();
+        for (String option : categoryOptions) {
+            if (option == null) {
+                continue;
+            }
+            String trimmed = option.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String key = trimmed.toLowerCase(Locale.ROOT);
+            if (normalized.add(key)) {
+                array.put(trimmed);
+            }
+        }
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        if (array.length() > 0) {
+            editor.putString(KEY_CUSTOM_CATEGORIES, array.toString());
+        } else {
+            editor.remove(KEY_CUSTOM_CATEGORIES);
+        }
+        editor.apply();
+    }
+
+    @NonNull
+    private List<String> loadStoredCategories() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String stored = preferences.getString(KEY_CUSTOM_CATEGORIES, null);
+        List<String> result = new ArrayList<>();
+        if (stored == null || stored.trim().isEmpty()) {
+            return result;
+        }
+        try {
+            JSONArray array = new JSONArray(stored);
+            LinkedHashSet<String> normalized = new LinkedHashSet<>();
+            for (int i = 0; i < array.length(); i++) {
+                String value = array.optString(i, null);
+                if (value == null) {
+                    continue;
+                }
+                String trimmed = value.trim();
+                if (trimmed.isEmpty()) {
+                    continue;
+                }
+                String key = trimmed.toLowerCase(Locale.ROOT);
+                if (normalized.add(key)) {
+                    result.add(trimmed);
+                }
+            }
+        } catch (JSONException exception) {
+            preferences.edit().remove(KEY_CUSTOM_CATEGORIES).apply();
+        }
+        return result;
+    }
+
     private void updateSelectionButtonText(@Nullable Button button,
                                            @Nullable Object selectedItem,
                                            int fallbackTextResId) {
@@ -4291,12 +4849,15 @@ public class RoomContentActivity extends Activity {
                                           @Nullable TextView trackTitle,
                                           @Nullable String selectedType) {
         String bookType = getString(R.string.dialog_type_book);
+        String magazineType = getString(R.string.dialog_type_magazine);
         String comicType = getString(R.string.dialog_type_comic);
         String cdType = getString(R.string.dialog_type_cd);
         String discType = getString(R.string.dialog_type_disc);
 
         boolean showBookFields = selectedType != null
-                && (selectedType.equals(bookType) || selectedType.equals(comicType));
+                && (selectedType.equals(bookType)
+                || selectedType.equals(magazineType)
+                || selectedType.equals(comicType));
         boolean showTrackFields = selectedType != null
                 && (selectedType.equals(cdType) || selectedType.equals(discType));
 

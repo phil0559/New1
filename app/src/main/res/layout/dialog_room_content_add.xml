@@ -28,6 +28,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/label_room_content_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
@@ -46,6 +47,7 @@
                 android:textColor="@android:color/black" />
 
             <TextView
+                android:id="@+id/label_room_content_comment"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
@@ -118,6 +120,7 @@
                 android:textStyle="bold" />
 
             <LinearLayout
+                android:id="@+id/container_custom_fields_section"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
@@ -241,6 +244,7 @@
                 android:visibility="gone">
 
                 <LinearLayout
+                    android:id="@+id/container_custom_field_1"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_input_field_white"
@@ -636,10 +640,12 @@
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/divider_custom_fields"
                     android:layout_width="match_parent"
                     android:layout_height="8dp" />
 
                 <LinearLayout
+                    android:id="@+id/container_custom_field_2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/bg_input_field_white"
