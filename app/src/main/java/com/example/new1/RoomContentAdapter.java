@@ -331,6 +331,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return "";
     }
 
+    @Nullable
+    private RoomContentItem findAttachedContainer(int position) {
+        if (position <= 0 || position >= items.size()) {
+            return null;
+        }
+        for (int i = position - 1; i >= 0; i--) {
+            RoomContentItem candidate = items.get(i);
+            if (!candidate.isContainer()) {
+                continue;
+            }
+            int attachedCount = Math.max(0, candidate.getAttachedItemCount());
+            int distanceFromContainer = position - i;
+            if (distanceFromContainer <= attachedCount) {
+                return candidate;
+            }
+            return null;
+        }
+        return null;
+    }
+
     private void applyLabelStyle(@NonNull Spannable spannable, int start, int end) {
         if (start >= end) {
             return;
@@ -477,7 +497,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     addView.setAlpha(1f);
                 }
             } else {
-                itemView.setBackgroundResource(R.drawable.bg_input_field_white);
+                RoomContentItem attachedContainer = RoomContentAdapter.this
+                        .findAttachedContainer(position);
+                boolean isAttachedToContainer = attachedContainer != null;
+                int backgroundRes = isAttachedToContainer
+                        ? R.drawable.bg_room_content_attached_item
+                        : R.drawable.bg_input_field_white;
+                itemView.setBackgroundResource(backgroundRes);
                 applyBannerColor(bannerContainer, item.getType());
                 if (addView != null) {
                     addView.setVisibility(View.GONE);
