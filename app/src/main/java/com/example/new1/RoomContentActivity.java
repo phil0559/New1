@@ -2077,27 +2077,23 @@ public class RoomContentActivity extends Activity {
         if (position < 0 || position >= items.size()) {
             return -1;
         }
-        int currentContainerIndex = -1;
-        int remainingAttached = 0;
-        for (int i = 0; i < items.size(); i++) {
-            RoomContentItem candidate = items.get(i);
-            if (candidate.isContainer()) {
-                if (i == position) {
+        List<ContentGroup> groups = buildContentGroups(items);
+        int currentIndex = 0;
+        for (ContentGroup group : groups) {
+            if (group.hasContainer()) {
+                if (position == currentIndex) {
                     return -1;
                 }
-                currentContainerIndex = i;
-                remainingAttached = Math.max(0, candidate.getAttachedItemCount());
-                continue;
-            }
-            if (remainingAttached > 0) {
-                if (i == position) {
-                    return currentContainerIndex;
+                int groupSize = group.size();
+                if (position < currentIndex + groupSize) {
+                    return currentIndex;
                 }
-                remainingAttached--;
-                continue;
-            }
-            if (i == position) {
-                return -1;
+                currentIndex += groupSize;
+            } else {
+                if (position == currentIndex) {
+                    return -1;
+                }
+                currentIndex += group.size();
             }
         }
         return -1;
@@ -2422,11 +2418,14 @@ public class RoomContentActivity extends Activity {
         if (items.size() <= 1) {
             return;
         }
-        Collections.sort(items, new Comparator<RoomContentItem>() {
+        List<ContentGroup> groups = buildContentGroups(items);
+        Collections.sort(groups, new Comparator<ContentGroup>() {
             @Override
-            public int compare(RoomContentItem first, RoomContentItem second) {
-                String firstType = normalizeForSort(first.getType());
-                String secondType = normalizeForSort(second.getType());
+            public int compare(ContentGroup first, ContentGroup second) {
+                RoomContentItem firstRepresentative = first.getRepresentative();
+                RoomContentItem secondRepresentative = second.getRepresentative();
+                String firstType = normalizeForSort(firstRepresentative.getType());
+                String secondType = normalizeForSort(secondRepresentative.getType());
                 boolean firstHasType = !firstType.isEmpty();
                 boolean secondHasType = !secondType.isEmpty();
                 if (firstHasType && secondHasType) {
@@ -2439,16 +2438,97 @@ public class RoomContentActivity extends Activity {
                 } else if (secondHasType) {
                     return 1;
                 }
-                String firstName = normalizeForSort(first.getName());
-                String secondName = normalizeForSort(second.getName());
+                String firstName = normalizeForSort(firstRepresentative.getName());
+                String secondName = normalizeForSort(secondRepresentative.getName());
                 return firstName.compareToIgnoreCase(secondName);
             }
         });
+
+        items.clear();
+        for (ContentGroup group : groups) {
+            if (group.hasContainer()) {
+                RoomContentItem container = group.container;
+                int attachmentCount = group.attachments.size();
+                if (container.getAttachedItemCount() != attachmentCount) {
+                    container = recreateContainerWithNewCount(container, attachmentCount);
+                }
+                items.add(container);
+                items.addAll(group.attachments);
+            } else {
+                items.addAll(group.attachments);
+            }
+        }
+    }
+
+    @NonNull
+    private List<ContentGroup> buildContentGroups(@NonNull List<RoomContentItem> items) {
+        // Regrouper les contenants et leurs éléments associés pour préserver leur cohésion visuelle.
+        List<ContentGroup> groups = new ArrayList<>();
+        int index = 0;
+        while (index < items.size()) {
+            RoomContentItem current = items.get(index);
+            if (current.isContainer()) {
+                int declaredCount = Math.max(0, current.getAttachedItemCount());
+                List<RoomContentItem> attachments = new ArrayList<>();
+                int nextIndex = index + 1;
+                if (declaredCount > 0) {
+                    while (nextIndex < items.size() && attachments.size() < declaredCount) {
+                        RoomContentItem candidate = items.get(nextIndex);
+                        if (candidate.isContainer()) {
+                            break;
+                        }
+                        attachments.add(candidate);
+                        nextIndex++;
+                    }
+                }
+                if (attachments.size() != declaredCount) {
+                    current = recreateContainerWithNewCount(current, attachments.size());
+                }
+                groups.add(new ContentGroup(current, attachments));
+                index = nextIndex;
+            } else {
+                List<RoomContentItem> singleton = new ArrayList<>();
+                singleton.add(current);
+                groups.add(new ContentGroup(null, singleton));
+                index++;
+            }
+        }
+        return groups;
     }
 
     @NonNull
     private String normalizeForSort(@Nullable String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private static final class ContentGroup {
+        @Nullable
+        RoomContentItem container;
+        @NonNull
+        final List<RoomContentItem> attachments;
+
+        ContentGroup(@Nullable RoomContentItem container,
+                @NonNull List<RoomContentItem> attachments) {
+            this.container = container;
+            this.attachments = attachments;
+        }
+
+        boolean hasContainer() {
+            return container != null;
+        }
+
+        int size() {
+            return hasContainer() ? 1 + attachments.size() : attachments.size();
+        }
+
+        @NonNull
+        RoomContentItem getRepresentative() {
+            // Utiliser le premier élément du groupe pour l’ordonnancement global.
+            if (hasContainer()) {
+                return container;
+            }
+            return attachments.get(0);
+        }
     }
 
     private void updateEmptyState() {
