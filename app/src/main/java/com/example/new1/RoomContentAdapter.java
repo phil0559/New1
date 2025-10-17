@@ -324,9 +324,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     @NonNull
     private String buildContainerRank(int position, @NonNull RoomContentItem container) {
-        if (!container.hasAttachedItems()) {
-            return "";
-        }
         int parentPosition = findAttachedContainerPosition(position);
         if (parentPosition < 0) {
             int index = computeTopLevelContainerIndex(position);
@@ -374,9 +371,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (findAttachedContainerPosition(i) >= 0) {
                 continue;
             }
-            if (!candidate.hasAttachedItems()) {
-                continue;
-            }
             rankIndex++;
             if (i == position) {
                 return rankIndex;
@@ -408,6 +402,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     private boolean shouldAttachmentBeRanked(@NonNull RoomContentItem item, int position) {
         if (item.isContainer()) {
+            if (findAttachedContainerPosition(position) >= 0) {
+                return true;
+            }
             return item.hasAttachedItems();
         }
         return findAttachedContainerPosition(position) >= 0;
