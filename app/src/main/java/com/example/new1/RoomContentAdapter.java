@@ -315,36 +315,102 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (position < 0 || position >= items.size()) {
             return "";
         }
-        // La numérotation ne concerne que les contenants et les éléments qui leur sont rattachés.
-        int containerIndex = 0;
-        int remainingAttachedItems = 0;
-        int currentContentIndex = 0;
+        RoomContentItem item = items.get(position);
+        if (item.isContainer()) {
+            return buildContainerRank(position, item);
+        }
+        return buildAttachmentRank(position);
+    }
+
+    @NonNull
+    private String buildContainerRank(int position, @NonNull RoomContentItem container) {
+        if (!container.hasAttachedItems()) {
+            return "";
+        }
+        int parentPosition = findAttachedContainerPosition(position);
+        if (parentPosition < 0) {
+            int index = computeTopLevelContainerIndex(position);
+            return index > 0 ? String.valueOf(index) : "";
+        }
+        String parentRank = buildRankLabel(parentPosition);
+        if (parentRank.isEmpty()) {
+            return "";
+        }
+        int indexWithinParent = computeAttachmentIndex(parentPosition, position);
+        if (indexWithinParent <= 0) {
+            return "";
+        }
+        return parentRank + "." + indexWithinParent;
+    }
+
+    @NonNull
+    private String buildAttachmentRank(int position) {
+        int parentPosition = findAttachedContainerPosition(position);
+        if (parentPosition < 0) {
+            return "";
+        }
+        RoomContentItem parent = items.get(parentPosition);
+        if (!parent.hasAttachedItems()) {
+            return "";
+        }
+        String parentRank = buildRankLabel(parentPosition);
+        if (parentRank.isEmpty()) {
+            return "";
+        }
+        int indexWithinParent = computeAttachmentIndex(parentPosition, position);
+        if (indexWithinParent <= 0) {
+            return "";
+        }
+        return parentRank + "." + indexWithinParent;
+    }
+
+    private int computeTopLevelContainerIndex(int position) {
+        int rankIndex = 0;
         for (int i = 0; i <= position && i < items.size(); i++) {
-            RoomContentItem item = items.get(i);
-            if (item.isContainer()) {
-                containerIndex++;
-                remainingAttachedItems = Math.max(0, item.getAttachedItemCount());
-                currentContentIndex = 0;
-                if (i == position) {
-                    return String.valueOf(containerIndex);
-                }
+            RoomContentItem candidate = items.get(i);
+            if (!candidate.isContainer()) {
                 continue;
             }
-            if (remainingAttachedItems > 0) {
-                currentContentIndex++;
-                remainingAttachedItems--;
-                if (i == position) {
-                    return containerIndex > 0
-                            ? containerIndex + "." + currentContentIndex
-                            : "";
-                }
+            if (findAttachedContainerPosition(i) >= 0) {
                 continue;
             }
+            if (!candidate.hasAttachedItems()) {
+                continue;
+            }
+            rankIndex++;
             if (i == position) {
-                return "";
+                return rankIndex;
             }
         }
-        return "";
+        return 0;
+    }
+
+    private int computeAttachmentIndex(int containerPosition, int targetPosition) {
+        if (containerPosition < 0 || containerPosition >= items.size()) {
+            return 0;
+        }
+        RoomContentItem container = items.get(containerPosition);
+        int declaredCount = Math.max(0, container.getAttachedItemCount());
+        int limit = Math.min(items.size(), containerPosition + 1 + declaredCount);
+        int rankIndex = 0;
+        for (int i = containerPosition + 1; i < limit; i++) {
+            RoomContentItem candidate = items.get(i);
+            if (!shouldAttachmentBeRanked(candidate, i)) {
+                continue;
+            }
+            rankIndex++;
+            if (i == targetPosition) {
+                return rankIndex;
+            }
+        }
+        return 0;
+    }
+
+    private boolean shouldAttachmentBeRanked(@NonNull RoomContentItem item, int position) {
+        if (item.isContainer()) {
+            return item.hasAttachedItems();
+        }
+        return findAttachedContainerPosition(position) >= 0;
     }
 
     @Nullable
