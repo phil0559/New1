@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@android:color/white" />
-    <corners android:radius="8dp" />
-    <stroke
-        android:width="3dp"
-        android:color="@color/room_container_border" />
-</shape>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@android:color/white" />
+            <corners android:radius="8dp" />
+            <stroke
+                android:width="3dp"
+                android:color="@color/room_container_border" />
+        </shape>
+    </item>
+    <item
+        android:left="3dp"
+        android:right="3dp">
+        <shape>
+            <solid android:color="@android:color/white" />
+            <size android:height="4dp" />
+            <corners
+                android:topLeftRadius="8dp"
+                android:topRightRadius="8dp" />
+        </shape>
+    </item>
+</layer-list>
