@@ -518,6 +518,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     class ViewHolder extends RecyclerView.ViewHolder {
         final View bannerContainer;
+        @Nullable
+        final View cardBackground;
         final View detailsContainer;
         @Nullable
         final ImageView photoView;
@@ -549,6 +551,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @Nullable OnRoomContentInteractionListener interactionListener) {
             super(itemView);
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
+            cardBackground = itemView.findViewById(R.id.container_room_content_root);
             detailsContainer = itemView.findViewById(R.id.container_room_content_details);
             photoView = itemView.findViewById(R.id.image_room_content_photo);
             nameView = itemView.findViewById(R.id.text_room_content_name);
@@ -600,11 +603,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
+            View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
                 if (isContainerExpanded) {
-                    itemView.setBackgroundResource(R.drawable.bg_room_container_group_header);
+                    backgroundTarget.setBackgroundResource(R.drawable.bg_room_container_group_header);
                 } else {
-                    itemView.setBackgroundResource(R.drawable.bg_room_container_item);
+                    backgroundTarget.setBackgroundResource(R.drawable.bg_room_container_item);
                 }
                 applyContainerBannerColor(bannerContainer);
                 if (addView != null) {
@@ -635,8 +639,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         ? (isLastAttachment
                                 ? R.drawable.bg_room_content_group_footer
                                 : R.drawable.bg_room_content_group_middle)
-                        : R.drawable.bg_input_field_white;
-                itemView.setBackgroundResource(backgroundRes);
+                        : R.drawable.bg_room_content_card_default;
+                backgroundTarget.setBackgroundResource(backgroundRes);
                 applyBannerColor(bannerContainer, item.getType());
                 if (addView != null) {
                     addView.setVisibility(View.GONE);

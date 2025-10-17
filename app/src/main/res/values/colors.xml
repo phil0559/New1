@@ -29,4 +29,8 @@
     <color name="button_light_blue">#B3E5FC</color>
     <color name="room_container_border">#0D47A1</color>
     <color name="room_container_border_dark">#3B2A1C</color>
+    <color name="room_content_card_background">#F6F8FA</color>
+    <color name="room_content_card_border">#26000000</color>
+    <color name="room_content_card_container_background">#EAF2FC</color>
+    <color name="room_content_card_container_border">#334C3A2A</color>
 </resources>

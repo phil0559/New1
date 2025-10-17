@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <solid android:color="@color/room_content_card_container_background" />
+    <solid android:color="@color/room_content_card_background" />
     <stroke
         android:width="1dp"
-        android:color="@color/room_content_card_container_border" />
+        android:color="@color/room_content_card_border" />
     <corners android:radius="18dp" />
 </shape>
