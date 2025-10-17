@@ -46,6 +46,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Nullable
     private final OnRoomContentInteractionListener interactionListener;
     private final SparseBooleanArray expandedStates = new SparseBooleanArray();
+    private final SparseBooleanArray containerCollapsedStates = new SparseBooleanArray();
 
     public RoomContentAdapter(@NonNull Context context,
             @NonNull List<RoomContentItem> items) {
@@ -99,18 +100,33 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         CharSequence metadataText = formatMetadataLines(metadataLines);
         boolean hasMetadata = metadataText != null;
 
-        boolean hasExpandableContent = hasComment || hasMetadata;
-        if (!hasExpandableContent) {
+        boolean isContainer = item.isContainer();
+        boolean canToggleContainer = isContainer && item.hasAttachedItems();
+        if (canToggleContainer) {
             expandedStates.delete(position);
         }
-        boolean isExpanded = hasExpandableContent && expandedStates.get(position, false);
-        holder.detailsContainer
-                .setVisibility(hasExpandableContent && isExpanded ? View.VISIBLE : View.GONE);
+        if (!hasComment && !hasMetadata) {
+            expandedStates.delete(position);
+        }
+        boolean isContainerExpanded = !containerCollapsedStates.get(position, false);
+        boolean shouldDisplayDetails;
+        if (canToggleContainer) {
+            shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata);
+        } else {
+            boolean isExpanded = (hasComment || hasMetadata)
+                    && expandedStates.get(position, false);
+            shouldDisplayDetails = isExpanded;
+        }
+        holder.detailsContainer.setVisibility(shouldDisplayDetails ? View.VISIBLE : View.GONE);
         CharSequence displayedName = holder.nameView.getText();
         String toggleLabel = displayedName != null ? displayedName.toString() : resolveItemName(item);
-        holder.updateToggle(hasExpandableContent, isExpanded, toggleLabel);
+        boolean hasToggle = hasComment || hasMetadata || canToggleContainer;
+        boolean isToggleExpanded = canToggleContainer
+                ? isContainerExpanded
+                : ((hasComment || hasMetadata) && expandedStates.get(position, false));
+        holder.updateToggle(hasToggle, isToggleExpanded, toggleLabel);
 
-        if (isExpanded) {
+        if (shouldDisplayDetails) {
             if (hasComment) {
                 holder.commentView.setVisibility(View.VISIBLE);
                 holder.commentView.setText(commentText);
@@ -333,8 +349,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     @Nullable
     private RoomContentItem findAttachedContainer(int position) {
-        if (position <= 0 || position >= items.size()) {
+        int containerPosition = findAttachedContainerPosition(position);
+        if (containerPosition < 0) {
             return null;
+        }
+        return items.get(containerPosition);
+    }
+
+    private int findAttachedContainerPosition(int position) {
+        if (position <= 0 || position >= items.size()) {
+            return -1;
         }
         for (int i = position - 1; i >= 0; i--) {
             RoomContentItem candidate = items.get(i);
@@ -344,11 +368,43 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int attachedCount = Math.max(0, candidate.getAttachedItemCount());
             int distanceFromContainer = position - i;
             if (distanceFromContainer <= attachedCount) {
-                return candidate;
+                return i;
             }
-            return null;
+            return -1;
         }
-        return null;
+        return -1;
+    }
+
+    private boolean isItemHiddenByCollapsedContainer(int position) {
+        int containerPosition = findAttachedContainerPosition(position);
+        if (containerPosition < 0) {
+            return false;
+        }
+        return containerCollapsedStates.get(containerPosition, false);
+    }
+
+    private boolean isContainerExpanded(int position) {
+        return !containerCollapsedStates.get(position, false);
+    }
+
+    private void setContainerExpanded(int position, boolean expanded) {
+        if (expanded) {
+            containerCollapsedStates.delete(position);
+        } else {
+            containerCollapsedStates.put(position, true);
+        }
+    }
+
+    private void notifyAttachedItemsChanged(int containerPosition, int attachedItemCount) {
+        if (attachedItemCount <= 0) {
+            return;
+        }
+        int start = containerPosition + 1;
+        int end = Math.min(items.size(), start + attachedItemCount);
+        if (start >= end) {
+            return;
+        }
+        notifyItemRangeChanged(start, end - start);
     }
 
     private void applyLabelStyle(@NonNull Spannable spannable, int start, int end) {
@@ -446,6 +502,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
         private final int defaultPaddingBottom;
+        private final int defaultMarginLeft;
+        private final int defaultMarginTop;
+        private final int defaultMarginRight;
+        private final int defaultMarginBottom;
         @Nullable
         private PopupWindow optionsPopup;
 
@@ -477,6 +537,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
             defaultPaddingBottom = photoView != null ? photoView.getPaddingBottom() : 0;
+            ViewGroup.LayoutParams params = itemView.getLayoutParams();
+            if (params instanceof RecyclerView.LayoutParams) {
+                RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) params;
+                defaultMarginLeft = layoutParams.leftMargin;
+                defaultMarginTop = layoutParams.topMargin;
+                defaultMarginRight = layoutParams.rightMargin;
+                defaultMarginBottom = layoutParams.bottomMargin;
+            } else {
+                defaultMarginLeft = 0;
+                defaultMarginTop = 0;
+                defaultMarginRight = 0;
+                defaultMarginBottom = 0;
+            }
         }
 
         void bind(@NonNull RoomContentItem item, int position) {
@@ -509,8 +582,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     addView.setVisibility(View.GONE);
                 }
             }
+            boolean hiddenByContainer = !item.isContainer()
+                    && RoomContentAdapter.this.isItemHiddenByCollapsedContainer(position);
+            itemView.setVisibility(hiddenByContainer ? View.GONE : View.VISIBLE);
+            ViewGroup.LayoutParams layoutParams = itemView.getLayoutParams();
+            if (layoutParams instanceof RecyclerView.LayoutParams) {
+                RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) layoutParams;
+                params.height = hiddenByContainer
+                        ? 0
+                        : ViewGroup.LayoutParams.WRAP_CONTENT;
+                params.leftMargin = hiddenByContainer ? 0 : defaultMarginLeft;
+                params.topMargin = hiddenByContainer ? 0 : defaultMarginTop;
+                params.rightMargin = hiddenByContainer ? 0 : defaultMarginRight;
+                params.bottomMargin = hiddenByContainer ? 0 : defaultMarginBottom;
+                itemView.setLayoutParams(params);
+            }
             if (filledIndicatorView != null) {
-                boolean isExpanded = expandedStates.get(position, false);
+                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(position);
                 boolean showIndicator = item.isContainer() && item.hasAttachedItems() && !isExpanded;
                 filledIndicatorView.setVisibility(showIndicator ? View.VISIBLE : View.GONE);
             }
@@ -631,13 +719,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (position == RecyclerView.NO_POSITION) {
                 return;
             }
-            boolean isExpanded = expandedStates.get(position, false);
-            if (isExpanded) {
-                expandedStates.delete(position);
+            if (currentItem != null && currentItem.isContainer()
+                    && currentItem.hasAttachedItems()) {
+                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(position);
+                RoomContentAdapter.this.setContainerExpanded(position, !isExpanded);
+                notifyItemChanged(position);
+                RoomContentAdapter.this.notifyAttachedItemsChanged(position,
+                        currentItem.getAttachedItemCount());
             } else {
-                expandedStates.put(position, true);
+                boolean isExpanded = expandedStates.get(position, false);
+                if (isExpanded) {
+                    expandedStates.delete(position);
+                } else {
+                    expandedStates.put(position, true);
+                }
+                notifyItemChanged(position);
             }
-            notifyItemChanged(position);
         }
 
         private void toggleOptionsMenu() {
