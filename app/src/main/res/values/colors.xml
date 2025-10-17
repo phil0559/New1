@@ -27,6 +27,6 @@
     <color name="room_content_banner_comic">#F7C2D7</color>
     <color name="room_content_banner_container">#CBE4F5</color>
     <color name="button_light_blue">#B3E5FC</color>
-    <color name="room_container_border">#5CA3CE</color>
+    <color name="room_container_border">#0D47A1</color>
     <color name="room_container_border_dark">#3B2A1C</color>
 </resources>
