@@ -420,6 +420,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
     }
 
+    private boolean isLastAttachedItem(@NonNull RoomContentItem container, int containerPosition,
+            int attachedPosition) {
+        int attachedCount = Math.max(0, container.getAttachedItemCount());
+        if (attachedCount <= 0) {
+            return true;
+        }
+        int relativeIndex = attachedPosition - containerPosition;
+        return relativeIndex >= attachedCount;
+    }
+
     private void notifyAttachedItemsChanged(int containerPosition, int attachedItemCount) {
         if (attachedItemCount <= 0) {
             return;
@@ -586,8 +596,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 rankedName = appendAttachmentCount(rankedName, item);
             }
             nameView.setText(rankedName);
+            boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
+            boolean isContainerExpanded = hasAttachedItems
+                    && RoomContentAdapter.this.isContainerExpanded(position);
             if (item.isContainer()) {
-                itemView.setBackgroundResource(R.drawable.bg_room_container_item);
+                if (isContainerExpanded) {
+                    itemView.setBackgroundResource(R.drawable.bg_room_container_group_header);
+                } else {
+                    itemView.setBackgroundResource(R.drawable.bg_room_container_item);
+                }
                 applyContainerBannerColor(bannerContainer);
                 if (addView != null) {
                     addView.setVisibility(View.VISIBLE);
@@ -597,9 +614,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             } else {
                 RoomContentItem attachedContainer = RoomContentAdapter.this
                         .findAttachedContainer(position);
-                boolean isAttachedToContainer = attachedContainer != null;
-                int backgroundRes = isAttachedToContainer
-                        ? R.drawable.bg_room_content_attached_item
+                boolean isPartOfExpandedContainer = false;
+                boolean isLastAttachment = false;
+                if (attachedContainer != null) {
+                    int containerPosition = RoomContentAdapter.this
+                            .findAttachedContainerPosition(position);
+                    if (containerPosition >= 0) {
+                        boolean containerExpanded = RoomContentAdapter.this
+                                .isContainerExpanded(containerPosition)
+                                && attachedContainer.hasAttachedItems();
+                        if (containerExpanded) {
+                            isPartOfExpandedContainer = true;
+                            isLastAttachment = RoomContentAdapter.this.isLastAttachedItem(
+                                    attachedContainer, containerPosition, position);
+                        }
+                    }
+                }
+                int backgroundRes = isPartOfExpandedContainer
+                        ? (isLastAttachment
+                                ? R.drawable.bg_room_content_group_footer
+                                : R.drawable.bg_room_content_group_middle)
                         : R.drawable.bg_input_field_white;
                 itemView.setBackgroundResource(backgroundRes);
                 applyBannerColor(bannerContainer, item.getType());
@@ -620,13 +654,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             ViewGroup.LayoutParams layoutParams = itemView.getLayoutParams();
             if (layoutParams instanceof RecyclerView.LayoutParams) {
                 RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) layoutParams;
-                params.height = hiddenByContainer
-                        ? 0
-                        : ViewGroup.LayoutParams.WRAP_CONTENT;
-                params.leftMargin = hiddenByContainer ? 0 : defaultMarginLeft;
-                params.topMargin = hiddenByContainer ? 0 : defaultMarginTop;
-                params.rightMargin = hiddenByContainer ? 0 : defaultMarginRight;
-                params.bottomMargin = hiddenByContainer ? 0 : defaultMarginBottom;
+                if (hiddenByContainer) {
+                    params.height = 0;
+                    params.leftMargin = 0;
+                    params.topMargin = 0;
+                    params.rightMargin = 0;
+                    params.bottomMargin = 0;
+                } else {
+                    params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                    params.leftMargin = defaultMarginLeft;
+                    params.topMargin = defaultMarginTop;
+                    params.rightMargin = defaultMarginRight;
+                    params.bottomMargin = resolveBottomMargin(item, position,
+                            isContainerExpanded);
+                }
                 itemView.setLayoutParams(params);
             }
             if (filledIndicatorView != null) {
@@ -767,6 +808,29 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 notifyItemChanged(position);
             }
+        }
+
+        private int resolveBottomMargin(@NonNull RoomContentItem item, int position,
+                boolean isContainerExpanded) {
+            if (item.isContainer()) {
+                return (isContainerExpanded && item.hasAttachedItems()) ? 0 : defaultMarginBottom;
+            }
+            RoomContentItem container = RoomContentAdapter.this.findAttachedContainer(position);
+            if (container == null) {
+                return defaultMarginBottom;
+            }
+            int containerPosition = RoomContentAdapter.this.findAttachedContainerPosition(position);
+            if (containerPosition < 0) {
+                return defaultMarginBottom;
+            }
+            boolean containerExpanded = RoomContentAdapter.this.isContainerExpanded(containerPosition)
+                    && container.hasAttachedItems();
+            if (!containerExpanded) {
+                return defaultMarginBottom;
+            }
+            boolean isLastAttachment = RoomContentAdapter.this.isLastAttachedItem(container,
+                    containerPosition, position);
+            return isLastAttachment ? defaultMarginBottom : 0;
         }
 
         private void toggleOptionsMenu() {
