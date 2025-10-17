@@ -3,21 +3,18 @@
     <item>
         <shape>
             <solid android:color="@android:color/white" />
-            <corners android:radius="8dp" />
             <stroke
                 android:width="3dp"
                 android:color="@color/room_container_border" />
+            <corners
+                android:bottomLeftRadius="8dp"
+                android:bottomRightRadius="8dp" />
         </shape>
     </item>
-    <item
-        android:left="3dp"
-        android:right="3dp">
+    <item android:gravity="top">
         <shape>
             <solid android:color="@android:color/white" />
-            <size android:height="4dp" />
-            <corners
-                android:topLeftRadius="8dp"
-                android:topRightRadius="8dp" />
+            <size android:height="3dp" />
         </shape>
     </item>
 </layer-list>

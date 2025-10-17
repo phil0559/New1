@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <solid android:color="@android:color/white" />
+            <stroke
+                android:width="3dp"
+                android:color="@color/room_container_border" />
+        </shape>
+    </item>
+    <item android:gravity="top">
+        <shape>
+            <solid android:color="@android:color/white" />
+            <size android:height="3dp" />
+        </shape>
+    </item>
+    <item android:gravity="bottom">
+        <shape>
+            <solid android:color="@android:color/white" />
+            <size android:height="3dp" />
+        </shape>
+    </item>
+</layer-list>
