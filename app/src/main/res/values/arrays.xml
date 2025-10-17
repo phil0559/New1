@@ -4,14 +4,13 @@
         <item>@string/dialog_type_other</item>
         <item>@string/dialog_type_key</item>
         <item>@string/dialog_type_book</item>
+        <item>@string/dialog_type_magazine</item>
         <item>@string/dialog_type_cd</item>
         <item>@string/dialog_type_disc</item>
         <item>@string/dialog_type_comic</item>
     </string-array>
 
     <string-array name="room_content_category_options">
-        <item>@string/dialog_category_placeholder_one</item>
-        <item>@string/dialog_category_placeholder_two</item>
     </string-array>
 
     <string-array name="room_container_type_defaults">
