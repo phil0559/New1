@@ -2,24 +2,19 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape>
-            <solid android:color="@android:color/white" />
+            <solid android:color="@color/room_content_card_container_background" />
             <stroke
-                android:width="3dp"
-                android:color="@color/room_container_border" />
+                android:width="1dp"
+                android:color="@color/room_content_card_container_border" />
             <corners
-                android:bottomLeftRadius="8dp"
-                android:bottomRightRadius="8dp" />
-            <padding
-                android:left="8dp"
-                android:top="0dp"
-                android:right="8dp"
-                android:bottom="8dp" />
+                android:bottomLeftRadius="18dp"
+                android:bottomRightRadius="18dp" />
         </shape>
     </item>
     <item android:gravity="top">
         <shape>
-            <solid android:color="@android:color/white" />
-            <size android:height="3dp" />
+            <solid android:color="@color/room_content_card_container_background" />
+            <size android:height="1dp" />
         </shape>
     </item>
 </layer-list>
