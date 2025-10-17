@@ -7,7 +7,4 @@
         android:top="8dp"
         android:right="8dp"
         android:bottom="0dp" />
-    <stroke
-        android:width="3dp"
-        android:color="@color/room_container_border" />
 </shape>
