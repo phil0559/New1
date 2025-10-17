@@ -78,6 +78,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         boolean hasComment = commentText != null;
 
         List<CharSequence> metadataLines = new ArrayList<>();
+        if (item.isContainer()) {
+            addAttachmentSummaryLine(metadataLines, item.getAttachedItemCount());
+        }
         addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
         addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
         addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
@@ -156,6 +159,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         metadataLines.add(createMetadataLine(templateRes, trimmed));
     }
 
+    private void addAttachmentSummaryLine(@NonNull List<CharSequence> metadataLines, int count) {
+        if (count <= 0) {
+            return;
+        }
+        metadataLines.add(createAttachmentSummaryLine(count));
+    }
+
     @Nullable
     private CharSequence formatMetadataLines(@NonNull List<CharSequence> metadataLines) {
         if (metadataLines.isEmpty()) {
@@ -194,6 +204,33 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         applyLabelStyle(builder, labelStart, labelEnd);
         if (!valuePart.isEmpty()) {
             appendValueWithLineBreaks(builder, valuePart);
+        }
+        return builder;
+    }
+
+    @NonNull
+    private CharSequence createAttachmentSummaryLine(int count) {
+        String formatted = context.getString(R.string.room_container_attached_summary, count);
+        int colonIndex = formatted.indexOf(':');
+        String labelPart;
+        String valuePart;
+        if (colonIndex >= 0) {
+            labelPart = formatted.substring(0, colonIndex).trim();
+            valuePart = formatted.substring(colonIndex + 1).trim();
+        } else {
+            labelPart = formatted.trim();
+            valuePart = "";
+        }
+
+        SpannableStringBuilder builder = new SpannableStringBuilder();
+        builder.append('\u2022').append(' ');
+        int labelStart = builder.length();
+        builder.append(labelPart);
+        builder.append(" : ");
+        int labelEnd = builder.length();
+        applyLabelStyle(builder, labelStart, labelEnd);
+        if (!valuePart.isEmpty()) {
+            builder.append(valuePart);
         }
         return builder;
     }
