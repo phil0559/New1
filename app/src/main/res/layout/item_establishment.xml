@@ -37,8 +37,8 @@
 
         <ImageView
             android:id="@+id/image_establishment_menu"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="@dimen/list_item_action_icon_size"
+            android:layout_height="@dimen/list_item_action_icon_size"
             android:layout_marginStart="12dp"
             android:contentDescription="@string/content_description_establishment_menu"
             android:padding="4dp"
