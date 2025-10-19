@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -29,6 +30,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.content.ContextCompat;
+import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -937,7 +939,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             popupWindow.setOnDismissListener(() -> optionsPopup = null);
             optionsPopup = popupWindow;
-            popupWindow.showAsDropDown(menuView, 0, 0, Gravity.END);
+
+            popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int popupHeight = popupView.getMeasuredHeight();
+            int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
+
+            Rect displayFrame = new Rect();
+            menuView.getWindowVisibleDisplayFrame(displayFrame);
+            int[] location = new int[2];
+            menuView.getLocationOnScreen(location);
+            int anchorBottom = location[1] + menuView.getHeight();
+            int spaceBelow = displayFrame.bottom - anchorBottom;
+            int spaceAbove = location[1] - displayFrame.top;
+
+            int yOffset = verticalOffset;
+            if (spaceBelow < popupHeight + verticalOffset
+                    && spaceAbove >= popupHeight + verticalOffset) {
+                yOffset = -(menuView.getHeight() + popupHeight + verticalOffset);
+            }
+
+            PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, yOffset, Gravity.END);
         }
 
         void dismissOptionsMenu() {
