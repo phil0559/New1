@@ -2597,7 +2597,7 @@ public class RoomContentActivity extends Activity {
         for (ContentGroup group : groups) {
             if (group.hasContainer()) {
                 RoomContentItem container = group.container;
-                int attachmentCount = group.attachments.size();
+                int attachmentCount = Math.max(0, group.directAttachmentCount);
                 if (container.getAttachedItemCount() != attachmentCount) {
                     container = recreateContainerWithNewCount(container, attachmentCount);
                 }
@@ -2617,32 +2617,45 @@ public class RoomContentActivity extends Activity {
         while (index < items.size()) {
             RoomContentItem current = items.get(index);
             if (current.isContainer()) {
-                int declaredCount = Math.max(0, current.getAttachedItemCount());
-                List<RoomContentItem> attachments = new ArrayList<>();
-                int nextIndex = index + 1;
-                if (declaredCount > 0) {
-                    while (nextIndex < items.size() && attachments.size() < declaredCount) {
-                        RoomContentItem candidate = items.get(nextIndex);
-                        if (candidate.isContainer()) {
-                            break;
-                        }
-                        attachments.add(candidate);
-                        nextIndex++;
-                    }
-                }
-                if (attachments.size() != declaredCount) {
-                    current = recreateContainerWithNewCount(current, attachments.size());
-                }
-                groups.add(new ContentGroup(current, attachments));
-                index = nextIndex;
+                ContainerExtraction extraction = extractContainerGroup(items, index);
+                groups.add(new ContentGroup(extraction.container, extraction.attachments,
+                        extraction.directAttachmentCount));
+                index = extraction.nextIndex;
             } else {
                 List<RoomContentItem> singleton = new ArrayList<>();
                 singleton.add(current);
-                groups.add(new ContentGroup(null, singleton));
+                groups.add(new ContentGroup(null, singleton, singleton.size()));
                 index++;
             }
         }
         return groups;
+    }
+
+    @NonNull
+    private ContainerExtraction extractContainerGroup(@NonNull List<RoomContentItem> items,
+            int containerIndex) {
+        RoomContentItem container = items.get(containerIndex);
+        int declaredCount = Math.max(0, container.getAttachedItemCount());
+        List<RoomContentItem> attachments = new ArrayList<>();
+        int nextIndex = containerIndex + 1;
+        int processedChildren = 0;
+        while (nextIndex < items.size() && processedChildren < declaredCount) {
+            RoomContentItem candidate = items.get(nextIndex);
+            if (candidate.isContainer()) {
+                ContainerExtraction childExtraction = extractContainerGroup(items, nextIndex);
+                attachments.add(childExtraction.container);
+                attachments.addAll(childExtraction.attachments);
+                nextIndex = childExtraction.nextIndex;
+            } else {
+                attachments.add(candidate);
+                nextIndex++;
+            }
+            processedChildren++;
+        }
+        if (processedChildren != declaredCount) {
+            container = recreateContainerWithNewCount(container, processedChildren);
+        }
+        return new ContainerExtraction(container, attachments, processedChildren, nextIndex);
     }
 
     @NonNull
@@ -2655,11 +2668,14 @@ public class RoomContentActivity extends Activity {
         RoomContentItem container;
         @NonNull
         final List<RoomContentItem> attachments;
+        final int directAttachmentCount;
 
         ContentGroup(@Nullable RoomContentItem container,
-                @NonNull List<RoomContentItem> attachments) {
+                @NonNull List<RoomContentItem> attachments,
+                int directAttachmentCount) {
             this.container = container;
             this.attachments = attachments;
+            this.directAttachmentCount = directAttachmentCount;
         }
 
         boolean hasContainer() {
@@ -2677,6 +2693,25 @@ public class RoomContentActivity extends Activity {
                 return container;
             }
             return attachments.get(0);
+        }
+    }
+
+    private static final class ContainerExtraction {
+        @NonNull
+        final RoomContentItem container;
+        @NonNull
+        final List<RoomContentItem> attachments;
+        final int directAttachmentCount;
+        final int nextIndex;
+
+        ContainerExtraction(@NonNull RoomContentItem container,
+                @NonNull List<RoomContentItem> attachments,
+                int directAttachmentCount,
+                int nextIndex) {
+            this.container = container;
+            this.attachments = attachments;
+            this.directAttachmentCount = directAttachmentCount;
+            this.nextIndex = nextIndex;
         }
     }
 
