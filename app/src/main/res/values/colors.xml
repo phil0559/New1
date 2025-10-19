@@ -33,4 +33,16 @@
     <color name="room_content_card_border">#26000000</color>
     <color name="room_content_card_container_background">#EAF2FC</color>
     <color name="room_content_card_container_border">#334C3A2A</color>
+    <color name="room_content_hierarchy_level_0_background">#E2ECF9</color>
+    <color name="room_content_hierarchy_level_0_border">#6691C2</color>
+    <color name="room_content_hierarchy_level_0_banner">#D6E5F7</color>
+    <color name="room_content_hierarchy_level_1_background">#E7EAF2</color>
+    <color name="room_content_hierarchy_level_1_border">#7A879C</color>
+    <color name="room_content_hierarchy_level_1_banner">#DADDE6</color>
+    <color name="room_content_hierarchy_level_2_background">#F2E6D8</color>
+    <color name="room_content_hierarchy_level_2_border">#B48B62</color>
+    <color name="room_content_hierarchy_level_2_banner">#E5D3BF</color>
+    <color name="room_content_hierarchy_level_3_background">#F5EFE4</color>
+    <color name="room_content_hierarchy_level_3_border">#C3A67C</color>
+    <color name="room_content_hierarchy_level_3_banner">#E9DECA</color>
 </resources>
