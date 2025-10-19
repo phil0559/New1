@@ -25,6 +25,9 @@ import android.widget.TextView;
 import android.widget.PopupWindow;
 import android.widget.Toast;
 
+import com.google.android.material.card.MaterialCardView;
+
+import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -50,6 +53,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final SparseBooleanArray expandedStates = new SparseBooleanArray();
     private final SparseBooleanArray containerCollapsedStates = new SparseBooleanArray();
     private final int hierarchyIndentPx;
+    private final float cardCornerRadiusPx;
+    private final int cardBorderWidthPx;
+    private final HierarchyStyle[] hierarchyStyles;
+    private final int hierarchyFrameInsetPx;
 
     public RoomContentAdapter(@NonNull Context context,
             @NonNull List<RoomContentItem> items) {
@@ -66,6 +73,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         this.labelColor = ContextCompat.getColor(context, R.color.icon_brown);
         this.hierarchyIndentPx = context.getResources()
                 .getDimensionPixelSize(R.dimen.room_content_hierarchy_indent);
+        this.cardCornerRadiusPx = context.getResources()
+                .getDimension(R.dimen.room_content_card_corner_radius);
+        this.cardBorderWidthPx = Math.max(1,
+                Math.round(context.getResources()
+                        .getDimension(R.dimen.room_content_card_border_width)));
+        this.hierarchyFrameInsetPx = context.getResources()
+                .getDimensionPixelSize(R.dimen.room_content_hierarchy_frame_inset);
+        this.hierarchyStyles = createHierarchyStyles(context);
     }
 
     @NonNull
@@ -546,6 +561,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return true;
     }
 
+    private boolean isLastDirectChild(int containerPosition, int childPosition) {
+        if (containerPosition < 0 || childPosition <= containerPosition
+                || childPosition >= items.size()) {
+            return true;
+        }
+        for (int index = childPosition + 1; index < items.size(); index++) {
+            if (!isDescendantOf(containerPosition, index)) {
+                break;
+            }
+            int parentPosition = findAttachedContainerPosition(index);
+            if (parentPosition == containerPosition) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void notifyAttachedItemsChanged(int containerPosition) {
         int start = containerPosition + 1;
         if (start >= items.size()) {
@@ -578,20 +610,150 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (background instanceof GradientDrawable) {
             GradientDrawable drawable = (GradientDrawable) background.mutate();
             drawable.setColor(color);
+        } else if (background instanceof ColorDrawable) {
+            ColorDrawable drawable = (ColorDrawable) background.mutate();
+            drawable.setColor(color);
         } else {
             bannerView.setBackgroundColor(color);
         }
     }
 
-    private void applyContainerBannerColor(@NonNull View bannerView) {
-        int color = ContextCompat.getColor(context, R.color.room_content_banner_container);
+    private void applyContainerBannerColor(@NonNull View bannerView,
+            @NonNull HierarchyStyle style) {
+        int color = style.bannerColor;
         Drawable background = bannerView.getBackground();
         if (background instanceof GradientDrawable) {
             GradientDrawable drawable = (GradientDrawable) background.mutate();
             drawable.setColor(color);
+        } else if (background instanceof ColorDrawable) {
+            ColorDrawable drawable = (ColorDrawable) background.mutate();
+            drawable.setColor(color);
         } else {
             bannerView.setBackgroundColor(color);
         }
+    }
+
+    private void applyContainerBackground(@NonNull View target, @NonNull HierarchyStyle style,
+            boolean hasAttachedItems, boolean isExpanded) {
+        float bottomRadius = (hasAttachedItems && isExpanded) ? 0f : cardCornerRadiusPx;
+        Drawable drawable = createRoundedDrawable(style.backgroundColor, style.borderColor,
+                cardCornerRadiusPx, cardCornerRadiusPx, bottomRadius, bottomRadius);
+        target.setBackground(drawable);
+    }
+
+    private void applyStandaloneContentBackground(@NonNull View target,
+            @NonNull HierarchyStyle style) {
+        Drawable drawable = createRoundedDrawable(style.backgroundColor, style.borderColor,
+                cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx);
+        target.setBackground(drawable);
+    }
+
+    private void applyAttachmentBackground(@NonNull View target, @NonNull HierarchyStyle style,
+            boolean isLastAttachment) {
+        float bottomRadius = isLastAttachment ? cardCornerRadiusPx : 0f;
+        Drawable drawable = createRoundedDrawable(style.backgroundColor, style.borderColor,
+                0f, 0f, bottomRadius, bottomRadius);
+        target.setBackground(drawable);
+    }
+
+    private void applyParentFrame(@NonNull ViewHolder holder,
+            @Nullable HierarchyStyle parentStyle, boolean parentExpanded,
+            boolean isLastDirectChild) {
+        MaterialCardView cardView = holder.cardView;
+        if (parentStyle == null || !parentExpanded) {
+            cardView.setBackground(null);
+            cardView.setContentPadding(holder.defaultContentPaddingStart,
+                    holder.defaultContentPaddingTop, holder.defaultContentPaddingEnd,
+                    holder.defaultContentPaddingBottom);
+            return;
+        }
+        float bottomRadius = isLastDirectChild ? cardCornerRadiusPx : 0f;
+        Drawable drawable = createRoundedDrawable(parentStyle.backgroundColor,
+                parentStyle.borderColor, 0f, 0f, bottomRadius, bottomRadius);
+        cardView.setBackground(drawable);
+        cardView.setContentPadding(hierarchyFrameInsetPx, hierarchyFrameInsetPx,
+                hierarchyFrameInsetPx, hierarchyFrameInsetPx);
+    }
+
+    private void applyFilledIndicatorStyle(@NonNull View indicatorView,
+            @NonNull HierarchyStyle style) {
+        Drawable background = indicatorView.getBackground();
+        int color = style.borderColor;
+        if (background instanceof GradientDrawable) {
+            GradientDrawable drawable = (GradientDrawable) background.mutate();
+            drawable.setColor(color);
+        } else if (background instanceof ColorDrawable) {
+            ColorDrawable drawable = (ColorDrawable) background.mutate();
+            drawable.setColor(color);
+        } else {
+            indicatorView.setBackgroundColor(color);
+        }
+    }
+
+    @NonNull
+    private Drawable createRoundedDrawable(@ColorInt int backgroundColor,
+            @ColorInt int borderColor, float topLeft, float topRight, float bottomRight,
+            float bottomLeft) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setColor(backgroundColor);
+        drawable.setCornerRadii(new float[] {
+                topLeft, topLeft,
+                topRight, topRight,
+                bottomRight, bottomRight,
+                bottomLeft, bottomLeft
+        });
+        drawable.setStroke(cardBorderWidthPx, borderColor);
+        return drawable;
+    }
+
+    @NonNull
+    private HierarchyStyle resolveHierarchyStyle(int depth) {
+        if (hierarchyStyles.length == 0) {
+            int fallbackBackground = ContextCompat.getColor(context,
+                    R.color.room_content_card_container_background);
+            int fallbackBorder = ContextCompat.getColor(context,
+                    R.color.room_content_card_container_border);
+            int fallbackBanner = ContextCompat.getColor(context,
+                    R.color.room_content_banner_container);
+            return new HierarchyStyle(fallbackBackground, fallbackBorder, fallbackBanner);
+        }
+        int index = Math.max(0, Math.min(depth, hierarchyStyles.length - 1));
+        return hierarchyStyles[index];
+    }
+
+    @NonNull
+    private HierarchyStyle[] createHierarchyStyles(@NonNull Context context) {
+        return new HierarchyStyle[] {
+                new HierarchyStyle(
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_0_background),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_0_border),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_0_banner)),
+                new HierarchyStyle(
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_1_background),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_1_border),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_1_banner)),
+                new HierarchyStyle(
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_2_background),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_2_border),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_2_banner)),
+                new HierarchyStyle(
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_3_background),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_3_border),
+                        ContextCompat.getColor(context,
+                                R.color.room_content_hierarchy_level_3_banner))
+        };
     }
 
     @ColorRes
@@ -625,6 +787,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return R.color.room_content_banner_default;
     }
 
+    private static class HierarchyStyle {
+        @ColorInt
+        final int backgroundColor;
+        @ColorInt
+        final int borderColor;
+        @ColorInt
+        final int bannerColor;
+
+        HierarchyStyle(@ColorInt int backgroundColor, @ColorInt int borderColor,
+                @ColorInt int bannerColor) {
+            this.backgroundColor = backgroundColor;
+            this.borderColor = borderColor;
+            this.bannerColor = bannerColor;
+        }
+    }
+
     interface OnRoomContentInteractionListener {
         void onCopyRoomContent(@NonNull RoomContentItem item, int position);
 
@@ -636,6 +814,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
+        final MaterialCardView cardView;
         final View bannerContainer;
         @Nullable
         final View cardBackground;
@@ -659,6 +838,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
         private final int defaultPaddingBottom;
+        private final int defaultContentPaddingStart;
+        private final int defaultContentPaddingTop;
+        private final int defaultContentPaddingEnd;
+        private final int defaultContentPaddingBottom;
         private final int defaultMarginLeft;
         private final int defaultMarginTop;
         private final int defaultMarginRight;
@@ -669,6 +852,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
             super(itemView);
+            cardView = (MaterialCardView) itemView;
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
             cardBackground = itemView.findViewById(R.id.container_room_content_root);
             detailsContainer = itemView.findViewById(R.id.container_room_content_details);
@@ -695,6 +879,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
             defaultPaddingBottom = photoView != null ? photoView.getPaddingBottom() : 0;
+            defaultContentPaddingStart = cardView.getContentPaddingLeft();
+            defaultContentPaddingTop = cardView.getContentPaddingTop();
+            defaultContentPaddingEnd = cardView.getContentPaddingRight();
+            defaultContentPaddingBottom = cardView.getContentPaddingBottom();
             ViewGroup.LayoutParams params = itemView.getLayoutParams();
             if (params instanceof RecyclerView.LayoutParams) {
                 RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) params;
@@ -722,14 +910,34 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
+            int depth = RoomContentAdapter.this.computeHierarchyDepth(position);
+            HierarchyStyle currentStyle = RoomContentAdapter.this.resolveHierarchyStyle(depth);
+            int parentPosition = RoomContentAdapter.this.findAttachedContainerPosition(position);
+            HierarchyStyle parentStyleForFrame = null;
+            boolean parentExpanded = false;
+            boolean isLastDirectChild = false;
+            if (parentPosition >= 0) {
+                RoomContentItem parentItem = RoomContentAdapter.this.items.get(parentPosition);
+                parentExpanded = RoomContentAdapter.this.isContainerExpanded(parentPosition)
+                        && parentItem.hasAttachedItems();
+                if (parentExpanded) {
+                    parentStyleForFrame = RoomContentAdapter.this.resolveHierarchyStyle(
+                            RoomContentAdapter.this.computeHierarchyDepth(parentPosition));
+                    isLastDirectChild = RoomContentAdapter.this.isLastDirectChild(parentPosition,
+                            position);
+                }
+            }
+            RoomContentAdapter.this.applyParentFrame(this, parentStyleForFrame, parentExpanded,
+                    isLastDirectChild);
             View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
-                if (isContainerExpanded) {
-                    backgroundTarget.setBackgroundResource(R.drawable.bg_room_container_group_header);
-                } else {
-                    backgroundTarget.setBackgroundResource(R.drawable.bg_room_container_item);
+                RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
+                        hasAttachedItems, isContainerExpanded);
+                RoomContentAdapter.this.applyContainerBannerColor(bannerContainer, currentStyle);
+                if (filledIndicatorView != null) {
+                    RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView,
+                            currentStyle);
                 }
-                applyContainerBannerColor(bannerContainer);
                 if (addView != null) {
                     addView.setVisibility(View.VISIBLE);
                     addView.setEnabled(true);
@@ -740,7 +948,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         .findAttachedContainer(position);
                 boolean isPartOfExpandedContainer = false;
                 boolean isLastAttachment = false;
-                if (attachedContainer != null) {
+                HierarchyStyle parentStyle = parentExpanded ? parentStyleForFrame : null;
+                if (attachedContainer != null && parentStyle != null) {
                     int containerPosition = RoomContentAdapter.this
                             .findAttachedContainerPosition(position);
                     if (containerPosition >= 0) {
@@ -754,12 +963,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         }
                     }
                 }
-                int backgroundRes = isPartOfExpandedContainer
-                        ? (isLastAttachment
-                                ? R.drawable.bg_room_content_group_footer
-                                : R.drawable.bg_room_content_group_middle)
-                        : R.drawable.bg_room_content_card_default;
-                backgroundTarget.setBackgroundResource(backgroundRes);
+                if (isPartOfExpandedContainer && parentStyle != null) {
+                    RoomContentAdapter.this.applyAttachmentBackground(backgroundTarget,
+                            parentStyle, isLastAttachment);
+                } else {
+                    RoomContentAdapter.this.applyStandaloneContentBackground(backgroundTarget,
+                            currentStyle);
+                }
                 applyBannerColor(bannerContainer, item.getType());
                 if (addView != null) {
                     addView.setVisibility(View.GONE);
@@ -788,7 +998,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     params.bottomMargin = 0;
                 } else {
                     params.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                    int depth = RoomContentAdapter.this.computeHierarchyDepth(position);
                     params.leftMargin = defaultMarginLeft + (depth * hierarchyIndentPx);
                     params.topMargin = defaultMarginTop;
                     params.rightMargin = defaultMarginRight;
