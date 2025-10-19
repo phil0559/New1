@@ -6,4 +6,5 @@
     <dimen name="barcode_preview_height">120dp</dimen>
     <dimen name="dialog_barcode_input_padding">24dp</dimen>
     <dimen name="list_item_action_icon_size">32dp</dimen>
+    <dimen name="room_content_hierarchy_indent">20dp</dimen>
 </resources>
