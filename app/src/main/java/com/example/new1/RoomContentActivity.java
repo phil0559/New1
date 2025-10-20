@@ -498,6 +498,7 @@ public class RoomContentActivity extends Activity {
                         }
                     });
             contentList.setAdapter(roomContentAdapter);
+            contentList.addItemDecoration(new RoomContentRankDecoration(this, roomContentAdapter));
         }
 
         loadRoomContent();
