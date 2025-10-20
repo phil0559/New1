@@ -71,6 +71,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Nullable
     private String[] hierarchyRankLabels;
     private boolean hierarchyDirty = true;
+    @Nullable
+    private RecyclerView attachedRecyclerView;
     private final RecyclerView.AdapterDataObserver hierarchyInvalidatingObserver =
             new RecyclerView.AdapterDataObserver() {
                 @Override
@@ -223,8 +225,46 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return items.size();
     }
 
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        attachedRecyclerView = recyclerView;
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        if (attachedRecyclerView == recyclerView) {
+            attachedRecyclerView = null;
+        }
+    }
+
+    @Nullable
+    RoomContentItem getItemAt(int position) {
+        if (position < 0 || position >= items.size()) {
+            return null;
+        }
+        return items.get(position);
+    }
+
+    @NonNull
+    String getRankLabelForPosition(int position) {
+        return buildRankLabel(position);
+    }
+
+    int getHierarchyDepthForPosition(int position) {
+        return computeHierarchyDepth(position);
+    }
+
+    private void invalidateDecorations() {
+        if (attachedRecyclerView != null) {
+            attachedRecyclerView.invalidateItemDecorations();
+        }
+    }
+
     private void invalidateHierarchyCache() {
         hierarchyDirty = true;
+        invalidateDecorations();
     }
 
     @Override
@@ -555,6 +595,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             containerCollapsedStates.put(position, true);
         }
         updateAttachedItemsDisplayState(position, expanded);
+        invalidateDecorations();
     }
 
     private void updateAttachedItemsDisplayState(int containerPosition, boolean expanded) {
@@ -599,6 +640,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         notifyItemRangeChanged(start, end - start);
+        invalidateDecorations();
     }
 
     private void applyLabelStyle(@NonNull Spannable spannable, int start, int end) {
