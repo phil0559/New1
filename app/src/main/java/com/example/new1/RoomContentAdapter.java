@@ -298,6 +298,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         int topLevelContainerIndex = 0;
         for (int i = 0; i < size; i++) {
             RoomContentItem current = items.get(i);
+            boolean hasDirectChildren = current.isContainer()
+                    && current.getAttachedItemCount() > 0;
             while (!stack.isEmpty() && stack.peek().remainingDirectChildren <= 0) {
                 stack.pop();
             }
@@ -308,7 +310,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (parentPosition >= 0) {
                 ContainerState parentState = stack.peek();
                 siblingIndex = parentState.consumeChild();
-            } else if (current.isContainer()) {
+            } else if (hasDirectChildren) {
                 topLevelContainerIndex++;
                 siblingIndex = topLevelContainerIndex;
             }
@@ -324,13 +326,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 } else {
                     hierarchyRankLabels[i] = parentRank;
                 }
-            } else if (current.isContainer() && siblingIndex > 0) {
+                if (current.isContainer() && !hasDirectChildren) {
+                    hierarchyRankLabels[i] = "";
+                }
+            } else if (hasDirectChildren && siblingIndex > 0) {
                 hierarchyRankLabels[i] = String.valueOf(siblingIndex);
             } else {
                 hierarchyRankLabels[i] = "";
             }
-            if (current.isContainer()) {
-                int directChildren = Math.max(0, current.getAttachedItemCount());
+            if (hasDirectChildren) {
+                int directChildren = current.getAttachedItemCount();
                 stack.push(new ContainerState(i, directChildren));
             }
         }
