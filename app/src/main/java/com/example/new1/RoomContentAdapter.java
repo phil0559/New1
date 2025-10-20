@@ -3,14 +3,7 @@ package com.example.new1;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PixelFormat;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -62,15 +55,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final SparseBooleanArray containerCollapsedStates = new SparseBooleanArray();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
-    private final int cardBorderWidthPx;
-    private final int filledCardBorderWidthPx;
     private final HierarchyStyle[] hierarchyStyles;
     @Nullable
     private int[] hierarchyParentPositions;
     @Nullable
     private int[] hierarchyDepths;
-    @Nullable
-    private String[] hierarchyRankLabels;
     private boolean hierarchyDirty = true;
     @Nullable
     private RecyclerView attachedRecyclerView;
@@ -125,12 +114,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 .getDimensionPixelSize(R.dimen.room_content_hierarchy_indent);
         this.cardCornerRadiusPx = context.getResources()
                 .getDimension(R.dimen.room_content_card_corner_radius);
-        this.cardBorderWidthPx = Math.max(1,
-                Math.round(context.getResources()
-                        .getDimension(R.dimen.room_content_card_border_width)));
-        this.filledCardBorderWidthPx = Math.max(cardBorderWidthPx,
-                Math.round(context.getResources()
-                        .getDimension(R.dimen.room_content_card_border_width_filled)));
         this.hierarchyStyles = createHierarchyStyles(context);
         registerAdapterDataObserver(hierarchyInvalidatingObserver);
     }
@@ -251,15 +234,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return items.get(position);
     }
 
-    @NonNull
-    String getRankLabelForPosition(int position) {
-        return buildRankLabel(position);
-    }
-
-    int getHierarchyDepthForPosition(int position) {
-        return computeHierarchyDepth(position);
-    }
-
     private void invalidateDecorations() {
         if (attachedRecyclerView != null) {
             attachedRecyclerView.invalidateItemDecorations();
@@ -289,13 +263,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         int size = items.size();
         hierarchyParentPositions = new int[size];
         hierarchyDepths = new int[size];
-        hierarchyRankLabels = new String[size];
         if (size == 0) {
             hierarchyDirty = false;
             return;
         }
         Deque<ContainerState> stack = new ArrayDeque<>();
-        int topLevelContainerIndex = 0;
         for (int i = 0; i < size; i++) {
             RoomContentItem current = items.get(i);
             boolean hasDirectChildren = current.isContainer()
@@ -306,33 +278,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int parentPosition = stack.isEmpty() ? -1 : stack.peek().position;
             hierarchyParentPositions[i] = parentPosition;
             hierarchyDepths[i] = Math.max(0, stack.size());
-            int siblingIndex = 0;
             if (parentPosition >= 0) {
                 ContainerState parentState = stack.peek();
-                siblingIndex = parentState.consumeChild();
-            } else if (hasDirectChildren) {
-                topLevelContainerIndex++;
-                siblingIndex = topLevelContainerIndex;
-            }
-            if (parentPosition >= 0) {
-                String parentRank = hierarchyRankLabels[parentPosition];
-                if (parentRank == null) {
-                    parentRank = "";
-                }
-                if (siblingIndex > 0) {
-                    hierarchyRankLabels[i] = parentRank.isEmpty()
-                            ? String.valueOf(siblingIndex)
-                            : parentRank + "." + siblingIndex;
-                } else {
-                    hierarchyRankLabels[i] = parentRank;
-                }
-                if (current.isContainer() && !hasDirectChildren) {
-                    hierarchyRankLabels[i] = "";
-                }
-            } else if (hasDirectChildren && siblingIndex > 0) {
-                hierarchyRankLabels[i] = String.valueOf(siblingIndex);
-            } else {
-                hierarchyRankLabels[i] = "";
+                parentState.consumeChild();
             }
             if (hasDirectChildren) {
                 int directChildren = current.getAttachedItemCount();
@@ -345,20 +293,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private static final class ContainerState {
         final int position;
         int remainingDirectChildren;
-        int nextChildIndex;
 
         ContainerState(int position, int remainingDirectChildren) {
             this.position = position;
             this.remainingDirectChildren = Math.max(0, remainingDirectChildren);
-            this.nextChildIndex = 0;
         }
 
-        int consumeChild() {
-            nextChildIndex++;
+        void consumeChild() {
             if (remainingDirectChildren > 0) {
                 remainingDirectChildren--;
             }
-            return nextChildIndex;
         }
     }
 
@@ -498,28 +442,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         // Afficher systématiquement le nombre d’éléments rattachés après le nom du contenant.
         int count = Math.max(0, item.getAttachedItemCount());
         return displayName + " (" + count + ")";
-    }
-
-    @NonNull
-    private String formatRankedName(@NonNull String baseName, int position) {
-        String rankLabel = buildRankLabel(position);
-        if (rankLabel.isEmpty()) {
-            return baseName;
-        }
-        return rankLabel + " " + baseName;
-    }
-
-    @NonNull
-    private String buildRankLabel(int position) {
-        ensureHierarchyComputed();
-        if (position < 0 || position >= items.size()) {
-            return "";
-        }
-        if (hierarchyRankLabels == null || position >= hierarchyRankLabels.length) {
-            return "";
-        }
-        String label = hierarchyRankLabels[position];
-        return label != null ? label : "";
     }
 
     @Nullable
@@ -696,47 +618,38 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean hasAttachedItems, boolean isExpanded, boolean joinsParentFrame,
             boolean isLastChildInParentGroup) {
         float topRadius = joinsParentFrame ? 0f : cardCornerRadiusPx;
-        boolean drawTopBorder = !joinsParentFrame;
         float bottomRadius;
-        boolean drawBottomBorder;
         if (hasAttachedItems && isExpanded) {
             bottomRadius = 0f;
-            drawBottomBorder = false;
         } else if (joinsParentFrame) {
             bottomRadius = isLastChildInParentGroup ? cardCornerRadiusPx : 0f;
-            drawBottomBorder = isLastChildInParentGroup;
         } else {
             bottomRadius = cardCornerRadiusPx;
-            drawBottomBorder = true;
         }
-        int borderWidth = hasAttachedItems ? filledCardBorderWidthPx : cardBorderWidthPx;
-        Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
-                borderWidth, topRadius, topRadius, bottomRadius, bottomRadius,
-                drawTopBorder, drawBottomBorder);
+        Drawable drawable = createRoundedBackground(style.backgroundColor, topRadius,
+                topRadius, bottomRadius, bottomRadius);
         target.setBackground(drawable);
     }
 
     private void applyStandaloneContentBackground(@NonNull View target,
             @NonNull HierarchyStyle style) {
-        Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
-                cardBorderWidthPx, cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx,
-                cardCornerRadiusPx, true, true);
+        Drawable drawable = createRoundedBackground(style.backgroundColor, cardCornerRadiusPx,
+                cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx);
         target.setBackground(drawable);
     }
 
     private void applyAttachmentBackground(@NonNull View target, @NonNull HierarchyStyle style,
             boolean isLastAttachment) {
         float bottomRadius = isLastAttachment ? cardCornerRadiusPx : 0f;
-        Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
-                cardBorderWidthPx, 0f, 0f, bottomRadius, bottomRadius, false,
-                isLastAttachment);
+        Drawable drawable = createRoundedBackground(style.backgroundColor, 0f, 0f, bottomRadius,
+                bottomRadius);
         target.setBackground(drawable);
     }
 
     private void applyFilledIndicatorStyle(@NonNull View indicatorView,
             @NonNull HierarchyStyle style) {
         Drawable background = indicatorView.getBackground();
-        int color = style.borderColor;
+        int color = style.accentColor;
         if (background instanceof GradientDrawable) {
             GradientDrawable drawable = (GradientDrawable) background.mutate();
             drawable.setColor(color);
@@ -749,12 +662,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     @NonNull
-    private Drawable createGroupedDrawable(@ColorInt int backgroundColor,
-            @ColorInt int borderColor, int borderWidth, float topLeft, float topRight,
-            float bottomRight, float bottomLeft, boolean drawTopBorder,
-            boolean drawBottomBorder) {
-        return new GroupedBackgroundDrawable(backgroundColor, borderColor, borderWidth,
-                topLeft, topRight, bottomRight, bottomLeft, drawTopBorder, drawBottomBorder);
+    private Drawable createRoundedBackground(@ColorInt int backgroundColor, float topLeft,
+            float topRight, float bottomRight, float bottomLeft) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(backgroundColor);
+        drawable.setCornerRadii(new float[] {
+                topLeft, topLeft,
+                topRight, topRight,
+                bottomRight, bottomRight,
+                bottomLeft, bottomLeft
+        });
+        return drawable;
     }
 
     @NonNull
@@ -762,11 +680,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (hierarchyStyles.length == 0) {
             int fallbackBackground = ContextCompat.getColor(context,
                     R.color.room_content_card_container_background);
-            int fallbackBorder = ContextCompat.getColor(context,
+            int fallbackAccent = ContextCompat.getColor(context,
                     R.color.room_content_card_container_border);
             int fallbackBanner = ContextCompat.getColor(context,
                     R.color.room_content_banner_container);
-            return new HierarchyStyle(fallbackBackground, fallbackBorder, fallbackBanner);
+            return new HierarchyStyle(fallbackBackground, fallbackAccent, fallbackBanner);
         }
         int index = Math.max(0, Math.min(depth, hierarchyStyles.length - 1));
         return hierarchyStyles[index];
@@ -841,83 +759,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @ColorInt
         final int backgroundColor;
         @ColorInt
-        final int borderColor;
+        final int accentColor;
         @ColorInt
         final int bannerColor;
 
-        HierarchyStyle(@ColorInt int backgroundColor, @ColorInt int borderColor,
+        HierarchyStyle(@ColorInt int backgroundColor, @ColorInt int accentColor,
                 @ColorInt int bannerColor) {
             this.backgroundColor = backgroundColor;
-            this.borderColor = borderColor;
+            this.accentColor = accentColor;
             this.bannerColor = bannerColor;
-        }
-    }
-
-    private static class GroupedBackgroundDrawable extends Drawable {
-        private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Path path = new Path();
-        private final RectF rect = new RectF();
-        private final float[] radii;
-        private final int borderWidth;
-        private final boolean drawTopBorder;
-        private final boolean drawBottomBorder;
-
-        GroupedBackgroundDrawable(@ColorInt int backgroundColor, @ColorInt int borderColor,
-                int borderWidth, float topLeft, float topRight, float bottomRight,
-                float bottomLeft, boolean drawTopBorder, boolean drawBottomBorder) {
-            this.borderWidth = Math.max(0, borderWidth);
-            this.drawTopBorder = drawTopBorder;
-            this.drawBottomBorder = drawBottomBorder;
-            this.radii = new float[] {
-                    topLeft, topLeft,
-                    topRight, topRight,
-                    bottomRight, bottomRight,
-                    bottomLeft, bottomLeft
-            };
-            fillPaint.setStyle(Paint.Style.FILL);
-            fillPaint.setColor(backgroundColor);
-            strokePaint.setStyle(Paint.Style.STROKE);
-            strokePaint.setColor(borderColor);
-            strokePaint.setStrokeWidth(this.borderWidth);
-        }
-
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            Rect bounds = getBounds();
-            rect.set(bounds.left, bounds.top, bounds.right, bounds.bottom);
-            path.reset();
-            path.addRoundRect(rect, radii, Path.Direction.CW);
-            canvas.drawPath(path, fillPaint);
-            if (borderWidth <= 0) {
-                return;
-            }
-            canvas.drawPath(path, strokePaint);
-            if (!drawTopBorder) {
-                canvas.drawRect(bounds.left, bounds.top, bounds.right,
-                        bounds.top + borderWidth, fillPaint);
-            }
-            if (!drawBottomBorder) {
-                canvas.drawRect(bounds.left, bounds.bottom - borderWidth, bounds.right,
-                        bounds.bottom, fillPaint);
-            }
-        }
-
-        @Override
-        public void setAlpha(int alpha) {
-            fillPaint.setAlpha(alpha);
-            strokePaint.setAlpha(alpha);
-        }
-
-        @Override
-        public void setColorFilter(@Nullable ColorFilter colorFilter) {
-            fillPaint.setColorFilter(colorFilter);
-            strokePaint.setColorFilter(colorFilter);
-        }
-
-        @Override
-        public int getOpacity() {
-            return PixelFormat.TRANSLUCENT;
         }
     }
 
@@ -1012,11 +862,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             currentItem = item;
             dismissOptionsMenu();
             String baseName = resolveItemName(item);
-            String rankedName = formatRankedName(baseName, position);
+            String displayName = baseName;
             if (item.isContainer()) {
-                rankedName = appendAttachmentCount(rankedName, item);
+                displayName = appendAttachmentCount(displayName, item);
             }
-            nameView.setText(rankedName);
+            nameView.setText(displayName);
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
@@ -1123,10 +973,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             updatePhoto(item);
             if (photoView != null) {
                 photoView.setContentDescription(itemView.getContext()
-                        .getString(R.string.content_description_room_content_photos, rankedName));
+                        .getString(R.string.content_description_room_content_photos, displayName));
             }
             menuView.setContentDescription(itemView.getContext()
-                    .getString(R.string.content_description_room_content_menu, rankedName));
+                    .getString(R.string.content_description_room_content_menu, displayName));
         }
 
         void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
