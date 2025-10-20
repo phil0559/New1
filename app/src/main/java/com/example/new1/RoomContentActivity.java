@@ -2036,6 +2036,8 @@ public class RoomContentActivity extends Activity {
         Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
         Spinner containerSpinner = dialogView.findViewById(R.id.spinner_move_container);
 
+        final RoomContentItem parentContainer = findParentContainerForCurrentRoom(position);
+
         List<String> establishmentOptions = loadEstablishmentNames();
         if (establishmentOptions.isEmpty()) {
             Toast.makeText(this, R.string.dialog_move_room_content_empty_establishments,
@@ -2070,14 +2072,14 @@ public class RoomContentActivity extends Activity {
                 Object value = parent.getItemAtPosition(spinnerPosition);
                 selectedEstablishmentHolder[0] = value != null ? value.toString() : null;
                 updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
-                        selectedEstablishmentHolder[0], selectedRoomHolder[0]);
+                        selectedEstablishmentHolder[0], selectedRoomHolder[0], item, parentContainer);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 selectedEstablishmentHolder[0] = null;
                 updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
-                        null, selectedRoomHolder[0]);
+                        null, selectedRoomHolder[0], item, parentContainer);
             }
         };
         establishmentSpinner.setOnItemSelectedListener(establishmentListener);
@@ -2088,14 +2090,14 @@ public class RoomContentActivity extends Activity {
                 Object value = parent.getItemAtPosition(spinnerPosition);
                 selectedRoomHolder[0] = value != null ? value.toString() : null;
                 updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
-                        selectedEstablishmentHolder[0], selectedRoomHolder[0]);
+                        selectedEstablishmentHolder[0], selectedRoomHolder[0], item, parentContainer);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 selectedRoomHolder[0] = null;
                 updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
-                        selectedEstablishmentHolder[0], null);
+                        selectedEstablishmentHolder[0], null, item, parentContainer);
             }
         };
         roomSpinner.setOnItemSelectedListener(roomListener);
@@ -2106,7 +2108,7 @@ public class RoomContentActivity extends Activity {
         selectedRoomHolder[0] = roomName;
 
         updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
-                selectedEstablishmentHolder[0], selectedRoomHolder[0]);
+                selectedEstablishmentHolder[0], selectedRoomHolder[0], item, parentContainer);
 
         dialog.setOnShowListener(d -> {
             updateMoveButtonState(dialog, roomSpinner);
@@ -2601,7 +2603,9 @@ public class RoomContentActivity extends Activity {
             @NonNull Spinner containerSpinner,
             @NonNull List<RoomContentItem>[] containerTemplatesHolder,
             @Nullable String establishment,
-            @Nullable String preferredRoom) {
+            @Nullable String preferredRoom,
+            @NonNull RoomContentItem movingItem,
+            @Nullable RoomContentItem currentParentContainer) {
         List<String> roomNames = loadRoomNames(establishment);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, roomNames);
@@ -2618,7 +2622,7 @@ public class RoomContentActivity extends Activity {
                 ? roomSpinner.getSelectedItem().toString()
                 : null;
         updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
-                establishment, selectedRoom);
+                establishment, selectedRoom, movingItem, currentParentContainer);
         if (dialog.isShowing()) {
             updateMoveButtonState(dialog, roomSpinner);
         }
@@ -2627,7 +2631,9 @@ public class RoomContentActivity extends Activity {
     private void updateMoveDialogContainers(@NonNull Spinner containerSpinner,
             @NonNull List<RoomContentItem>[] containerTemplatesHolder,
             @Nullable String establishment,
-            @Nullable String room) {
+            @Nullable String room,
+            @NonNull RoomContentItem movingItem,
+            @Nullable RoomContentItem currentParentContainer) {
         List<String> labels = new ArrayList<>();
         labels.add(getString(R.string.dialog_move_room_content_no_container));
         List<RoomContentItem> containers;
@@ -2636,14 +2642,54 @@ public class RoomContentActivity extends Activity {
         } else {
             containers = loadContainerOptions(establishment, room);
         }
-        containerTemplatesHolder[0] = containers;
+        List<RoomContentItem> filteredContainers = new ArrayList<>();
         for (RoomContentItem container : containers) {
+            if (shouldExcludeContainerOption(movingItem, currentParentContainer,
+                    establishment, room, container)) {
+                continue;
+            }
+            filteredContainers.add(container);
             labels.add(resolveContainerDisplayName(container));
         }
+        containerTemplatesHolder[0] = filteredContainers;
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, labels);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         containerSpinner.setAdapter(adapter);
+    }
+
+    @Nullable
+    private RoomContentItem findParentContainerForCurrentRoom(int position) {
+        int parentIndex = findContainerIndexForItem(roomContentItems, position);
+        if (parentIndex < 0 || parentIndex >= roomContentItems.size()) {
+            return null;
+        }
+        return roomContentItems.get(parentIndex);
+    }
+
+    private boolean shouldExcludeContainerOption(@NonNull RoomContentItem movingItem,
+            @Nullable RoomContentItem currentParentContainer,
+            @Nullable String targetEstablishment,
+            @Nullable String targetRoom,
+            @NonNull RoomContentItem candidate) {
+        String normalizedTargetEstablishment = normalizeName(targetEstablishment);
+        String normalizedTargetRoom = normalizeName(targetRoom);
+        String normalizedCurrentEstablishment = normalizeName(establishmentName);
+        String normalizedCurrentRoom = normalizeName(roomName);
+        boolean sameLocation = normalizedTargetEstablishment
+                .equalsIgnoreCase(normalizedCurrentEstablishment)
+                && normalizedTargetRoom.equalsIgnoreCase(normalizedCurrentRoom);
+        if (!sameLocation) {
+            return false;
+        }
+        if (currentParentContainer != null
+                && areContainersEquivalent(currentParentContainer, candidate)) {
+            return true;
+        }
+        if (movingItem.isContainer() && areContainersEquivalent(movingItem, candidate)) {
+            return true;
+        }
+        return false;
     }
 
     private void updateMoveButtonState(@NonNull AlertDialog dialog, @NonNull Spinner roomSpinner) {
