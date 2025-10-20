@@ -41,6 +41,7 @@ import android.util.Base64;
 
 import android.view.Gravity;
 
+import androidx.core.content.ContextCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -5130,7 +5131,8 @@ public class RoomContentActivity extends Activity {
                 .create();
         dialog.show();
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(
+                    ContextCompat.getDrawable(this, R.drawable.bg_room_content_popup));
         }
     }
 
