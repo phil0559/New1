@@ -29,7 +29,7 @@ class RoomContentRankDecoration extends RecyclerView.ItemDecoration {
         this.adapter = adapter;
         borderPaint.setStyle(Paint.Style.STROKE);
         float strokeWidth = Math.max(1f,
-                context.getResources().getDimension(R.dimen.room_content_card_border_width));
+                context.getResources().getDimension(R.dimen.room_content_card_border_width_filled));
         borderPaint.setStrokeWidth(strokeWidth);
         cornerRadius = context.getResources().getDimension(R.dimen.room_content_card_corner_radius);
         halfStrokeWidth = strokeWidth / 2f;
