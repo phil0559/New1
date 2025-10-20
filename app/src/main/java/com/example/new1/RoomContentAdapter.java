@@ -715,7 +715,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             @NonNull HierarchyStyle style) {
         Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
                 cardBorderWidthPx, cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx,
-                true, true);
+                cardCornerRadiusPx, true, true);
         target.setBackground(drawable);
     }
 
