@@ -71,6 +71,39 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Nullable
     private String[] hierarchyRankLabels;
     private boolean hierarchyDirty = true;
+    private final RecyclerView.AdapterDataObserver hierarchyInvalidatingObserver =
+            new RecyclerView.AdapterDataObserver() {
+                @Override
+                public void onChanged() {
+                    invalidateHierarchyCache();
+                }
+
+                @Override
+                public void onItemRangeChanged(int positionStart, int itemCount) {
+                    invalidateHierarchyCache();
+                }
+
+                @Override
+                public void onItemRangeChanged(int positionStart, int itemCount,
+                        @Nullable Object payload) {
+                    invalidateHierarchyCache();
+                }
+
+                @Override
+                public void onItemRangeInserted(int positionStart, int itemCount) {
+                    invalidateHierarchyCache();
+                }
+
+                @Override
+                public void onItemRangeRemoved(int positionStart, int itemCount) {
+                    invalidateHierarchyCache();
+                }
+
+                @Override
+                public void onItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
+                    invalidateHierarchyCache();
+                }
+            };
 
     public RoomContentAdapter(@NonNull Context context,
             @NonNull List<RoomContentItem> items) {
@@ -93,6 +126,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 Math.round(context.getResources()
                         .getDimension(R.dimen.room_content_card_border_width)));
         this.hierarchyStyles = createHierarchyStyles(context);
+        registerAdapterDataObserver(hierarchyInvalidatingObserver);
     }
 
     @NonNull
@@ -187,12 +221,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Override
     public int getItemCount() {
         return items.size();
-    }
-
-    @Override
-    public void notifyDataSetChanged() {
-        invalidateHierarchyCache();
-        super.notifyDataSetChanged();
     }
 
     private void invalidateHierarchyCache() {
