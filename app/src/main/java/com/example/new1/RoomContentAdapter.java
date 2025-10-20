@@ -42,7 +42,9 @@ import androidx.core.content.ContextCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.ViewHolder> {
@@ -62,6 +64,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final float cardCornerRadiusPx;
     private final int cardBorderWidthPx;
     private final HierarchyStyle[] hierarchyStyles;
+    @Nullable
+    private int[] hierarchyParentPositions;
+    @Nullable
+    private int[] hierarchyDepths;
+    @Nullable
+    private String[] hierarchyRankLabels;
+    private boolean hierarchyDirty = true;
 
     public RoomContentAdapter(@NonNull Context context,
             @NonNull List<RoomContentItem> items) {
@@ -181,9 +190,99 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     @Override
+    public void notifyDataSetChanged() {
+        invalidateHierarchyCache();
+        super.notifyDataSetChanged();
+    }
+
+    private void invalidateHierarchyCache() {
+        hierarchyDirty = true;
+    }
+
+    @Override
     public void onViewRecycled(@NonNull ViewHolder holder) {
         super.onViewRecycled(holder);
         holder.dismissOptionsMenu();
+    }
+
+    private void ensureHierarchyComputed() {
+        if (!hierarchyDirty && hierarchyParentPositions != null
+                && hierarchyParentPositions.length == items.size()) {
+            return;
+        }
+        rebuildHierarchyCache();
+    }
+
+    private void rebuildHierarchyCache() {
+        int size = items.size();
+        hierarchyParentPositions = new int[size];
+        hierarchyDepths = new int[size];
+        hierarchyRankLabels = new String[size];
+        if (size == 0) {
+            hierarchyDirty = false;
+            return;
+        }
+        Deque<ContainerState> stack = new ArrayDeque<>();
+        int topLevelContainerIndex = 0;
+        for (int i = 0; i < size; i++) {
+            RoomContentItem current = items.get(i);
+            while (!stack.isEmpty() && stack.peek().remainingDirectChildren <= 0) {
+                stack.pop();
+            }
+            int parentPosition = stack.isEmpty() ? -1 : stack.peek().position;
+            hierarchyParentPositions[i] = parentPosition;
+            hierarchyDepths[i] = Math.max(0, stack.size());
+            int siblingIndex = 0;
+            if (parentPosition >= 0) {
+                ContainerState parentState = stack.peek();
+                siblingIndex = parentState.consumeChild();
+            } else if (current.isContainer()) {
+                topLevelContainerIndex++;
+                siblingIndex = topLevelContainerIndex;
+            }
+            if (parentPosition >= 0) {
+                String parentRank = hierarchyRankLabels[parentPosition];
+                if (parentRank == null) {
+                    parentRank = "";
+                }
+                if (siblingIndex > 0) {
+                    hierarchyRankLabels[i] = parentRank.isEmpty()
+                            ? String.valueOf(siblingIndex)
+                            : parentRank + "." + siblingIndex;
+                } else {
+                    hierarchyRankLabels[i] = parentRank;
+                }
+            } else if (current.isContainer() && siblingIndex > 0) {
+                hierarchyRankLabels[i] = String.valueOf(siblingIndex);
+            } else {
+                hierarchyRankLabels[i] = "";
+            }
+            if (current.isContainer()) {
+                int directChildren = Math.max(0, current.getAttachedItemCount());
+                stack.push(new ContainerState(i, directChildren));
+            }
+        }
+        hierarchyDirty = false;
+    }
+
+    private static final class ContainerState {
+        final int position;
+        int remainingDirectChildren;
+        int nextChildIndex;
+
+        ContainerState(int position, int remainingDirectChildren) {
+            this.position = position;
+            this.remainingDirectChildren = Math.max(0, remainingDirectChildren);
+            this.nextChildIndex = 0;
+        }
+
+        int consumeChild() {
+            nextChildIndex++;
+            if (remainingDirectChildren > 0) {
+                remainingDirectChildren--;
+            }
+            return nextChildIndex;
+        }
     }
 
     private void addMetadataLine(@NonNull List<CharSequence> metadataLines, int templateRes,
@@ -335,102 +434,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     @NonNull
     private String buildRankLabel(int position) {
+        ensureHierarchyComputed();
         if (position < 0 || position >= items.size()) {
             return "";
         }
-        RoomContentItem item = items.get(position);
-        if (item.isContainer()) {
-            return buildContainerRank(position, item);
-        }
-        return buildAttachmentRank(position);
-    }
-
-    @NonNull
-    private String buildContainerRank(int position, @NonNull RoomContentItem container) {
-        int parentPosition = findAttachedContainerPosition(position);
-        if (parentPosition < 0) {
-            int index = computeTopLevelContainerIndex(position);
-            return index > 0 ? String.valueOf(index) : "";
-        }
-        String parentRank = buildRankLabel(parentPosition);
-        if (parentRank.isEmpty()) {
+        if (hierarchyRankLabels == null || position >= hierarchyRankLabels.length) {
             return "";
         }
-        int indexWithinParent = computeAttachmentIndex(parentPosition, position);
-        if (indexWithinParent <= 0) {
-            return "";
-        }
-        return parentRank + "." + indexWithinParent;
-    }
-
-    @NonNull
-    private String buildAttachmentRank(int position) {
-        int parentPosition = findAttachedContainerPosition(position);
-        if (parentPosition < 0) {
-            return "";
-        }
-        RoomContentItem parent = items.get(parentPosition);
-        if (!parent.hasAttachedItems()) {
-            return "";
-        }
-        String parentRank = buildRankLabel(parentPosition);
-        if (parentRank.isEmpty()) {
-            return "";
-        }
-        int indexWithinParent = computeAttachmentIndex(parentPosition, position);
-        if (indexWithinParent <= 0) {
-            return "";
-        }
-        return parentRank + "." + indexWithinParent;
-    }
-
-    private int computeTopLevelContainerIndex(int position) {
-        int rankIndex = 0;
-        for (int i = 0; i <= position && i < items.size(); i++) {
-            RoomContentItem candidate = items.get(i);
-            if (!candidate.isContainer()) {
-                continue;
-            }
-            if (findAttachedContainerPosition(i) >= 0) {
-                continue;
-            }
-            rankIndex++;
-            if (i == position) {
-                return rankIndex;
-            }
-        }
-        return 0;
-    }
-
-    private int computeAttachmentIndex(int containerPosition, int targetPosition) {
-        if (containerPosition < 0 || containerPosition >= items.size()) {
-            return 0;
-        }
-        RoomContentItem container = items.get(containerPosition);
-        int declaredCount = Math.max(0, container.getAttachedItemCount());
-        int limit = Math.min(items.size(), containerPosition + 1 + declaredCount);
-        int rankIndex = 0;
-        for (int i = containerPosition + 1; i < limit; i++) {
-            RoomContentItem candidate = items.get(i);
-            if (!shouldAttachmentBeRanked(candidate, i)) {
-                continue;
-            }
-            rankIndex++;
-            if (i == targetPosition) {
-                return rankIndex;
-            }
-        }
-        return 0;
-    }
-
-    private boolean shouldAttachmentBeRanked(@NonNull RoomContentItem item, int position) {
-        if (item.isContainer()) {
-            if (findAttachedContainerPosition(position) >= 0) {
-                return true;
-            }
-            return item.hasAttachedItems();
-        }
-        return findAttachedContainerPosition(position) >= 0;
+        String label = hierarchyRankLabels[position];
+        return label != null ? label : "";
     }
 
     @Nullable
@@ -443,22 +455,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private int findAttachedContainerPosition(int position) {
-        if (position <= 0 || position >= items.size()) {
+        ensureHierarchyComputed();
+        if (position < 0 || position >= items.size()) {
             return -1;
         }
-        for (int i = position - 1; i >= 0; i--) {
-            RoomContentItem candidate = items.get(i);
-            if (!candidate.isContainer()) {
-                continue;
-            }
-            int attachedCount = Math.max(0, candidate.getAttachedItemCount());
-            int distanceFromContainer = position - i;
-            if (distanceFromContainer <= attachedCount) {
-                return i;
-            }
+        if (hierarchyParentPositions == null || position >= hierarchyParentPositions.length) {
             return -1;
         }
-        return -1;
+        return hierarchyParentPositions[position];
     }
 
     private boolean isItemHiddenByCollapsedContainer(int position) {
@@ -502,17 +506,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private int computeHierarchyDepth(int position) {
-        String rankLabel = buildRankLabel(position);
-        if (rankLabel.isEmpty()) {
+        ensureHierarchyComputed();
+        if (position < 0 || position >= items.size()) {
             return 0;
         }
-        int segments = 1;
-        for (int i = 0; i < rankLabel.length(); i++) {
-            if (rankLabel.charAt(i) == '.') {
-                segments++;
-            }
+        if (hierarchyDepths == null || position >= hierarchyDepths.length) {
+            return 0;
         }
-        return Math.max(0, segments - 1);
+        return Math.max(0, hierarchyDepths[position]);
     }
 
     private boolean isContainerExpanded(int position) {
