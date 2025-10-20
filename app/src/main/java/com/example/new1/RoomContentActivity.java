@@ -2148,13 +2148,13 @@ public class RoomContentActivity extends Activity {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
+        MovementGroup group = extractMovementGroup(roomContentItems, position);
         adjustContainerCountForRemoval(roomContentItems, position);
-        RoomContentItem removed = roomContentItems.remove(position);
-        RoomContentItem itemToInsert = removed != null ? removed : item;
+        removeGroupAtPosition(roomContentItems, position, group.size);
         if (targetContainerTemplate != null) {
-            insertIntoContainer(roomContentItems, itemToInsert, targetContainerTemplate);
+            insertGroupIntoContainer(roomContentItems, group.items, targetContainerTemplate);
         } else {
-            roomContentItems.add(itemToInsert);
+            roomContentItems.addAll(group.items);
             sortRoomContentItems();
         }
         if (roomContentAdapter != null) {
@@ -2171,8 +2171,9 @@ public class RoomContentActivity extends Activity {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
+        MovementGroup group = extractMovementGroup(roomContentItems, position);
         adjustContainerCountForRemoval(roomContentItems, position);
-        roomContentItems.remove(position);
+        removeGroupAtPosition(roomContentItems, position, group.size);
         sortRoomContentItems();
         if (roomContentAdapter != null) {
             roomContentAdapter.notifyDataSetChanged();
@@ -2181,11 +2182,10 @@ public class RoomContentActivity extends Activity {
         updateEmptyState();
 
         List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
-        RoomContentItem itemToInsert = item;
         if (targetContainerTemplate != null) {
-            insertIntoContainer(targetItems, itemToInsert, targetContainerTemplate);
+            insertGroupIntoContainer(targetItems, group.items, targetContainerTemplate);
         } else {
-            targetItems.add(itemToInsert);
+            targetItems.addAll(group.items);
             sortRoomContentItems(targetItems);
         }
         saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
@@ -2208,18 +2208,51 @@ public class RoomContentActivity extends Activity {
     private void insertIntoContainer(@NonNull List<RoomContentItem> items,
             @NonNull RoomContentItem item,
             @NonNull RoomContentItem containerTemplate) {
+        List<RoomContentItem> single = new ArrayList<>();
+        single.add(item);
+        insertGroupIntoContainer(items, single, containerTemplate);
+    }
+
+    private void insertGroupIntoContainer(@NonNull List<RoomContentItem> items,
+            @NonNull List<RoomContentItem> group,
+            @NonNull RoomContentItem containerTemplate) {
+        if (group.isEmpty()) {
+            return;
+        }
         int containerIndex = findContainerIndex(items, containerTemplate);
         if (containerIndex < 0) {
-            items.add(item);
+            // À défaut d’un parent valide, replacer le groupe au niveau racine.
+            items.addAll(group);
             sortRoomContentItems(items);
             return;
         }
         RoomContentItem container = items.get(containerIndex);
         int attachedCount = Math.max(0, container.getAttachedItemCount());
         int insertionIndex = Math.min(containerIndex + attachedCount + 1, items.size());
-        items.add(insertionIndex, item);
+        items.addAll(insertionIndex, group);
         RoomContentItem updatedContainer = recreateContainerWithNewCount(container, attachedCount + 1);
         items.set(containerIndex, updatedContainer);
+    }
+
+    @NonNull
+    private MovementGroup extractMovementGroup(@NonNull List<RoomContentItem> items, int position) {
+        RoomContentItem current = items.get(position);
+        if (current.isContainer()) {
+            ContainerExtraction extraction = extractContainerGroup(items, position);
+            List<RoomContentItem> groupItems = new ArrayList<>();
+            groupItems.add(extraction.container);
+            groupItems.addAll(extraction.attachments);
+            return new MovementGroup(groupItems);
+        }
+        List<RoomContentItem> singleton = new ArrayList<>();
+        singleton.add(current);
+        return new MovementGroup(singleton);
+    }
+
+    private void removeGroupAtPosition(@NonNull List<RoomContentItem> items, int startPosition, int count) {
+        for (int i = 0; i < count && startPosition < items.size(); i++) {
+            items.remove(startPosition);
+        }
     }
 
     private int findContainerIndexForItem(@NonNull List<RoomContentItem> items, int position) {
@@ -2693,6 +2726,17 @@ public class RoomContentActivity extends Activity {
                 return container;
             }
             return attachments.get(0);
+        }
+    }
+
+    private static final class MovementGroup {
+        @NonNull
+        final List<RoomContentItem> items;
+        final int size;
+
+        MovementGroup(@NonNull List<RoomContentItem> items) {
+            this.items = items;
+            this.size = items.size();
         }
     }
 
