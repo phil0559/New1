@@ -67,11 +67,13 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -2260,23 +2262,22 @@ public class RoomContentActivity extends Activity {
         if (position < 0 || position >= items.size()) {
             return -1;
         }
-        List<ContentGroup> groups = buildContentGroups(items);
-        int currentIndex = 0;
-        for (ContentGroup group : groups) {
-            if (group.hasContainer()) {
-                if (position == currentIndex) {
-                    return -1;
-                }
-                int groupSize = group.size();
-                if (position < currentIndex + groupSize) {
-                    return currentIndex;
-                }
-                currentIndex += groupSize;
-            } else {
-                if (position == currentIndex) {
-                    return -1;
-                }
-                currentIndex += group.size();
+        Deque<ContainerFrame> stack = new ArrayDeque<>();
+        for (int i = 0; i < items.size(); i++) {
+            while (!stack.isEmpty() && stack.peek().remainingDirectChildren <= 0) {
+                stack.pop();
+            }
+            if (i == position) {
+                return stack.isEmpty() ? -1 : stack.peek().index;
+            }
+            RoomContentItem current = items.get(i);
+            if (!stack.isEmpty()) {
+                ContainerFrame parent = stack.peek();
+                parent.remainingDirectChildren = Math.max(0, parent.remainingDirectChildren - 1);
+            }
+            if (current.isContainer()) {
+                int directChildren = Math.max(0, current.getAttachedItemCount());
+                stack.push(new ContainerFrame(i, directChildren));
             }
         }
         return -1;
@@ -2738,6 +2739,16 @@ public class RoomContentActivity extends Activity {
         MovementGroup(@NonNull List<RoomContentItem> items) {
             this.items = items;
             this.size = items.size();
+        }
+    }
+
+    private static final class ContainerFrame {
+        final int index;
+        int remainingDirectChildren;
+
+        ContainerFrame(int index, int remainingDirectChildren) {
+            this.index = index;
+            this.remainingDirectChildren = remainingDirectChildren;
         }
     }
 
