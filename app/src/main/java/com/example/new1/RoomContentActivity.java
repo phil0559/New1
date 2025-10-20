@@ -885,6 +885,36 @@ public class RoomContentActivity extends Activity {
         List<String> typeOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_type_options)));
         final Set<String> lockedTypes = new LinkedHashSet<>();
+        String keyTypeDefault = getString(R.string.dialog_type_key);
+        if (!containsIgnoreCase(typeOptions, keyTypeDefault)) {
+            typeOptions.add(keyTypeDefault);
+        }
+        lockedTypes.add(keyTypeDefault);
+
+        String bookTypeDefault = getString(R.string.dialog_type_book);
+        if (!containsIgnoreCase(typeOptions, bookTypeDefault)) {
+            typeOptions.add(bookTypeDefault);
+        }
+        lockedTypes.add(bookTypeDefault);
+
+        String cdTypeDefault = getString(R.string.dialog_type_cd);
+        if (!containsIgnoreCase(typeOptions, cdTypeDefault)) {
+            typeOptions.add(cdTypeDefault);
+        }
+        lockedTypes.add(cdTypeDefault);
+
+        String discTypeDefault = getString(R.string.dialog_type_disc);
+        if (!containsIgnoreCase(typeOptions, discTypeDefault)) {
+            typeOptions.add(discTypeDefault);
+        }
+        lockedTypes.add(discTypeDefault);
+
+        String comicTypeDefault = getString(R.string.dialog_type_comic);
+        if (!containsIgnoreCase(typeOptions, comicTypeDefault)) {
+            typeOptions.add(comicTypeDefault);
+        }
+        lockedTypes.add(comicTypeDefault);
+
         String magazineTypeDefault = getString(R.string.dialog_type_magazine);
         if (!containsIgnoreCase(typeOptions, magazineTypeDefault)) {
             typeOptions.add(magazineTypeDefault);
