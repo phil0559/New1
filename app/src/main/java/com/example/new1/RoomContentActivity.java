@@ -885,6 +885,13 @@ public class RoomContentActivity extends Activity {
         List<String> typeOptions = new ArrayList<>(Arrays.asList(
                 getResources().getStringArray(R.array.room_content_type_options)));
         final Set<String> lockedTypes = new LinkedHashSet<>();
+
+        String otherTypeDefault = getString(R.string.dialog_type_other);
+        if (!containsIgnoreCase(typeOptions, otherTypeDefault)) {
+            typeOptions.add(otherTypeDefault);
+        }
+        lockedTypes.add(otherTypeDefault);
+
         String keyTypeDefault = getString(R.string.dialog_type_key);
         if (!containsIgnoreCase(typeOptions, keyTypeDefault)) {
             typeOptions.add(keyTypeDefault);
