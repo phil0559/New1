@@ -68,6 +68,27 @@
                 android:textColor="@android:color/black" />
 
             <TextView
+                android:id="@+id/label_publication_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:text="@string/dialog_label_publication_date"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <EditText
+                android:id="@+id/input_publication_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_input_field_white"
+                android:inputType="text"
+                android:padding="12dp"
+                android:textColor="@android:color/black"
+                android:visibility="gone" />
+
+            <TextView
                 android:id="@+id/text_room_content_photos_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -487,24 +508,6 @@
                     android:layout_marginBottom="12dp"
                     android:background="@drawable/bg_input_field_white"
                     android:inputType="textCapWords"
-                    android:padding="12dp"
-                    android:textColor="@android:color/black" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="4dp"
-                    android:text="@string/dialog_label_publication_date"
-                    android:textColor="@android:color/black"
-                    android:textSize="14sp" />
-
-                <EditText
-                    android:id="@+id/input_publication_date"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
-                    android:background="@drawable/bg_input_field_white"
-                    android:inputType="text"
                     android:padding="12dp"
                     android:textColor="@android:color/black" />
 
