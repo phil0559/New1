@@ -167,6 +167,12 @@
     <string name="dialog_type_field_name">Nom</string>
     <string name="dialog_type_field_comment">Commentaire</string>
     <string name="dialog_type_field_photos">Appareil photo</string>
+    <string name="dialog_type_field_date">Date</string>
+    <string name="dialog_type_field_date_with_format">Date (%1$s)</string>
+    <string name="dialog_date_format_title">Format de date</string>
+    <string name="dialog_date_format_european">JJ/MM/AAAA (européen)</string>
+    <string name="dialog_date_format_english">MM/JJ/AAAA (anglais)</string>
+    <string name="dialog_date_format_iso">AAAA-MM-JJ (ISO)</string>
     <string name="dialog_delete_type_message">Voulez-vous supprimer le type %1$s ?</string>
     <string name="dialog_container_type_selector_title">Types de contenant</string>
     <string name="dialog_container_type_box">Boîte</string>
@@ -193,6 +199,7 @@
     <string name="dialog_label_publisher">Éditeur</string>
     <string name="dialog_label_edition">Édition</string>
     <string name="dialog_label_publication_date">Date de publication</string>
+    <string name="dialog_label_publication_date_with_format">Date de publication (%1$s)</string>
     <string name="dialog_label_summary">Résumé</string>
     <string name="dialog_tracks_cd_title">Pistes du CD</string>
     <string name="dialog_tracks_disc_title">Pistes du Disque</string>

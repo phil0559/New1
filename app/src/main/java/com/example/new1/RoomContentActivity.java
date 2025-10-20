@@ -22,6 +22,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.CompoundButton;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -92,11 +93,17 @@ public class RoomContentActivity extends Activity {
 
     private static final String KEY_CUSTOM_CATEGORIES = "custom_categories";
     private static final String KEY_TYPE_FIELD_CONFIGS = "type_field_configs";
+    private static final String KEY_TYPE_DATE_FORMATS = "type_date_formats";
     private static final String FIELD_NAME = "name";
     private static final String FIELD_COMMENT = "comment";
     private static final String FIELD_PHOTOS = "photos";
+    private static final String FIELD_DATE = "date";
     private static final String FIELD_CUSTOM_1 = "custom_field_1";
     private static final String FIELD_CUSTOM_2 = "custom_field_2";
+
+    private static final String DATE_FORMAT_EUROPEAN = "dd/MM/yyyy";
+    private static final String DATE_FORMAT_ENGLISH = "MM/dd/yyyy";
+    private static final String DATE_FORMAT_ISO = "yyyy-MM-dd";
 
     private static final String ESTABLISHMENTS_PREFS = "establishments_prefs";
     private static final String KEY_ESTABLISHMENTS = "establishments";
@@ -201,6 +208,10 @@ public class RoomContentActivity extends Activity {
         @Nullable
         final EditText commentInput;
         @Nullable
+        final TextView dateLabel;
+        @Nullable
+        final EditText dateInput;
+        @Nullable
         final View customSection;
         @Nullable
         final View customDivider;
@@ -217,6 +228,8 @@ public class RoomContentActivity extends Activity {
                        @Nullable EditText nameInput,
                        @Nullable TextView commentLabel,
                        @Nullable EditText commentInput,
+                       @Nullable TextView dateLabel,
+                       @Nullable EditText dateInput,
                        @Nullable View customSection,
                        @Nullable View customDivider,
                        @Nullable View customFieldOne,
@@ -227,6 +240,8 @@ public class RoomContentActivity extends Activity {
             this.nameInput = nameInput;
             this.commentLabel = commentLabel;
             this.commentInput = commentInput;
+            this.dateLabel = dateLabel;
+            this.dateInput = dateInput;
             this.customSection = customSection;
             this.customDivider = customDivider;
             this.customFieldOne = customFieldOne;
@@ -248,6 +263,22 @@ public class RoomContentActivity extends Activity {
             this.label = label;
             this.mandatory = mandatory;
         }
+    }
+
+    private static class DateFormatOption {
+        @NonNull
+        final String key;
+        @StringRes
+        final int labelRes;
+
+        DateFormatOption(@NonNull String key, @StringRes int labelRes) {
+            this.key = key;
+            this.labelRes = labelRes;
+        }
+    }
+
+    private interface OnDateFormatSelectedListener {
+        void onDateFormatSelected(@NonNull String formatKey);
     }
 
     private static class BarcodeScanContext {
@@ -403,6 +434,7 @@ public class RoomContentActivity extends Activity {
 
     private final List<RoomContentItem> roomContentItems = new ArrayList<>();
     private final Map<String, Set<String>> typeFieldConfigurations = new HashMap<>();
+    private final Map<String, String> typeDateFormats = new HashMap<>();
     @Nullable
     private RecyclerView contentList;
     @Nullable
@@ -450,6 +482,8 @@ public class RoomContentActivity extends Activity {
         setContentView(R.layout.activity_room_content);
 
         loadTypeFieldConfigurationsFromPreferences();
+        loadTypeDateFormatsFromPreferences();
+        ensureDefaultTypeConfigurations();
 
         ImageView backButton = findViewById(R.id.button_back);
         if (backButton != null) {
@@ -701,6 +735,7 @@ public class RoomContentActivity extends Activity {
         EditText summaryInput = dialogView.findViewById(R.id.input_summary);
         TextView nameLabel = dialogView.findViewById(R.id.label_room_content_name);
         TextView commentLabel = dialogView.findViewById(R.id.label_room_content_comment);
+        TextView publicationDateLabel = dialogView.findViewById(R.id.label_publication_date);
         View customFieldsSection = dialogView.findViewById(R.id.container_custom_fields_section);
         View customFieldDivider = dialogView.findViewById(R.id.divider_custom_fields);
         View customFieldOne = dialogView.findViewById(R.id.container_custom_field_1);
@@ -712,6 +747,8 @@ public class RoomContentActivity extends Activity {
                 nameInput,
                 commentLabel,
                 commentInput,
+                publicationDateLabel,
+                publicationDateInput,
                 customFieldsSection,
                 customFieldDivider,
                 customFieldOne,
@@ -1536,6 +1573,8 @@ public class RoomContentActivity extends Activity {
                 nameInput,
                 commentLabel,
                 commentInput,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -4309,6 +4348,14 @@ public class RoomContentActivity extends Activity {
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
         final Map<String, CheckBox> fieldCheckboxes = buildTypeFieldCheckboxes(dialogView,
                 resolveFieldsForType(currentLabel));
+        final String[] selectedDateFormatHolder = new String[] {
+                resolveDateFormatForType(currentLabel)
+        };
+        CheckBox dateCheckBox = fieldCheckboxes.get(FIELD_DATE);
+        if (dateCheckBox != null) {
+            String baseLabel = getString(R.string.dialog_type_field_date);
+            setupDateFieldSelection(dateCheckBox, baseLabel, selectedDateFormatHolder);
+        }
 
         if (lockedTypes.contains(currentLabel)) {
             dialog.dismiss();
@@ -4347,8 +4394,13 @@ public class RoomContentActivity extends Activity {
                     return;
                 }
                 Set<String> selectedFields = collectSelectedFields(fieldCheckboxes);
+                if (!selectedFields.contains(FIELD_DATE)) {
+                    selectedDateFormatHolder[0] = null;
+                } else if (sanitizeDateFormatSelection(selectedDateFormatHolder[0]) == null) {
+                    selectedDateFormatHolder[0] = getDefaultDateFormatKey();
+                }
                 typeOptions.set(position, trimmedName);
-                saveTypeFieldConfiguration(trimmedName, selectedFields);
+                saveTypeFieldConfiguration(trimmedName, selectedFields, selectedDateFormatHolder[0]);
                 if (adapter != null) {
                     adapter.updateType(position, trimmedName);
                 }
@@ -4538,6 +4590,12 @@ public class RoomContentActivity extends Activity {
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
         final Map<String, CheckBox> fieldCheckboxes = buildTypeFieldCheckboxes(dialogView,
                 getDefaultTypeFields());
+        final String[] selectedDateFormatHolder = new String[1];
+        CheckBox dateCheckBox = fieldCheckboxes.get(FIELD_DATE);
+        if (dateCheckBox != null) {
+            String baseLabel = getString(R.string.dialog_type_field_date);
+            setupDateFieldSelection(dateCheckBox, baseLabel, selectedDateFormatHolder);
+        }
 
         if (cancelButton != null) {
             cancelButton.setOnClickListener(v -> dialog.dismiss());
@@ -4562,8 +4620,13 @@ public class RoomContentActivity extends Activity {
                     return;
                 }
                 Set<String> selectedFields = collectSelectedFields(fieldCheckboxes);
+                if (!selectedFields.contains(FIELD_DATE)) {
+                    selectedDateFormatHolder[0] = null;
+                } else if (sanitizeDateFormatSelection(selectedDateFormatHolder[0]) == null) {
+                    selectedDateFormatHolder[0] = getDefaultDateFormatKey();
+                }
                 typeOptions.add(trimmedName);
-                saveTypeFieldConfiguration(trimmedName, selectedFields);
+                saveTypeFieldConfiguration(trimmedName, selectedFields, selectedDateFormatHolder[0]);
                 if (adapter != null) {
                     adapter.addType(trimmedName);
                     if (recyclerView != null) {
@@ -4661,6 +4724,59 @@ public class RoomContentActivity extends Activity {
         editor.apply();
     }
 
+    private void loadTypeDateFormatsFromPreferences() {
+        typeDateFormats.clear();
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        String stored = preferences.getString(KEY_TYPE_DATE_FORMATS, null);
+        if (stored == null || stored.trim().isEmpty()) {
+            return;
+        }
+        try {
+            JSONObject root = new JSONObject(stored);
+            Iterator<String> keys = root.keys();
+            while (keys.hasNext()) {
+                String rawKey = keys.next();
+                if (rawKey == null) {
+                    continue;
+                }
+                String trimmedKey = rawKey.trim();
+                if (trimmedKey.isEmpty()) {
+                    continue;
+                }
+                String value = root.optString(rawKey, null);
+                String sanitized = sanitizeDateFormatSelection(value);
+                if (sanitized != null) {
+                    typeDateFormats.put(trimmedKey, sanitized);
+                }
+            }
+        } catch (JSONException exception) {
+            preferences.edit().remove(KEY_TYPE_DATE_FORMATS).apply();
+        }
+    }
+
+    private void persistTypeDateFormats() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        JSONObject root = new JSONObject();
+        for (Map.Entry<String, String> entry : typeDateFormats.entrySet()) {
+            String label = entry.getKey();
+            String format = sanitizeDateFormatSelection(entry.getValue());
+            if (label == null || label.trim().isEmpty() || format == null) {
+                continue;
+            }
+            try {
+                root.put(label, format);
+            } catch (JSONException ignored) {
+            }
+        }
+        SharedPreferences.Editor editor = preferences.edit();
+        if (root.length() > 0) {
+            editor.putString(KEY_TYPE_DATE_FORMATS, root.toString());
+        } else {
+            editor.remove(KEY_TYPE_DATE_FORMATS);
+        }
+        editor.apply();
+    }
+
     @NonNull
     private LinkedHashSet<String> getDefaultTypeFields() {
         LinkedHashSet<String> defaults = new LinkedHashSet<>();
@@ -4686,6 +4802,7 @@ public class RoomContentActivity extends Activity {
                 continue;
             }
             if (FIELD_COMMENT.equals(trimmed)
+                    || FIELD_DATE.equals(trimmed)
                     || FIELD_PHOTOS.equals(trimmed)
                     || FIELD_CUSTOM_1.equals(trimmed)
                     || FIELD_CUSTOM_2.equals(trimmed)) {
@@ -4693,6 +4810,64 @@ public class RoomContentActivity extends Activity {
             }
         }
         return sanitized;
+    }
+
+    @Nullable
+    private String findMatchingKeyIgnoreCase(@NonNull Map<String, ?> map, @NonNull String key) {
+        for (String entryKey : map.keySet()) {
+            if (entryKey != null && entryKey.trim().equalsIgnoreCase(key)) {
+                return entryKey;
+            }
+        }
+        return null;
+    }
+
+    private boolean mapContainsKeyIgnoreCase(@NonNull Map<String, ?> map, @NonNull String key) {
+        return findMatchingKeyIgnoreCase(map, key) != null;
+    }
+
+    private void ensureDefaultTypeConfigurations() {
+        boolean fieldsChanged = false;
+        boolean formatsChanged = false;
+        String[] defaults = new String[] {
+                getString(R.string.dialog_type_book),
+                getString(R.string.dialog_type_magazine),
+                getString(R.string.dialog_type_comic)
+        };
+        for (String value : defaults) {
+            if (value == null) {
+                continue;
+            }
+            String trimmed = value.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String existingFieldKey = findMatchingKeyIgnoreCase(typeFieldConfigurations, trimmed);
+            if (existingFieldKey == null) {
+                LinkedHashSet<String> defaultFields = getDefaultTypeFields();
+                defaultFields.add(FIELD_DATE);
+                typeFieldConfigurations.put(trimmed, sanitizeFieldSelection(defaultFields));
+                fieldsChanged = true;
+            } else {
+                Set<String> currentFields = typeFieldConfigurations.get(existingFieldKey);
+                LinkedHashSet<String> sanitized = sanitizeFieldSelection(currentFields);
+                if (!sanitized.contains(FIELD_DATE)) {
+                    sanitized.add(FIELD_DATE);
+                    typeFieldConfigurations.put(existingFieldKey, sanitized);
+                    fieldsChanged = true;
+                }
+            }
+            if (!mapContainsKeyIgnoreCase(typeDateFormats, trimmed)) {
+                typeDateFormats.put(trimmed, getDefaultDateFormatKey());
+                formatsChanged = true;
+            }
+        }
+        if (fieldsChanged) {
+            persistTypeFieldConfigurations();
+        }
+        if (formatsChanged) {
+            persistTypeDateFormats();
+        }
     }
 
     private boolean removeTypeFieldConfigurationInternal(@NonNull String typeLabel) {
@@ -4710,7 +4885,17 @@ public class RoomContentActivity extends Activity {
                 removed = true;
             }
         }
-        return removed;
+        Iterator<Map.Entry<String, String>> dateIterator = typeDateFormats.entrySet().iterator();
+        boolean formatRemoved = false;
+        while (dateIterator.hasNext()) {
+            Map.Entry<String, String> entry = dateIterator.next();
+            String key = entry.getKey();
+            if (key != null && key.trim().equalsIgnoreCase(trimmed)) {
+                dateIterator.remove();
+                formatRemoved = true;
+            }
+        }
+        return removed || formatRemoved;
     }
 
     private void removeTypeFieldConfiguration(@Nullable String typeLabel) {
@@ -4719,18 +4904,25 @@ public class RoomContentActivity extends Activity {
         }
         if (removeTypeFieldConfigurationInternal(typeLabel)) {
             persistTypeFieldConfigurations();
+            persistTypeDateFormats();
         }
     }
 
     private void saveTypeFieldConfiguration(@NonNull String typeLabel,
-                                            @NonNull Set<String> fields) {
+                                            @NonNull Set<String> fields,
+                                            @Nullable String dateFormat) {
         String trimmed = typeLabel.trim();
         if (trimmed.isEmpty()) {
             return;
         }
         removeTypeFieldConfigurationInternal(trimmed);
         typeFieldConfigurations.put(trimmed, sanitizeFieldSelection(fields));
+        String sanitizedFormat = sanitizeDateFormatSelection(dateFormat);
+        if (sanitizedFormat != null) {
+            typeDateFormats.put(trimmed, sanitizedFormat);
+        }
         persistTypeFieldConfigurations();
+        persistTypeDateFormats();
     }
 
     @NonNull
@@ -4751,6 +4943,24 @@ public class RoomContentActivity extends Activity {
         return getDefaultTypeFields();
     }
 
+    @Nullable
+    private String resolveDateFormatForType(@Nullable String typeLabel) {
+        if (typeLabel == null) {
+            return null;
+        }
+        String trimmed = typeLabel.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        for (Map.Entry<String, String> entry : typeDateFormats.entrySet()) {
+            String key = entry.getKey();
+            if (key != null && key.trim().equalsIgnoreCase(trimmed)) {
+                return sanitizeDateFormatSelection(entry.getValue());
+            }
+        }
+        return null;
+    }
+
     @NonNull
     private List<String> getCustomFieldLabels() {
         List<String> labels = new ArrayList<>();
@@ -4764,6 +4974,7 @@ public class RoomContentActivity extends Activity {
         List<TypeFieldOption> options = new ArrayList<>();
         options.add(new TypeFieldOption(FIELD_NAME, getString(R.string.dialog_type_field_name), true));
         options.add(new TypeFieldOption(FIELD_COMMENT, getString(R.string.dialog_type_field_comment), false));
+        options.add(new TypeFieldOption(FIELD_DATE, getString(R.string.dialog_type_field_date), false));
         options.add(new TypeFieldOption(FIELD_PHOTOS, getString(R.string.dialog_type_field_photos), false));
         List<String> customLabels = getCustomFieldLabels();
         if (!customLabels.isEmpty()) {
@@ -4773,6 +4984,154 @@ public class RoomContentActivity extends Activity {
             }
         }
         return options;
+    }
+
+    @NonNull
+    private List<DateFormatOption> getDateFormatOptions() {
+        List<DateFormatOption> options = new ArrayList<>();
+        options.add(new DateFormatOption(DATE_FORMAT_EUROPEAN, R.string.dialog_date_format_european));
+        options.add(new DateFormatOption(DATE_FORMAT_ENGLISH, R.string.dialog_date_format_english));
+        options.add(new DateFormatOption(DATE_FORMAT_ISO, R.string.dialog_date_format_iso));
+        return options;
+    }
+
+    @NonNull
+    private String getDefaultDateFormatKey() {
+        return DATE_FORMAT_EUROPEAN;
+    }
+
+    @Nullable
+    private DateFormatOption findDateFormatOption(@Nullable String key) {
+        if (key == null) {
+            return null;
+        }
+        String trimmed = key.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        for (DateFormatOption option : getDateFormatOptions()) {
+            if (option.key.equals(trimmed)) {
+                return option;
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    private String sanitizeDateFormatSelection(@Nullable String formatKey) {
+        DateFormatOption option = findDateFormatOption(formatKey);
+        return option != null ? option.key : null;
+    }
+
+    @Nullable
+    private String getDateFormatDisplayName(@Nullable String formatKey) {
+        DateFormatOption option = findDateFormatOption(formatKey);
+        return option != null ? getString(option.labelRes) : null;
+    }
+
+    private void updateDateFieldCheckboxLabel(@NonNull CheckBox checkBox,
+                                              @NonNull String baseLabel,
+                                              @Nullable String formatKey) {
+        String display = getDateFormatDisplayName(formatKey);
+        if (display == null) {
+            checkBox.setText(baseLabel);
+        } else {
+            checkBox.setText(getString(R.string.dialog_type_field_date_with_format, display));
+        }
+    }
+
+    private void setupDateFieldSelection(@NonNull CheckBox dateCheckBox,
+                                         @NonNull String baseLabel,
+                                         @NonNull String[] selectedDateFormatHolder) {
+        if (dateCheckBox.isChecked()) {
+            String sanitized = sanitizeDateFormatSelection(selectedDateFormatHolder[0]);
+            if (sanitized == null) {
+                sanitized = getDefaultDateFormatKey();
+            }
+            selectedDateFormatHolder[0] = sanitized;
+        } else {
+            selectedDateFormatHolder[0] = null;
+        }
+        updateDateFieldCheckboxLabel(dateCheckBox, baseLabel, selectedDateFormatHolder[0]);
+        final CompoundButton.OnCheckedChangeListener[] listenerHolder = new CompoundButton.OnCheckedChangeListener[1];
+        CompoundButton.OnCheckedChangeListener listener = (buttonView, isChecked) -> {
+            if (isChecked) {
+                showDateFormatSelectionDialog(selectedDateFormatHolder[0], formatKey -> {
+                    String sanitized = sanitizeDateFormatSelection(formatKey);
+                    if (sanitized == null) {
+                        sanitized = getDefaultDateFormatKey();
+                    }
+                    selectedDateFormatHolder[0] = sanitized;
+                    updateDateFieldCheckboxLabel(dateCheckBox, baseLabel, selectedDateFormatHolder[0]);
+                }, () -> {
+                    buttonView.setOnCheckedChangeListener(null);
+                    buttonView.setChecked(false);
+                    buttonView.setOnCheckedChangeListener(listenerHolder[0]);
+                    selectedDateFormatHolder[0] = null;
+                    updateDateFieldCheckboxLabel(dateCheckBox, baseLabel, null);
+                });
+            } else {
+                selectedDateFormatHolder[0] = null;
+                updateDateFieldCheckboxLabel(dateCheckBox, baseLabel, null);
+            }
+        };
+        listenerHolder[0] = listener;
+        dateCheckBox.setOnCheckedChangeListener(listener);
+        dateCheckBox.setOnLongClickListener(v -> {
+            if (!dateCheckBox.isChecked()) {
+                return false;
+            }
+            showDateFormatSelectionDialog(selectedDateFormatHolder[0], formatKey -> {
+                String sanitized = sanitizeDateFormatSelection(formatKey);
+                if (sanitized == null) {
+                    sanitized = getDefaultDateFormatKey();
+                }
+                selectedDateFormatHolder[0] = sanitized;
+                updateDateFieldCheckboxLabel(dateCheckBox, baseLabel, selectedDateFormatHolder[0]);
+            }, () -> {
+            });
+            return true;
+        });
+    }
+
+    private void showDateFormatSelectionDialog(@Nullable String currentSelection,
+                                               @NonNull OnDateFormatSelectedListener listener,
+                                               @NonNull Runnable onCancelled) {
+        List<DateFormatOption> options = getDateFormatOptions();
+        CharSequence[] items = new CharSequence[options.size()];
+        int selectedIndex = -1;
+        for (int i = 0; i < options.size(); i++) {
+            DateFormatOption option = options.get(i);
+            items[i] = getString(option.labelRes);
+            if (option.key.equals(currentSelection)) {
+                selectedIndex = i;
+            }
+        }
+        final String[] selectedHolder = new String[1];
+        if (selectedIndex >= 0) {
+            selectedHolder[0] = options.get(selectedIndex).key;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_date_format_title)
+                .setSingleChoiceItems(items, selectedIndex, (d, which) -> {
+                    selectedHolder[0] = options.get(which).key;
+                })
+                .setPositiveButton(R.string.action_confirm, (d, which) -> {
+                    String value = selectedHolder[0];
+                    if (value == null && !options.isEmpty()) {
+                        value = options.get(0).key;
+                    }
+                    if (value != null) {
+                        listener.onDateFormatSelected(value);
+                    }
+                })
+                .setNegativeButton(R.string.action_cancel, (d, which) -> onCancelled.run())
+                .setOnCancelListener(d -> onCancelled.run())
+                .create();
+        dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
     }
 
     @NonNull
@@ -4831,6 +5190,7 @@ public class RoomContentActivity extends Activity {
                                              @NonNull FormState formState,
                                              @NonNull TypeFieldViews views) {
         Set<String> selectedFields = resolveFieldsForType(selectedType);
+        String dateFormat = resolveDateFormatForType(selectedType);
 
         boolean showName = selectedFields.contains(FIELD_NAME);
         if (views.nameLabel != null) {
@@ -4853,6 +5213,34 @@ public class RoomContentActivity extends Activity {
             if (!showComment) {
                 views.commentInput.setText("");
                 views.commentInput.setError(null);
+            }
+        }
+
+        boolean showDate = selectedFields.contains(FIELD_DATE);
+        String dateFormatDisplay = getDateFormatDisplayName(dateFormat);
+        if (views.dateLabel != null) {
+            if (showDate) {
+                if (dateFormatDisplay != null) {
+                    views.dateLabel.setText(
+                            getString(R.string.dialog_label_publication_date_with_format, dateFormatDisplay));
+                } else {
+                    views.dateLabel.setText(R.string.dialog_label_publication_date);
+                }
+                views.dateLabel.setVisibility(View.VISIBLE);
+            } else {
+                views.dateLabel.setVisibility(View.GONE);
+                views.dateLabel.setText(R.string.dialog_label_publication_date);
+            }
+        }
+        if (views.dateInput != null) {
+            if (showDate) {
+                views.dateInput.setHint(dateFormatDisplay);
+                views.dateInput.setVisibility(View.VISIBLE);
+            } else {
+                views.dateInput.setVisibility(View.GONE);
+                views.dateInput.setText("");
+                views.dateInput.setError(null);
+                views.dateInput.setHint(null);
             }
         }
 
