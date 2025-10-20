@@ -115,7 +115,6 @@ class RoomContentRankDecoration extends RecyclerView.ItemDecoration {
             if (groupBounds.right > groupBounds.left && groupBounds.bottom > groupBounds.top) {
                 canvas.drawRoundRect(groupBounds, cornerRadius, cornerRadius, borderPaint);
             }
-            index = lastIncludedIndex;
         }
     }
 
