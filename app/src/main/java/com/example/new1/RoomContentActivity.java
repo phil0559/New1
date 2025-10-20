@@ -2308,10 +2308,30 @@ public class RoomContentActivity extends Activity {
         }
         RoomContentItem container = items.get(containerIndex);
         int attachedCount = Math.max(0, container.getAttachedItemCount());
-        int insertionIndex = Math.min(containerIndex + attachedCount + 1, items.size());
+        int insertionIndex = findContainerInsertionIndex(items, containerIndex);
         items.addAll(insertionIndex, group);
-        RoomContentItem updatedContainer = recreateContainerWithNewCount(container, attachedCount + 1);
+        RoomContentItem updatedContainer = recreateContainerWithNewCount(container,
+                attachedCount + (group.isEmpty() ? 0 : 1));
         items.set(containerIndex, updatedContainer);
+    }
+
+    private int findContainerInsertionIndex(@NonNull List<RoomContentItem> items, int containerIndex) {
+        if (containerIndex < 0 || containerIndex >= items.size()) {
+            return items.size();
+        }
+        int insertionIndex = containerIndex + 1;
+        int remainingDirectChildren = Math.max(0, items.get(containerIndex).getAttachedItemCount());
+        // Parcourir l’intégralité du sous-arbre pour éviter d’insérer un élément au milieu
+        // des descendants d’un sous-contenant.
+        while (insertionIndex < items.size() && remainingDirectChildren > 0) {
+            RoomContentItem current = items.get(insertionIndex);
+            remainingDirectChildren--;
+            if (current.isContainer()) {
+                remainingDirectChildren += Math.max(0, current.getAttachedItemCount());
+            }
+            insertionIndex++;
+        }
+        return insertionIndex;
     }
 
     @NonNull
