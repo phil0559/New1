@@ -2229,6 +2229,7 @@ public class RoomContentActivity extends Activity {
             return;
         }
         MovementGroup group = extractMovementGroup(roomContentItems, position);
+        markItemsAsDisplayed(group.items);
         adjustContainerCountForRemoval(roomContentItems, position);
         removeGroupAtPosition(roomContentItems, position, group.size);
         if (targetContainerTemplate != null) {
@@ -2252,6 +2253,7 @@ public class RoomContentActivity extends Activity {
             return;
         }
         MovementGroup group = extractMovementGroup(roomContentItems, position);
+        markItemsAsDisplayed(group.items);
         adjustContainerCountForRemoval(roomContentItems, position);
         removeGroupAtPosition(roomContentItems, position, group.size);
         sortRoomContentItems();
@@ -2302,6 +2304,7 @@ public class RoomContentActivity extends Activity {
         int containerIndex = findContainerIndex(items, containerTemplate);
         if (containerIndex < 0) {
             // À défaut d’un parent valide, replacer le groupe au niveau racine.
+            markItemsAsDisplayed(group);
             items.addAll(group);
             sortRoomContentItems(items);
             return;
@@ -2309,6 +2312,7 @@ public class RoomContentActivity extends Activity {
         RoomContentItem container = items.get(containerIndex);
         int attachedCount = Math.max(0, container.getAttachedItemCount());
         int insertionIndex = findContainerInsertionIndex(items, containerIndex);
+        markItemsAsDisplayed(group);
         items.addAll(insertionIndex, group);
         RoomContentItem updatedContainer = recreateContainerWithNewCount(container,
                 attachedCount + (group.isEmpty() ? 0 : 1));
@@ -2836,6 +2840,13 @@ public class RoomContentActivity extends Activity {
         MovementGroup(@NonNull List<RoomContentItem> items) {
             this.items = items;
             this.size = items.size();
+        }
+    }
+
+    private void markItemsAsDisplayed(@NonNull List<RoomContentItem> items) {
+        // Forcer l’affichage après un déplacement afin d’éviter les résidus d’état d’expansion.
+        for (RoomContentItem item : items) {
+            item.setDisplayed(true);
         }
     }
 
