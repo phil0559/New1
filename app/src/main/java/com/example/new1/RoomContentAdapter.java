@@ -3,8 +3,14 @@ package com.example.new1;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -636,23 +642,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private void applyContainerBackground(@NonNull View target, @NonNull HierarchyStyle style,
             boolean hasAttachedItems, boolean isExpanded) {
         float bottomRadius = (hasAttachedItems && isExpanded) ? 0f : cardCornerRadiusPx;
-        Drawable drawable = createRoundedDrawable(style.backgroundColor, style.borderColor,
-                cardCornerRadiusPx, cardCornerRadiusPx, bottomRadius, bottomRadius);
+        boolean drawBottomBorder = !(hasAttachedItems && isExpanded);
+        Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
+                cardCornerRadiusPx, cardCornerRadiusPx, bottomRadius, bottomRadius,
+                true, drawBottomBorder);
         target.setBackground(drawable);
     }
 
     private void applyStandaloneContentBackground(@NonNull View target,
             @NonNull HierarchyStyle style) {
-        Drawable drawable = createRoundedDrawable(style.backgroundColor, style.borderColor,
-                cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx);
+        Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
+                cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx,
+                true, true);
         target.setBackground(drawable);
     }
 
     private void applyAttachmentBackground(@NonNull View target, @NonNull HierarchyStyle style,
             boolean isLastAttachment) {
         float bottomRadius = isLastAttachment ? cardCornerRadiusPx : 0f;
-        Drawable drawable = createRoundedDrawable(style.backgroundColor, style.borderColor,
-                0f, 0f, bottomRadius, bottomRadius);
+        Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
+                0f, 0f, bottomRadius, bottomRadius, false, isLastAttachment);
         target.setBackground(drawable);
     }
 
@@ -668,8 +677,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         float bottomRadius = isLastDirectChild ? cardCornerRadiusPx : 0f;
-        Drawable drawable = createRoundedDrawable(parentStyle.backgroundColor,
-                parentStyle.borderColor, 0f, 0f, bottomRadius, bottomRadius);
+        Drawable drawable = createGroupedDrawable(parentStyle.backgroundColor,
+                parentStyle.borderColor, 0f, 0f, bottomRadius, bottomRadius,
+                false, isLastDirectChild);
         cardView.setBackground(drawable);
         cardView.setContentPadding(hierarchyFrameInsetPx, hierarchyFrameInsetPx,
                 hierarchyFrameInsetPx, hierarchyFrameInsetPx);
@@ -691,20 +701,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     @NonNull
-    private Drawable createRoundedDrawable(@ColorInt int backgroundColor,
+    private Drawable createGroupedDrawable(@ColorInt int backgroundColor,
             @ColorInt int borderColor, float topLeft, float topRight, float bottomRight,
-            float bottomLeft) {
-        GradientDrawable drawable = new GradientDrawable();
-        drawable.setShape(GradientDrawable.RECTANGLE);
-        drawable.setColor(backgroundColor);
-        drawable.setCornerRadii(new float[] {
-                topLeft, topLeft,
-                topRight, topRight,
-                bottomRight, bottomRight,
-                bottomLeft, bottomLeft
-        });
-        drawable.setStroke(cardBorderWidthPx, borderColor);
-        return drawable;
+            float bottomLeft, boolean drawTopBorder, boolean drawBottomBorder) {
+        return new GroupedBackgroundDrawable(backgroundColor, borderColor, cardBorderWidthPx,
+                topLeft, topRight, bottomRight, bottomLeft, drawTopBorder, drawBottomBorder);
     }
 
     @NonNull
@@ -800,6 +801,74 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             this.backgroundColor = backgroundColor;
             this.borderColor = borderColor;
             this.bannerColor = bannerColor;
+        }
+    }
+
+    private static class GroupedBackgroundDrawable extends Drawable {
+        private final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path path = new Path();
+        private final RectF rect = new RectF();
+        private final float[] radii;
+        private final int borderWidth;
+        private final boolean drawTopBorder;
+        private final boolean drawBottomBorder;
+
+        GroupedBackgroundDrawable(@ColorInt int backgroundColor, @ColorInt int borderColor,
+                int borderWidth, float topLeft, float topRight, float bottomRight,
+                float bottomLeft, boolean drawTopBorder, boolean drawBottomBorder) {
+            this.borderWidth = Math.max(0, borderWidth);
+            this.drawTopBorder = drawTopBorder;
+            this.drawBottomBorder = drawBottomBorder;
+            this.radii = new float[] {
+                    topLeft, topLeft,
+                    topRight, topRight,
+                    bottomRight, bottomRight,
+                    bottomLeft, bottomLeft
+            };
+            fillPaint.setStyle(Paint.Style.FILL);
+            fillPaint.setColor(backgroundColor);
+            strokePaint.setStyle(Paint.Style.STROKE);
+            strokePaint.setColor(borderColor);
+            strokePaint.setStrokeWidth(this.borderWidth);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas) {
+            Rect bounds = getBounds();
+            rect.set(bounds.left, bounds.top, bounds.right, bounds.bottom);
+            path.reset();
+            path.addRoundRect(rect, radii, Path.Direction.CW);
+            canvas.drawPath(path, fillPaint);
+            if (borderWidth <= 0) {
+                return;
+            }
+            canvas.drawPath(path, strokePaint);
+            if (!drawTopBorder) {
+                canvas.drawRect(bounds.left, bounds.top, bounds.right,
+                        bounds.top + borderWidth, fillPaint);
+            }
+            if (!drawBottomBorder) {
+                canvas.drawRect(bounds.left, bounds.bottom - borderWidth, bounds.right,
+                        bounds.bottom, fillPaint);
+            }
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            fillPaint.setAlpha(alpha);
+            strokePaint.setAlpha(alpha);
+        }
+
+        @Override
+        public void setColorFilter(@Nullable ColorFilter colorFilter) {
+            fillPaint.setColorFilter(colorFilter);
+            strokePaint.setColorFilter(colorFilter);
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
         }
     }
 
