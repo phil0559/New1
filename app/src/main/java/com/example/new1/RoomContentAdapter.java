@@ -486,6 +486,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return false;
     }
 
+    private boolean isLastDirectChild(int parentPosition, int position) {
+        if (parentPosition < 0 || position <= parentPosition || position >= items.size()) {
+            return true;
+        }
+        for (int index = position + 1; index < items.size(); index++) {
+            if (!isDescendantOf(parentPosition, index)) {
+                break;
+            }
+            if (findAttachedContainerPosition(index) == parentPosition) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private int computeHierarchyDepth(int position) {
         String rankLabel = buildRankLabel(position);
         if (rankLabel.isEmpty()) {
@@ -540,28 +555,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 attachedItem.setDisplayed(expanded);
             }
         }
-    }
-
-    private boolean isLastAttachedItem(@NonNull RoomContentItem container, int containerPosition,
-            int attachedPosition) {
-        if (containerPosition < 0 || attachedPosition <= containerPosition
-                || attachedPosition >= items.size()) {
-            return true;
-        }
-        for (int index = attachedPosition + 1; index < items.size(); index++) {
-            if (!isDescendantOf(containerPosition, index)) {
-                break;
-            }
-            RoomContentItem candidate = items.get(index);
-            if (candidate.isContainer()) {
-                continue;
-            }
-            int parentPosition = findAttachedContainerPosition(index);
-            if (parentPosition == containerPosition) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void notifyAttachedItemsChanged(int containerPosition) {
@@ -620,12 +613,25 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private void applyContainerBackground(@NonNull View target, @NonNull HierarchyStyle style,
-            boolean hasAttachedItems, boolean isExpanded) {
-        float bottomRadius = (hasAttachedItems && isExpanded) ? 0f : cardCornerRadiusPx;
-        boolean drawBottomBorder = !(hasAttachedItems && isExpanded);
+            boolean hasAttachedItems, boolean isExpanded, boolean joinsParentFrame,
+            boolean isLastChildInParentGroup) {
+        float topRadius = joinsParentFrame ? 0f : cardCornerRadiusPx;
+        boolean drawTopBorder = !joinsParentFrame;
+        float bottomRadius;
+        boolean drawBottomBorder;
+        if (hasAttachedItems && isExpanded) {
+            bottomRadius = 0f;
+            drawBottomBorder = false;
+        } else if (joinsParentFrame) {
+            bottomRadius = isLastChildInParentGroup ? cardCornerRadiusPx : 0f;
+            drawBottomBorder = isLastChildInParentGroup;
+        } else {
+            bottomRadius = cardCornerRadiusPx;
+            drawBottomBorder = true;
+        }
         Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
-                cardCornerRadiusPx, cardCornerRadiusPx, bottomRadius, bottomRadius,
-                true, drawBottomBorder);
+                topRadius, topRadius, bottomRadius, bottomRadius,
+                drawTopBorder, drawBottomBorder);
         target.setBackground(drawable);
     }
 
@@ -947,8 +953,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
+                boolean joinsParentFrame = parentExpanded && parentStyleForFrame != null;
+                boolean isLastChildInParentGroup = joinsParentFrame
+                        && RoomContentAdapter.this.isLastDirectChild(parentPosition, position);
                 RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
-                        hasAttachedItems, isContainerExpanded);
+                        hasAttachedItems, isContainerExpanded, joinsParentFrame,
+                        isLastChildInParentGroup);
                 RoomContentAdapter.this.applyContainerBannerColor(bannerContainer, currentStyle);
                 if (filledIndicatorView != null) {
                     RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView,
@@ -974,8 +984,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                 && attachedContainer.hasAttachedItems();
                         if (containerExpanded) {
                             isPartOfExpandedContainer = true;
-                            isLastAttachment = RoomContentAdapter.this.isLastAttachedItem(
-                                    attachedContainer, containerPosition, position);
+                            isLastAttachment = RoomContentAdapter.this.isLastDirectChild(
+                                    containerPosition, position);
                         }
                     }
                 }
@@ -1179,8 +1189,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (!containerExpanded) {
                 return defaultMarginBottom;
             }
-            boolean isLastAttachment = RoomContentAdapter.this.isLastAttachedItem(container,
-                    containerPosition, position);
+            boolean isLastAttachment = RoomContentAdapter.this.isLastDirectChild(containerPosition,
+                    position);
             return isLastAttachment ? defaultMarginBottom : 0;
         }
 
