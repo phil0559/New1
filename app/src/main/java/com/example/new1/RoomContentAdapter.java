@@ -62,7 +62,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final float cardCornerRadiusPx;
     private final int cardBorderWidthPx;
     private final HierarchyStyle[] hierarchyStyles;
-    private final int hierarchyFrameInsetPx;
 
     public RoomContentAdapter(@NonNull Context context,
             @NonNull List<RoomContentItem> items) {
@@ -84,8 +83,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         this.cardBorderWidthPx = Math.max(1,
                 Math.round(context.getResources()
                         .getDimension(R.dimen.room_content_card_border_width)));
-        this.hierarchyFrameInsetPx = context.getResources()
-                .getDimensionPixelSize(R.dimen.room_content_hierarchy_frame_inset);
         this.hierarchyStyles = createHierarchyStyles(context);
     }
 
@@ -567,23 +564,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return true;
     }
 
-    private boolean isLastDirectChild(int containerPosition, int childPosition) {
-        if (containerPosition < 0 || childPosition <= containerPosition
-                || childPosition >= items.size()) {
-            return true;
-        }
-        for (int index = childPosition + 1; index < items.size(); index++) {
-            if (!isDescendantOf(containerPosition, index)) {
-                break;
-            }
-            int parentPosition = findAttachedContainerPosition(index);
-            if (parentPosition == containerPosition) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private void notifyAttachedItemsChanged(int containerPosition) {
         int start = containerPosition + 1;
         if (start >= items.size()) {
@@ -663,26 +643,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         Drawable drawable = createGroupedDrawable(style.backgroundColor, style.borderColor,
                 0f, 0f, bottomRadius, bottomRadius, false, isLastAttachment);
         target.setBackground(drawable);
-    }
-
-    private void applyParentFrame(@NonNull ViewHolder holder,
-            @Nullable HierarchyStyle parentStyle, boolean parentExpanded,
-            boolean isLastDirectChild) {
-        MaterialCardView cardView = holder.cardView;
-        if (parentStyle == null || !parentExpanded) {
-            cardView.setBackground(null);
-            cardView.setContentPadding(holder.defaultContentPaddingStart,
-                    holder.defaultContentPaddingTop, holder.defaultContentPaddingEnd,
-                    holder.defaultContentPaddingBottom);
-            return;
-        }
-        float bottomRadius = isLastDirectChild ? cardCornerRadiusPx : 0f;
-        Drawable drawable = createGroupedDrawable(parentStyle.backgroundColor,
-                parentStyle.borderColor, 0f, 0f, bottomRadius, bottomRadius,
-                false, isLastDirectChild);
-        cardView.setBackground(drawable);
-        cardView.setContentPadding(hierarchyFrameInsetPx, hierarchyFrameInsetPx,
-                hierarchyFrameInsetPx, hierarchyFrameInsetPx);
     }
 
     private void applyFilledIndicatorStyle(@NonNull View indicatorView,
@@ -907,10 +867,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
         private final int defaultPaddingBottom;
-        private final int defaultContentPaddingStart;
-        private final int defaultContentPaddingTop;
-        private final int defaultContentPaddingEnd;
-        private final int defaultContentPaddingBottom;
         private final int defaultMarginLeft;
         private final int defaultMarginTop;
         private final int defaultMarginRight;
@@ -948,10 +904,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
             defaultPaddingBottom = photoView != null ? photoView.getPaddingBottom() : 0;
-            defaultContentPaddingStart = cardView.getContentPaddingLeft();
-            defaultContentPaddingTop = cardView.getContentPaddingTop();
-            defaultContentPaddingEnd = cardView.getContentPaddingRight();
-            defaultContentPaddingBottom = cardView.getContentPaddingBottom();
             ViewGroup.LayoutParams params = itemView.getLayoutParams();
             if (params instanceof RecyclerView.LayoutParams) {
                 RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) params;
@@ -984,7 +936,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int parentPosition = RoomContentAdapter.this.findAttachedContainerPosition(position);
             HierarchyStyle parentStyleForFrame = null;
             boolean parentExpanded = false;
-            boolean isLastDirectChild = false;
             if (parentPosition >= 0) {
                 RoomContentItem parentItem = RoomContentAdapter.this.items.get(parentPosition);
                 parentExpanded = RoomContentAdapter.this.isContainerExpanded(parentPosition)
@@ -992,12 +943,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (parentExpanded) {
                     parentStyleForFrame = RoomContentAdapter.this.resolveHierarchyStyle(
                             RoomContentAdapter.this.computeHierarchyDepth(parentPosition));
-                    isLastDirectChild = RoomContentAdapter.this.isLastDirectChild(parentPosition,
-                            position);
                 }
             }
-            RoomContentAdapter.this.applyParentFrame(this, parentStyleForFrame, parentExpanded,
-                    isLastDirectChild);
             View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
                 RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
