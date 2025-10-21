@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -27,6 +28,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -84,6 +86,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class RoomContentActivity extends Activity {
     private static final String PREFS_NAME = "room_content_prefs";
@@ -693,7 +696,7 @@ public class RoomContentActivity extends Activity {
                 && positionToEdit >= 0
                 && positionToEdit < roomContentItems.size();
         final RoomContentItem prefillItem = initialItem;
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_room_content_add, null);
+        View dialogView = inflateDialogView(R.layout.dialog_room_content_add);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -781,7 +784,7 @@ public class RoomContentActivity extends Activity {
             if (nameInput != null) {
                 String name = prefillItem.getName();
                 nameInput.setText(name);
-                if (name != null) {
+                if (!TextUtils.isEmpty(name)) {
                     nameInput.setSelection(name.length());
                 }
             }
@@ -1017,7 +1020,7 @@ public class RoomContentActivity extends Activity {
             selectedCategoryHolder[0] = restoreData.selectedCategory;
         }
 
-        final ArrayAdapter<String>[] categoryAdapterHolder = new ArrayAdapter[]{null};
+        final AtomicReference<ArrayAdapter<String>> categoryAdapterRef = new AtomicReference<>();
 
         if (confirmButton != null) {
             confirmButton.setOnClickListener(v -> {
@@ -1302,7 +1305,7 @@ public class RoomContentActivity extends Activity {
                     categorySpinner.setSelection(selectedIndex);
                 }
             }
-            categoryAdapterHolder[0] = categoryAdapter;
+            categoryAdapterRef.set(categoryAdapter);
         }
 
         applyTypeConfiguration(selectedTypeHolder[0], formState, bookFields, trackFields,
@@ -1314,7 +1317,7 @@ public class RoomContentActivity extends Activity {
 
         View.OnClickListener typeDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
-            View sheetView = getLayoutInflater().inflate(R.layout.dialog_type_selector, null);
+            View sheetView = inflateDialogView(R.layout.dialog_type_selector);
             bottomSheetDialog.setContentView(sheetView);
 
             RecyclerView recyclerView = sheetView.findViewById(R.id.recycler_type_options);
@@ -1397,7 +1400,7 @@ public class RoomContentActivity extends Activity {
 
         View.OnClickListener categoryDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
-            View sheetView = getLayoutInflater().inflate(R.layout.dialog_category_selector, null);
+            View sheetView = inflateDialogView(R.layout.dialog_category_selector);
             bottomSheetDialog.setContentView(sheetView);
 
             RecyclerView recyclerView = sheetView.findViewById(R.id.recycler_category_options);
@@ -1425,7 +1428,7 @@ public class RoomContentActivity extends Activity {
                             public void onEditCategory(String category, int position) {
                                 showEditCategoryDialog(categoryOptions,
                                         adapterHolder[0],
-                                        categoryAdapterHolder[0],
+                                        categoryAdapterRef.get(),
                                         position,
                                         category,
                                         selectCategoryButton,
@@ -1437,7 +1440,7 @@ public class RoomContentActivity extends Activity {
                             public void onDeleteCategory(String category, int position) {
                                 showDeleteCategoryConfirmation(categoryOptions,
                                         adapterHolder[0],
-                                        categoryAdapterHolder[0],
+                                        categoryAdapterRef.get(),
                                         position,
                                         selectCategoryButton,
                                         selectedCategoryHolder,
@@ -1455,7 +1458,7 @@ public class RoomContentActivity extends Activity {
                         showAddCategoryDialog(categoryOptions,
                                 adapterHolder[0],
                                 recyclerView,
-                                categoryAdapterHolder[0],
+                                categoryAdapterRef.get(),
                                 selectCategoryButton,
                                 selectedCategoryHolder,
                                 categorySpinner));
@@ -1537,7 +1540,7 @@ public class RoomContentActivity extends Activity {
                 && positionToEdit >= 0
                 && positionToEdit < roomContentItems.size();
 
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_room_container_add, null);
+        View dialogView = inflateDialogView(R.layout.dialog_room_container_add);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -1651,7 +1654,7 @@ public class RoomContentActivity extends Activity {
 
         View.OnClickListener typeDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
-            View sheetView = getLayoutInflater().inflate(R.layout.dialog_type_selector, null);
+            View sheetView = inflateDialogView(R.layout.dialog_type_selector);
             bottomSheetDialog.setContentView(sheetView);
 
             if (sheetView != null) {
@@ -1962,8 +1965,7 @@ public class RoomContentActivity extends Activity {
             return;
         }
 
-        View popupContent = LayoutInflater.from(this)
-                .inflate(R.layout.popup_add_room_content_menu, null);
+        View popupContent = inflateDialogView(R.layout.popup_add_room_content_menu);
         TextView titleView = popupContent.findViewById(R.id.text_popup_add_room_content_title);
         if (titleView != null) {
             titleView.setText(R.string.popup_add_room_content_title);
@@ -2033,7 +2035,7 @@ public class RoomContentActivity extends Activity {
     private void showMoveRoomContentDialog(@NonNull RoomContentItem item, int position) {
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
 
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_move_room_content, null);
+        View dialogView = inflateDialogView(R.layout.dialog_move_room_content);
         Spinner establishmentSpinner = dialogView.findViewById(R.id.spinner_move_establishment);
         Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
         Spinner containerSpinner = dialogView.findViewById(R.id.spinner_move_container);
@@ -2893,7 +2895,7 @@ public class RoomContentActivity extends Activity {
     }
 
     private void showTrackListDialog(@NonNull FormState formState) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_track_list_input, null);
+        View dialogView = inflateDialogView(R.layout.dialog_track_list_input);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -2972,7 +2974,7 @@ public class RoomContentActivity extends Activity {
             return;
         }
 
-        View previewView = getLayoutInflater().inflate(R.layout.dialog_photo_preview, null);
+        View previewView = inflateDialogView(R.layout.dialog_photo_preview);
         ImageView previewImage = previewView.findViewById(R.id.image_photo_preview);
         ImageButton previousButton = previewView.findViewById(R.id.button_previous_photo);
         ImageButton nextButton = previewView.findViewById(R.id.button_next_photo);
@@ -4112,7 +4114,7 @@ public class RoomContentActivity extends Activity {
                                         @Nullable Button selectCategoryButton,
                                         @NonNull String[] selectedCategoryHolder,
                                         @Nullable Spinner categorySpinner) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_category, null);
+        View dialogView = inflateDialogView(R.layout.dialog_add_category);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -4270,7 +4272,7 @@ public class RoomContentActivity extends Activity {
                                     @Nullable TextView trackTitle,
                                     @NonNull Set<String> lockedTypes,
                                     @NonNull TypeFieldViews typeFieldViews) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_type, null);
+        View dialogView = inflateDialogView(R.layout.dialog_add_type);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -4429,7 +4431,7 @@ public class RoomContentActivity extends Activity {
                                        @Nullable Button selectCategoryButton,
                                        @NonNull String[] selectedCategoryHolder,
                                        @Nullable Spinner categorySpinner) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_category, null);
+        View dialogView = inflateDialogView(R.layout.dialog_add_category);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -4513,7 +4515,7 @@ public class RoomContentActivity extends Activity {
     private void showAddTypeDialog(List<String> typeOptions,
                                    @Nullable TypeSelectorAdapter adapter,
                                    @Nullable RecyclerView recyclerView) {
-        View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_type, null);
+        View dialogView = inflateDialogView(R.layout.dialog_add_type);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
@@ -5225,6 +5227,17 @@ public class RoomContentActivity extends Activity {
                     ? View.VISIBLE
                     : View.GONE);
         }
+    }
+
+    @NonNull
+    private View inflateDialogView(@LayoutRes int layoutResId) {
+        ViewGroup root = findViewById(android.R.id.content);
+        LayoutInflater inflater = LayoutInflater.from(this);
+        if (root != null) {
+            return inflater.inflate(layoutResId, root, false);
+        }
+        FrameLayout fallbackRoot = new FrameLayout(this);
+        return inflater.inflate(layoutResId, fallbackRoot, false);
     }
 
     private void persistCategoryOptions(@NonNull List<String> categoryOptions) {
