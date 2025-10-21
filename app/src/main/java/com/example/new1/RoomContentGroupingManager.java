@@ -71,6 +71,9 @@ final class RoomContentGroupingManager {
         }
         List<HierarchyGroup> groups = parseAllGroups(items);
         groups.sort((first, second) -> comparator.compare(first.root, second.root));
+        for (HierarchyGroup group : groups) {
+            group.sortRecursively(comparator);
+        }
         items.clear();
         for (HierarchyGroup group : groups) {
             items.addAll(group.flatten());
@@ -174,6 +177,8 @@ final class RoomContentGroupingManager {
         final List<HierarchyGroup> children = new ArrayList<>();
         int startIndex;
         int endIndex;
+        @Nullable
+        Comparator<RoomContentItem> sortingComparator;
 
         HierarchyGroup(@NonNull RoomContentItem root) {
             this.root = root;
@@ -203,8 +208,22 @@ final class RoomContentGroupingManager {
 
         void collect(@NonNull List<RoomContentItem> destination) {
             destination.add(root);
+            if (sortingComparator != null && children.size() > 1) {
+                children.sort((first, second) ->
+                        sortingComparator.compare(first.root, second.root));
+            }
             for (HierarchyGroup child : children) {
                 child.collect(destination);
+            }
+        }
+
+        void sortRecursively(@NonNull Comparator<RoomContentItem> comparator) {
+            sortingComparator = comparator;
+            if (children.size() > 1) {
+                children.sort((first, second) -> comparator.compare(first.root, second.root));
+            }
+            for (HierarchyGroup child : children) {
+                child.sortRecursively(comparator);
             }
         }
 

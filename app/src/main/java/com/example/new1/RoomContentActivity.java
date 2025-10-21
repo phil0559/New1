@@ -2782,6 +2782,7 @@ public class RoomContentActivity extends Activity {
             }
         };
         RoomContentGroupingManager.sortWithComparator(items, comparator);
+        RoomContentHierarchyHelper.normalizeHierarchy(items);
     }
 
     @NonNull

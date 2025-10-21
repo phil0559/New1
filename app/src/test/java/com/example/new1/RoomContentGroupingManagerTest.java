@@ -85,6 +85,26 @@ public class RoomContentGroupingManagerTest {
                 "  Objet A (élément)");
     }
 
+    @Test
+    public void triRecursifReordonneLesDescendants() {
+        List<RoomContentItem> items = new ArrayList<>();
+        items.add(conteneur("Sac", 3));
+        items.add(conteneur("Zèbre", 0));
+        items.add(element("Objet Z"));
+        items.add(conteneur("Alpha", 0));
+        items.add(conteneur("Boîte", 1));
+        items.add(element("Objet B"));
+
+        RoomContentGroupingManager.sortWithComparator(items, creerComparateur());
+
+        assertEquals("Sac", items.get(0).getName());
+        assertEquals("Alpha", items.get(1).getName());
+        assertEquals("Boîte", items.get(2).getName());
+        assertEquals("Objet B", items.get(3).getName());
+        assertEquals("Zèbre", items.get(4).getName());
+        assertEquals("Objet Z", items.get(5).getName());
+    }
+
     private Comparator<RoomContentItem> creerComparateur() {
         return new Comparator<RoomContentItem>() {
             @Override
