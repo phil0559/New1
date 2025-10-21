@@ -63,6 +63,8 @@ public class RoomContentItem {
     @Nullable
     private Long parentRank;
     private int attachedItemCount;
+    @Nullable
+    private String displayRank;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
@@ -133,6 +135,7 @@ public class RoomContentItem {
         this.rank = -1L;
         this.parentRank = null;
         this.attachedItemCount = Math.max(0, ignoredAttachedItemCount);
+        this.displayRank = null;
     }
 
     @NonNull
@@ -234,6 +237,15 @@ public class RoomContentItem {
 
     public void setDisplayed(boolean displayed) {
         this.displayed = displayed;
+    }
+
+    @Nullable
+    public String getDisplayRank() {
+        return displayRank;
+    }
+
+    public void setDisplayRank(@Nullable String displayRank) {
+        this.displayRank = displayRank;
     }
 
     public JSONObject toJson() {
@@ -382,6 +394,7 @@ public class RoomContentItem {
                 0);
         item.setRank(rank);
         item.setParentRank(parentRank);
+        item.setDisplayRank(null);
         return item;
     }
 
