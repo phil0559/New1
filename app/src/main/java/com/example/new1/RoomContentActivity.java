@@ -2208,7 +2208,7 @@ public class RoomContentActivity extends Activity {
         }
         MovementGroup group = extractMovementGroup(roomContentItems, position);
         markItemsAsDisplayed(group.items);
-        removeGroupAtPosition(roomContentItems, position, group.size);
+        removeGroupAtPosition(roomContentItems, position);
         roomContentItems.addAll(group.items);
         sortRoomContentItems();
         if (roomContentAdapter != null) {
@@ -2226,7 +2226,7 @@ public class RoomContentActivity extends Activity {
         }
         MovementGroup group = extractMovementGroup(roomContentItems, position);
         markItemsAsDisplayed(group.items);
-        removeGroupAtPosition(roomContentItems, position, group.size);
+        removeGroupAtPosition(roomContentItems, position);
         sortRoomContentItems();
         if (roomContentAdapter != null) {
             roomContentAdapter.notifyDataSetChanged();
@@ -2242,42 +2242,15 @@ public class RoomContentActivity extends Activity {
 
     @NonNull
     private MovementGroup extractMovementGroup(@NonNull List<RoomContentItem> items, int position) {
-        RoomContentItem current = items.get(position);
-        RoomContentItem normalized = current;
-        if (current.isContainer() && current.getAttachedItemCount() > 0) {
-            normalized = recreateContainerWithNewCount(current, 0);
-            items.set(position, normalized);
+        List<RoomContentItem> groupItems = RoomContentGroupingManager.extractGroup(items, position);
+        if (groupItems.isEmpty() && position >= 0 && position < items.size()) {
+            groupItems.add(items.get(position));
         }
-        List<RoomContentItem> singleton = new ArrayList<>();
-        singleton.add(normalized);
-        return new MovementGroup(singleton);
+        return new MovementGroup(groupItems);
     }
 
-    private void removeGroupAtPosition(@NonNull List<RoomContentItem> items, int startPosition, int count) {
-        for (int i = 0; i < count && startPosition < items.size(); i++) {
-            items.remove(startPosition);
-        }
-    }
-
-    @NonNull
-    private RoomContentItem recreateContainerWithNewCount(@NonNull RoomContentItem container,
-            int newCount) {
-        return new RoomContentItem(container.getName(),
-                container.getComment(),
-                container.getType(),
-                container.getCategory(),
-                container.getBarcode(),
-                container.getSeries(),
-                container.getNumber(),
-                container.getAuthor(),
-                container.getPublisher(),
-                container.getEdition(),
-                container.getPublicationDate(),
-                container.getSummary(),
-                new ArrayList<>(container.getTracks()),
-                new ArrayList<>(container.getPhotos()),
-                true,
-                Math.max(0, newCount));
+    private void removeGroupAtPosition(@NonNull List<RoomContentItem> items, int startPosition) {
+        RoomContentGroupingManager.removeGroup(items, startPosition);
     }
 
     @NonNull
@@ -2492,16 +2465,7 @@ public class RoomContentActivity extends Activity {
     }
 
     private void sortRoomContentItems(@NonNull List<RoomContentItem> items) {
-        if (items.size() <= 1) {
-            return;
-        }
-        for (int i = 0; i < items.size(); i++) {
-            RoomContentItem item = items.get(i);
-            if (item.isContainer() && item.getAttachedItemCount() > 0) {
-                items.set(i, recreateContainerWithNewCount(item, 0));
-            }
-        }
-        Collections.sort(items, new Comparator<RoomContentItem>() {
+        Comparator<RoomContentItem> comparator = new Comparator<RoomContentItem>() {
             @Override
             public int compare(RoomContentItem first, RoomContentItem second) {
                 String firstType = normalizeForSort(first.getType());
@@ -2522,7 +2486,8 @@ public class RoomContentActivity extends Activity {
                 String secondName = normalizeForSort(second.getName());
                 return firstName.compareToIgnoreCase(secondName);
             }
-        });
+        };
+        RoomContentGroupingManager.sortWithComparator(items, comparator);
     }
 
     @NonNull
@@ -2533,11 +2498,9 @@ public class RoomContentActivity extends Activity {
     private static final class MovementGroup {
         @NonNull
         final List<RoomContentItem> items;
-        final int size;
 
         MovementGroup(@NonNull List<RoomContentItem> items) {
             this.items = items;
-            this.size = items.size();
         }
     }
 
