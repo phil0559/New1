@@ -161,16 +161,7 @@ final class RoomContentHierarchyHelper {
         if (!item.isContainer()) {
             return true;
         }
-        List<RoomContentItem> children = childrenByParent.get(item.getRank());
-        if (children == null || children.isEmpty()) {
-            return true;
-        }
-        for (RoomContentItem child : children) {
-            if (isRankable(child, childrenByParent)) {
-                return true;
-            }
-        }
-        return false;
+        return hasRankableDescendants(item, childrenByParent);
     }
 
     private static boolean hasRankableDescendants(@NonNull RoomContentItem item,
