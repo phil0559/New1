@@ -3268,16 +3268,19 @@ public class RoomContentActivity extends Activity {
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
             int responseCode = connection.getResponseCode();
-            InputStream stream = responseCode >= 400
+            InputStream rawStream = responseCode >= 400
                     ? connection.getErrorStream()
                     : connection.getInputStream();
-            if (stream == null) {
+            if (rawStream == null) {
                 BarcodeLookupResult error = new BarcodeLookupResult();
                 error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
                 error.networkError = true;
                 return error;
             }
-            String response = readStream(stream);
+            String response;
+            try (InputStream stream = rawStream) {
+                response = readStream(stream);
+            }
             if (responseCode >= 400) {
                 BarcodeLookupResult error = new BarcodeLookupResult();
                 error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
@@ -3423,13 +3426,16 @@ public class RoomContentActivity extends Activity {
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
             int responseCode = connection.getResponseCode();
-            InputStream stream = responseCode >= 400
+            InputStream rawStream = responseCode >= 400
                     ? connection.getErrorStream()
                     : connection.getInputStream();
-            if (stream == null || responseCode >= 400) {
+            if (rawStream == null || responseCode >= 400) {
                 return;
             }
-            String response = readStream(stream);
+            String response;
+            try (InputStream stream = rawStream) {
+                response = readStream(stream);
+            }
             JSONObject root = new JSONObject(response);
 
             if (TextUtils.isEmpty(result.title)) {
@@ -3600,11 +3606,14 @@ public class RoomContentActivity extends Activity {
             if (responseCode >= 400) {
                 return null;
             }
-            InputStream stream = connection.getInputStream();
-            if (stream == null) {
+            InputStream rawStream = connection.getInputStream();
+            if (rawStream == null) {
                 return null;
             }
-            String response = readStream(stream);
+            String response;
+            try (InputStream stream = rawStream) {
+                response = readStream(stream);
+            }
             JSONObject authorObject = new JSONObject(response);
             String name = authorObject.optString("name", null);
             if (TextUtils.isEmpty(name)) {
@@ -3687,16 +3696,19 @@ public class RoomContentActivity extends Activity {
             connection.setRequestProperty("Accept", "application/json");
             connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
             int responseCode = connection.getResponseCode();
-            InputStream stream = responseCode >= 400
+            InputStream rawStream = responseCode >= 400
                     ? connection.getErrorStream()
                     : connection.getInputStream();
-            if (stream == null) {
+            if (rawStream == null) {
                 BarcodeLookupResult error = new BarcodeLookupResult();
                 error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
                 error.networkError = true;
                 return error;
             }
-            String response = readStream(stream);
+            String response;
+            try (InputStream stream = rawStream) {
+                response = readStream(stream);
+            }
             if (responseCode >= 400) {
                 BarcodeLookupResult error = new BarcodeLookupResult();
                 error.errorMessage = getString(R.string.dialog_barcode_lookup_error);

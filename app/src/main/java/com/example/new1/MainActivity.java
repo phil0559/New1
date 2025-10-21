@@ -14,6 +14,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupWindow;
 
+import androidx.core.content.ContextCompat;
+
 import java.util.Locale;
 
 public class MainActivity extends Activity {
@@ -79,7 +81,9 @@ public class MainActivity extends Activity {
 
         popupWindow.setElevation(12f);
         popupWindow.setOutsideTouchable(true);
-        popupWindow.setBackgroundDrawable(getResources().getDrawable(R.drawable.bg_language_popup, getTheme()));
+        popupWindow.setBackgroundDrawable(
+            ContextCompat.getDrawable(this, R.drawable.bg_language_popup)
+        );
         popupWindow.setOnDismissListener(() -> languagePopup = null);
 
         contentView.findViewById(R.id.flag_fr).setOnClickListener(view -> applyLanguageSelection("fr"));
