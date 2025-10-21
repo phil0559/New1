@@ -161,6 +161,14 @@ final class RoomContentHierarchyHelper {
         if (!item.isContainer()) {
             return true;
         }
+        List<RoomContentItem> children = childrenByParent.get(item.getRank());
+        if (children == null || children.isEmpty()) {
+            // Conserver le rang des conteneurs même lorsqu'ils sont vides afin
+            // d'éviter les "trous" dans la numérotation. Cela garantit que
+            // le déplacement d'un élément ne modifie pas rétroactivement le
+            // rang de son ancien conteneur encore présent dans la hiérarchie.
+            return true;
+        }
         return hasRankableDescendants(item, childrenByParent);
     }
 
