@@ -28,7 +28,6 @@ public class RoomContentItem {
     private static final String KEY_SUMMARY = "summary";
     private static final String KEY_TRACKS = "tracks";
     private static final String KEY_PHOTOS = "photos";
-    private static final String KEY_ATTACHED_COUNT = "attachedCount";
 
     private final String name;
     private final String comment;
@@ -57,7 +56,6 @@ public class RoomContentItem {
     @NonNull
     private final List<String> photos;
     private final boolean container;
-    private final int attachedItemCount;
     private boolean displayed;
 
     public RoomContentItem(@NonNull String name,
@@ -94,7 +92,9 @@ public class RoomContentItem {
                            @Nullable List<String> tracks,
                            @Nullable List<String> photos,
                            boolean isContainer,
-                           int attachedItemCount) {
+                           int ignoredAttachedItemCount) {
+        // Le paramètre ignoredAttachedItemCount est conservé pour la compatibilité
+        // binaire mais n'est plus utilisé : chaque élément est stocké sans lien.
         this.name = name;
         this.comment = comment != null ? comment : "";
         this.type = isNullOrEmpty(type) ? null : type;
@@ -123,7 +123,6 @@ public class RoomContentItem {
             this.photos = new ArrayList<>(photos);
         }
         this.container = isContainer;
-        this.attachedItemCount = Math.max(0, attachedItemCount);
         this.displayed = true;
     }
 
@@ -202,11 +201,11 @@ public class RoomContentItem {
     }
 
     public int getAttachedItemCount() {
-        return attachedItemCount;
+        return 0;
     }
 
     public boolean hasAttachedItems() {
-        return attachedItemCount > 0;
+        return false;
     }
 
     public boolean isDisplayed() {
@@ -223,9 +222,8 @@ public class RoomContentItem {
             object.put(KEY_NAME, name);
             object.put(KEY_COMMENT, comment);
             object.put(KEY_CONTAINER, container);
-            if (attachedItemCount > 0) {
-                object.put(KEY_ATTACHED_COUNT, attachedItemCount);
-            }
+            // Ne pas réécrire le nombre d'attachements : les éléments sont
+            // sauvegardés individuellement désormais.
             if (type != null) {
                 object.put(KEY_TYPE, type);
             }
@@ -337,10 +335,8 @@ public class RoomContentItem {
             }
         }
         boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
-        int attachedItemCount = object.optInt(KEY_ATTACHED_COUNT, 0);
-        if (attachedItemCount < 0) {
-            attachedItemCount = 0;
-        }
+        // Ignorer toute donnée d'attachements potentiellement persistée par les
+        // versions précédentes : chaque élément est maintenant autonome.
         return new RoomContentItem(name,
                 comment,
                 type,
@@ -356,7 +352,7 @@ public class RoomContentItem {
                 tracks,
                 photos,
                 isContainer,
-                attachedItemCount);
+                0);
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {
