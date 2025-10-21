@@ -2247,8 +2247,8 @@ public class RoomContentActivity extends Activity {
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         MovementGroup group = extractMovementGroup(roomContentItems, position);
         markItemsAsDisplayed(group.items);
-        removeGroupAtPosition(roomContentItems, position);
         RoomContentItem root = group.items.isEmpty() ? null : group.items.get(0);
+        removeGroupAtPosition(roomContentItems, position);
         RoomContentItem target = null;
         if (targetContainer != null) {
             if (targetContainer.container != null) {
@@ -2271,14 +2271,10 @@ public class RoomContentActivity extends Activity {
                 insertionIndex = roomContentItems.size();
             }
             roomContentItems.addAll(insertionIndex, group.items);
-            if (root != null) {
-                RoomContentHierarchyHelper.attachToContainer(root, target);
-            }
+            applyReparenting(root, target, group.items);
         } else {
             roomContentItems.addAll(group.items);
-            if (root != null) {
-                root.setParentRank(null);
-            }
+            applyReparenting(root, null, group.items);
         }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
@@ -2300,6 +2296,7 @@ public class RoomContentActivity extends Activity {
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         MovementGroup group = extractMovementGroup(roomContentItems, position);
         markItemsAsDisplayed(group.items);
+        RoomContentItem root = group.items.isEmpty() ? null : group.items.get(0);
         removeGroupAtPosition(roomContentItems, position);
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
@@ -2311,7 +2308,6 @@ public class RoomContentActivity extends Activity {
         updateEmptyState();
 
         List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
-        RoomContentItem root = group.items.isEmpty() ? null : group.items.get(0);
         RoomContentItem target = null;
         if (targetContainer != null) {
             target = findContainerByRank(targetItems, targetContainer.rank);
@@ -2329,14 +2325,10 @@ public class RoomContentActivity extends Activity {
                 insertionIndex = targetItems.size();
             }
             targetItems.addAll(insertionIndex, group.items);
-            if (root != null) {
-                RoomContentHierarchyHelper.attachToContainer(root, target);
-            }
+            applyReparenting(root, target, group.items);
         } else {
             targetItems.addAll(group.items);
-            if (root != null) {
-                root.setParentRank(null);
-            }
+            applyReparenting(root, null, group.items);
         }
         RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
         sortRoomContentItems(targetItems);
@@ -2351,6 +2343,54 @@ public class RoomContentActivity extends Activity {
             groupItems.add(items.get(position));
         }
         return new MovementGroup(groupItems);
+    }
+
+    private void applyReparenting(@Nullable RoomContentItem item,
+            @Nullable RoomContentItem newParent,
+            @NonNull List<RoomContentItem> movedItems) {
+        if (item == null) {
+            return;
+        }
+        RoomContentHierarchyHelper.attachToContainer(item, newParent);
+        if (item.isContainer()) {
+            rewriteParentLinks(item, movedItems);
+        }
+    }
+
+    private void rewriteParentLinks(@NonNull RoomContentItem root,
+            @NonNull List<RoomContentItem> movedItems) {
+        if (movedItems.size() <= 1) {
+            return;
+        }
+        List<ContainerTraversalState> stack = new ArrayList<>();
+        if (root.isContainer()) {
+            stack.add(new ContainerTraversalState(root, root.getAttachedItemCount()));
+        }
+        for (int index = 1; index < movedItems.size(); index++) {
+            RoomContentItem current = movedItems.get(index);
+            while (!stack.isEmpty() && stack.get(stack.size() - 1).remainingChildren <= 0) {
+                stack.remove(stack.size() - 1);
+            }
+            RoomContentItem parent = stack.isEmpty() ? null : stack.get(stack.size() - 1).container;
+            RoomContentHierarchyHelper.attachToContainer(current, parent);
+            if (!stack.isEmpty()) {
+                ContainerTraversalState state = stack.get(stack.size() - 1);
+                state.remainingChildren = Math.max(0, state.remainingChildren - 1);
+            }
+            if (current.isContainer()) {
+                stack.add(new ContainerTraversalState(current, current.getAttachedItemCount()));
+            }
+        }
+    }
+
+    private static final class ContainerTraversalState {
+        final RoomContentItem container;
+        int remainingChildren;
+
+        ContainerTraversalState(@NonNull RoomContentItem container, int remainingChildren) {
+            this.container = container;
+            this.remainingChildren = Math.max(0, remainingChildren);
+        }
     }
 
     private void removeGroupAtPosition(@NonNull List<RoomContentItem> items, int startPosition) {
