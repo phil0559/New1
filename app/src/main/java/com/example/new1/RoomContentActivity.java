@@ -2034,9 +2034,6 @@ public class RoomContentActivity extends Activity {
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_move_room_content, null);
         Spinner establishmentSpinner = dialogView.findViewById(R.id.spinner_move_establishment);
         Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
-        Spinner containerSpinner = dialogView.findViewById(R.id.spinner_move_container);
-
-        final RoomContentItem parentContainer = findParentContainerForCurrentRoom(position);
 
         List<String> establishmentOptions = loadEstablishmentNames();
         if (establishmentOptions.isEmpty()) {
@@ -2054,8 +2051,6 @@ public class RoomContentActivity extends Activity {
             establishmentSpinner.setSelection(establishmentIndex);
         }
 
-        final List<RoomContentItem>[] containerTemplatesHolder = new List[1];
-        containerTemplatesHolder[0] = new ArrayList<>();
         final String[] selectedEstablishmentHolder = new String[1];
         final String[] selectedRoomHolder = new String[1];
 
@@ -2071,15 +2066,14 @@ public class RoomContentActivity extends Activity {
             public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
                 Object value = parent.getItemAtPosition(spinnerPosition);
                 selectedEstablishmentHolder[0] = value != null ? value.toString() : null;
-                updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
-                        selectedEstablishmentHolder[0], selectedRoomHolder[0], item, parentContainer);
+                updateMoveDialogRooms(dialog, roomSpinner, selectedEstablishmentHolder[0],
+                        selectedRoomHolder[0]);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 selectedEstablishmentHolder[0] = null;
-                updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
-                        null, selectedRoomHolder[0], item, parentContainer);
+                updateMoveDialogRooms(dialog, roomSpinner, null, selectedRoomHolder[0]);
             }
         };
         establishmentSpinner.setOnItemSelectedListener(establishmentListener);
@@ -2089,15 +2083,14 @@ public class RoomContentActivity extends Activity {
             public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
                 Object value = parent.getItemAtPosition(spinnerPosition);
                 selectedRoomHolder[0] = value != null ? value.toString() : null;
-                updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
-                        selectedEstablishmentHolder[0], selectedRoomHolder[0], item, parentContainer);
+                updateMoveDialogRooms(dialog, roomSpinner, selectedEstablishmentHolder[0],
+                        selectedRoomHolder[0]);
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 selectedRoomHolder[0] = null;
-                updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
-                        selectedEstablishmentHolder[0], null, item, parentContainer);
+                updateMoveDialogRooms(dialog, roomSpinner, selectedEstablishmentHolder[0], null);
             }
         };
         roomSpinner.setOnItemSelectedListener(roomListener);
@@ -2107,8 +2100,8 @@ public class RoomContentActivity extends Activity {
                 : null;
         selectedRoomHolder[0] = roomName;
 
-        updateMoveDialogRooms(dialog, roomSpinner, containerSpinner, containerTemplatesHolder,
-                selectedEstablishmentHolder[0], selectedRoomHolder[0], item, parentContainer);
+        updateMoveDialogRooms(dialog, roomSpinner, selectedEstablishmentHolder[0],
+                selectedRoomHolder[0]);
 
         dialog.setOnShowListener(d -> {
             updateMoveButtonState(dialog, roomSpinner);
@@ -2131,16 +2124,7 @@ public class RoomContentActivity extends Activity {
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                RoomContentItem targetContainer = null;
-                int containerIndex = containerSpinner.getSelectedItemPosition();
-                if (containerIndex > 0) {
-                    List<RoomContentItem> templates = containerTemplatesHolder[0];
-                    int templateIndex = containerIndex - 1;
-                    if (templates != null && templateIndex >= 0 && templateIndex < templates.size()) {
-                        targetContainer = templates.get(templateIndex);
-                    }
-                }
-                if (moveRoomContentItem(item, position, targetEstablishment, targetRoom, targetContainer)) {
+                if (moveRoomContentItem(item, position, targetEstablishment, targetRoom)) {
                     dialog.dismiss();
                 }
             });
@@ -2203,8 +2187,7 @@ public class RoomContentActivity extends Activity {
 
     private boolean moveRoomContentItem(@NonNull RoomContentItem item, int position,
             @Nullable String targetEstablishment,
-            @Nullable String targetRoom,
-            @Nullable RoomContentItem targetContainer) {
+            @Nullable String targetRoom) {
         String normalizedTargetRoom = normalizeName(targetRoom);
         if (normalizedTargetRoom.isEmpty()) {
             return false;
@@ -2216,16 +2199,15 @@ public class RoomContentActivity extends Activity {
                 .equalsIgnoreCase(normalizedTargetEstablishment)
                 && normalizedSourceRoom.equalsIgnoreCase(normalizedTargetRoom);
         if (movingWithinSameRoom) {
-            moveWithinCurrentRoom(item, position, targetContainer);
+            moveWithinCurrentRoom(item, position);
         } else {
-            moveToDifferentRoom(item, position, targetEstablishment, targetRoom, targetContainer);
+            moveToDifferentRoom(item, position, targetEstablishment, targetRoom);
         }
         Toast.makeText(this, R.string.dialog_move_room_content_success, Toast.LENGTH_SHORT).show();
         return true;
     }
 
-    private void moveWithinCurrentRoom(@NonNull RoomContentItem item, int position,
-            @Nullable RoomContentItem targetContainerTemplate) {
+    private void moveWithinCurrentRoom(@NonNull RoomContentItem item, int position) {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
@@ -2233,12 +2215,8 @@ public class RoomContentActivity extends Activity {
         markItemsAsDisplayed(group.items);
         adjustContainerCountForRemoval(roomContentItems, position);
         removeGroupAtPosition(roomContentItems, position, group.size);
-        if (targetContainerTemplate != null) {
-            insertGroupIntoContainer(roomContentItems, group.items, targetContainerTemplate);
-        } else {
-            roomContentItems.addAll(group.items);
-            sortRoomContentItems();
-        }
+        roomContentItems.addAll(group.items);
+        sortRoomContentItems();
         if (roomContentAdapter != null) {
             roomContentAdapter.notifyDataSetChanged();
         }
@@ -2248,8 +2226,7 @@ public class RoomContentActivity extends Activity {
 
     private void moveToDifferentRoom(@NonNull RoomContentItem item, int position,
             @Nullable String targetEstablishment,
-            @Nullable String targetRoom,
-            @Nullable RoomContentItem targetContainerTemplate) {
+            @Nullable String targetRoom) {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
@@ -2265,12 +2242,8 @@ public class RoomContentActivity extends Activity {
         updateEmptyState();
 
         List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
-        if (targetContainerTemplate != null) {
-            insertGroupIntoContainer(targetItems, group.items, targetContainerTemplate);
-        } else {
-            targetItems.addAll(group.items);
-            sortRoomContentItems(targetItems);
-        }
+        targetItems.addAll(group.items);
+        sortRoomContentItems(targetItems);
         saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
     }
 
@@ -2286,57 +2259,6 @@ public class RoomContentActivity extends Activity {
         }
         RoomContentItem updatedContainer = recreateContainerWithNewCount(container, currentCount - 1);
         items.set(containerIndex, updatedContainer);
-    }
-
-    private void insertIntoContainer(@NonNull List<RoomContentItem> items,
-            @NonNull RoomContentItem item,
-            @NonNull RoomContentItem containerTemplate) {
-        List<RoomContentItem> single = new ArrayList<>();
-        single.add(item);
-        insertGroupIntoContainer(items, single, containerTemplate);
-    }
-
-    private void insertGroupIntoContainer(@NonNull List<RoomContentItem> items,
-            @NonNull List<RoomContentItem> group,
-            @NonNull RoomContentItem containerTemplate) {
-        if (group.isEmpty()) {
-            return;
-        }
-        int containerIndex = findContainerIndex(items, containerTemplate);
-        if (containerIndex < 0) {
-            // À défaut d’un parent valide, replacer le groupe au niveau racine.
-            markItemsAsDisplayed(group);
-            items.addAll(group);
-            sortRoomContentItems(items);
-            return;
-        }
-        RoomContentItem container = items.get(containerIndex);
-        int attachedCount = Math.max(0, container.getAttachedItemCount());
-        int insertionIndex = findContainerInsertionIndex(items, containerIndex);
-        markItemsAsDisplayed(group);
-        items.addAll(insertionIndex, group);
-        RoomContentItem updatedContainer = recreateContainerWithNewCount(container,
-                attachedCount + (group.isEmpty() ? 0 : 1));
-        items.set(containerIndex, updatedContainer);
-    }
-
-    private int findContainerInsertionIndex(@NonNull List<RoomContentItem> items, int containerIndex) {
-        if (containerIndex < 0 || containerIndex >= items.size()) {
-            return items.size();
-        }
-        int insertionIndex = containerIndex + 1;
-        int remainingDirectChildren = Math.max(0, items.get(containerIndex).getAttachedItemCount());
-        // Parcourir l’intégralité du sous-arbre pour éviter d’insérer un élément au milieu
-        // des descendants d’un sous-contenant.
-        while (insertionIndex < items.size() && remainingDirectChildren > 0) {
-            RoomContentItem current = items.get(insertionIndex);
-            remainingDirectChildren--;
-            if (current.isContainer()) {
-                remainingDirectChildren += Math.max(0, current.getAttachedItemCount());
-            }
-            insertionIndex++;
-        }
-        return insertionIndex;
     }
 
     @NonNull
@@ -2385,38 +2307,6 @@ public class RoomContentActivity extends Activity {
         return -1;
     }
 
-    private int findContainerIndex(@NonNull List<RoomContentItem> items,
-            @NonNull RoomContentItem template) {
-        for (int i = 0; i < items.size(); i++) {
-            RoomContentItem candidate = items.get(i);
-            if (!candidate.isContainer()) {
-                continue;
-            }
-            if (areContainersEquivalent(candidate, template)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    private boolean areContainersEquivalent(@NonNull RoomContentItem first,
-            @NonNull RoomContentItem second) {
-        return TextUtils.equals(first.getName(), second.getName())
-                && TextUtils.equals(first.getComment(), second.getComment())
-                && TextUtils.equals(first.getType(), second.getType())
-                && TextUtils.equals(first.getCategory(), second.getCategory())
-                && TextUtils.equals(first.getBarcode(), second.getBarcode())
-                && TextUtils.equals(first.getSeries(), second.getSeries())
-                && TextUtils.equals(first.getNumber(), second.getNumber())
-                && TextUtils.equals(first.getAuthor(), second.getAuthor())
-                && TextUtils.equals(first.getPublisher(), second.getPublisher())
-                && TextUtils.equals(first.getEdition(), second.getEdition())
-                && TextUtils.equals(first.getPublicationDate(), second.getPublicationDate())
-                && TextUtils.equals(first.getSummary(), second.getSummary())
-                && first.getTracks().equals(second.getTracks())
-                && first.getPhotos().equals(second.getPhotos());
-    }
-
     @NonNull
     private RoomContentItem recreateContainerWithNewCount(@NonNull RoomContentItem container,
             int newCount) {
@@ -2436,15 +2326,6 @@ public class RoomContentActivity extends Activity {
                 new ArrayList<>(container.getPhotos()),
                 true,
                 Math.max(0, newCount));
-    }
-
-    @NonNull
-    private String resolveContainerDisplayName(@NonNull RoomContentItem container) {
-        String name = container.getName();
-        if (name == null || name.trim().isEmpty()) {
-            return getString(R.string.dialog_room_content_item_placeholder);
-        }
-        return name.trim();
     }
 
     @NonNull
@@ -2513,19 +2394,6 @@ public class RoomContentActivity extends Activity {
             }
         }
         return result;
-    }
-
-    @NonNull
-    private List<RoomContentItem> loadContainerOptions(@Nullable String establishment,
-            @Nullable String room) {
-        List<RoomContentItem> content = loadRoomContentFor(establishment, room);
-        List<RoomContentItem> containers = new ArrayList<>();
-        for (RoomContentItem item : content) {
-            if (item.isContainer()) {
-                containers.add(item);
-            }
-        }
-        return containers;
     }
 
     @NonNull
@@ -2600,12 +2468,8 @@ public class RoomContentActivity extends Activity {
 
     private void updateMoveDialogRooms(@NonNull AlertDialog dialog,
             @NonNull Spinner roomSpinner,
-            @NonNull Spinner containerSpinner,
-            @NonNull List<RoomContentItem>[] containerTemplatesHolder,
             @Nullable String establishment,
-            @Nullable String preferredRoom,
-            @NonNull RoomContentItem movingItem,
-            @Nullable RoomContentItem currentParentContainer) {
+            @Nullable String preferredRoom) {
         List<String> roomNames = loadRoomNames(establishment);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, roomNames);
@@ -2618,78 +2482,9 @@ public class RoomContentActivity extends Activity {
         } else {
             roomSpinner.setEnabled(false);
         }
-        String selectedRoom = roomSpinner.getSelectedItem() != null
-                ? roomSpinner.getSelectedItem().toString()
-                : null;
-        updateMoveDialogContainers(containerSpinner, containerTemplatesHolder,
-                establishment, selectedRoom, movingItem, currentParentContainer);
         if (dialog.isShowing()) {
             updateMoveButtonState(dialog, roomSpinner);
         }
-    }
-
-    private void updateMoveDialogContainers(@NonNull Spinner containerSpinner,
-            @NonNull List<RoomContentItem>[] containerTemplatesHolder,
-            @Nullable String establishment,
-            @Nullable String room,
-            @NonNull RoomContentItem movingItem,
-            @Nullable RoomContentItem currentParentContainer) {
-        List<String> labels = new ArrayList<>();
-        labels.add(getString(R.string.dialog_move_room_content_no_container));
-        List<RoomContentItem> containers;
-        if (room == null || room.trim().isEmpty()) {
-            containers = new ArrayList<>();
-        } else {
-            containers = loadContainerOptions(establishment, room);
-        }
-        List<RoomContentItem> filteredContainers = new ArrayList<>();
-        for (RoomContentItem container : containers) {
-            if (shouldExcludeContainerOption(movingItem, currentParentContainer,
-                    establishment, room, container)) {
-                continue;
-            }
-            filteredContainers.add(container);
-            labels.add(resolveContainerDisplayName(container));
-        }
-        containerTemplatesHolder[0] = filteredContainers;
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, labels);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        containerSpinner.setAdapter(adapter);
-    }
-
-    @Nullable
-    private RoomContentItem findParentContainerForCurrentRoom(int position) {
-        int parentIndex = findContainerIndexForItem(roomContentItems, position);
-        if (parentIndex < 0 || parentIndex >= roomContentItems.size()) {
-            return null;
-        }
-        return roomContentItems.get(parentIndex);
-    }
-
-    private boolean shouldExcludeContainerOption(@NonNull RoomContentItem movingItem,
-            @Nullable RoomContentItem currentParentContainer,
-            @Nullable String targetEstablishment,
-            @Nullable String targetRoom,
-            @NonNull RoomContentItem candidate) {
-        String normalizedTargetEstablishment = normalizeName(targetEstablishment);
-        String normalizedTargetRoom = normalizeName(targetRoom);
-        String normalizedCurrentEstablishment = normalizeName(establishmentName);
-        String normalizedCurrentRoom = normalizeName(roomName);
-        boolean sameLocation = normalizedTargetEstablishment
-                .equalsIgnoreCase(normalizedCurrentEstablishment)
-                && normalizedTargetRoom.equalsIgnoreCase(normalizedCurrentRoom);
-        if (!sameLocation) {
-            return false;
-        }
-        if (currentParentContainer != null
-                && areContainersEquivalent(currentParentContainer, candidate)) {
-            return true;
-        }
-        if (movingItem.isContainer() && areContainersEquivalent(movingItem, candidate)) {
-            return true;
-        }
-        return false;
     }
 
     private void updateMoveButtonState(@NonNull AlertDialog dialog, @NonNull Spinner roomSpinner) {
