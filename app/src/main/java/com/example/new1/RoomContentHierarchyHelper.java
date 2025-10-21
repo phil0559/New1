@@ -94,7 +94,10 @@ final class RoomContentHierarchyHelper {
     private static long generateUniqueRank(@NonNull Set<Long> usedRanks) {
         long candidate;
         do {
-            candidate = Math.abs(ThreadLocalRandom.current().nextLong(Long.MAX_VALUE));
+            // Utiliser une borne supérieure garantit des valeurs toujours positives
+            // et évite le cas particulier de Long.MIN_VALUE qui restait négatif après
+            // Math.abs, ce qui cassait la normalisation des rangs.
+            candidate = ThreadLocalRandom.current().nextLong(Long.MAX_VALUE);
         } while (usedRanks.contains(candidate));
         return candidate;
     }
