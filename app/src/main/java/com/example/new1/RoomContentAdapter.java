@@ -866,9 +866,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             currentItem = item;
             dismissOptionsMenu();
             String baseName = resolveItemName(item);
-            String displayName = baseName;
             if (item.isContainer()) {
-                displayName = appendAttachmentCount(displayName, item);
+                baseName = appendAttachmentCount(baseName, item);
+            }
+            String displayName = baseName;
+            String rankLabel = item.getDisplayRank();
+            if (rankLabel != null && !rankLabel.trim().isEmpty()) {
+                displayName = rankLabel + " · " + baseName;
             }
             nameView.setText(displayName);
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();

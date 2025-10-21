@@ -3,6 +3,7 @@ package com.example.new1;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -22,6 +23,7 @@ final class RoomContentHierarchyHelper {
         ensureRanks(items);
         sanitizeParentLinks(items);
         rebuildAttachedCounts(items);
+        assignDisplayRanks(items);
     }
 
     static void ensureRanks(@NonNull List<RoomContentItem> items) {
@@ -89,6 +91,94 @@ final class RoomContentHierarchyHelper {
             return;
         }
         item.setParentRank(container.getRank());
+    }
+
+    private static void assignDisplayRanks(@NonNull List<RoomContentItem> items) {
+        Map<Long, RoomContentItem> byRank = new HashMap<>();
+        Map<Long, List<RoomContentItem>> childrenByParent = new HashMap<>();
+        for (RoomContentItem item : items) {
+            item.setDisplayRank(null);
+            byRank.put(item.getRank(), item);
+        }
+        for (RoomContentItem item : items) {
+            Long parentRank = item.getParentRank();
+            if (parentRank == null) {
+                continue;
+            }
+            RoomContentItem parent = byRank.get(parentRank);
+            if (parent == null) {
+                continue;
+            }
+            List<RoomContentItem> siblings = childrenByParent.get(parentRank);
+            if (siblings == null) {
+                siblings = new ArrayList<>();
+                childrenByParent.put(parentRank, siblings);
+            }
+            siblings.add(item);
+        }
+        int index = 1;
+        for (RoomContentItem item : items) {
+            if (!item.isContainer()) {
+                continue;
+            }
+            if (item.getParentRank() != null) {
+                continue;
+            }
+            if (!hasRankableDescendants(item, childrenByParent)) {
+                continue;
+            }
+            String label = String.valueOf(index);
+            index++;
+            item.setDisplayRank(label);
+            assignDisplayRanksRecursively(item, label, childrenByParent);
+        }
+    }
+
+    private static void assignDisplayRanksRecursively(@NonNull RoomContentItem parent,
+            @NonNull String parentLabel,
+            @NonNull Map<Long, List<RoomContentItem>> childrenByParent) {
+        List<RoomContentItem> children = childrenByParent.get(parent.getRank());
+        if (children == null || children.isEmpty()) {
+            return;
+        }
+        int index = 1;
+        for (RoomContentItem child : children) {
+            if (!isRankable(child, childrenByParent)) {
+                child.setDisplayRank(null);
+                continue;
+            }
+            String label = parentLabel + "." + index;
+            index++;
+            child.setDisplayRank(label);
+            if (child.isContainer()) {
+                assignDisplayRanksRecursively(child, label, childrenByParent);
+            }
+        }
+    }
+
+    private static boolean isRankable(@NonNull RoomContentItem item,
+            @NonNull Map<Long, List<RoomContentItem>> childrenByParent) {
+        if (!item.isContainer()) {
+            return true;
+        }
+        return hasRankableDescendants(item, childrenByParent);
+    }
+
+    private static boolean hasRankableDescendants(@NonNull RoomContentItem item,
+            @NonNull Map<Long, List<RoomContentItem>> childrenByParent) {
+        List<RoomContentItem> children = childrenByParent.get(item.getRank());
+        if (children == null || children.isEmpty()) {
+            return false;
+        }
+        for (RoomContentItem child : children) {
+            if (!child.isContainer()) {
+                return true;
+            }
+            if (hasRankableDescendants(child, childrenByParent)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static long generateUniqueRank(@NonNull Set<Long> usedRanks) {
