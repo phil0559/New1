@@ -38,8 +38,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.ViewHolder> {
 
@@ -268,6 +271,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             hierarchyDirty = false;
             return;
         }
+        Arrays.fill(hierarchyParentPositions, -1);
+        Map<Long, Integer> positionByRank = new HashMap<>();
+        for (int i = 0; i < size; i++) {
+            positionByRank.put(items.get(i).getRank(), i);
+        }
+        for (int i = 0; i < size; i++) {
+            Long parentRank = items.get(i).getParentRank();
+            if (parentRank == null) {
+                continue;
+            }
+            Integer parentPosition = positionByRank.get(parentRank);
+            if (parentPosition != null && parentPosition >= 0 && parentPosition != i) {
+                hierarchyParentPositions[i] = parentPosition;
+            }
+        }
         Deque<ContainerState> stack = new ArrayDeque<>();
         for (int i = 0; i < size; i++) {
             RoomContentItem current = items.get(i);
@@ -276,19 +294,55 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             while (!stack.isEmpty() && stack.peek().remainingDirectChildren <= 0) {
                 stack.pop();
             }
-            int parentPosition = stack.isEmpty() ? -1 : stack.peek().position;
-            hierarchyParentPositions[i] = parentPosition;
-            hierarchyDepths[i] = Math.max(0, stack.size());
+            if (hierarchyParentPositions[i] < 0) {
+                int parentPosition = stack.isEmpty() ? -1 : stack.peek().position;
+                hierarchyParentPositions[i] = parentPosition;
+            }
+            int parentPosition = hierarchyParentPositions[i];
             if (parentPosition >= 0) {
-                ContainerState parentState = stack.peek();
-                parentState.consumeChild();
+                for (ContainerState state : stack) {
+                    if (state.position == parentPosition) {
+                        state.consumeChild();
+                        break;
+                    }
+                }
             }
             if (hasDirectChildren) {
                 int directChildren = current.getAttachedItemCount();
                 stack.push(new ContainerState(i, directChildren));
             }
         }
+        Arrays.fill(hierarchyDepths, Integer.MIN_VALUE);
+        boolean[] visiting = new boolean[size];
+        for (int i = 0; i < size; i++) {
+            hierarchyDepths[i] = computeDepthForPosition(i, hierarchyParentPositions,
+                    hierarchyDepths, visiting);
+        }
         hierarchyDirty = false;
+    }
+
+    private int computeDepthForPosition(int position, @NonNull int[] parents,
+            @NonNull int[] cache, @NonNull boolean[] visiting) {
+        if (position < 0 || position >= parents.length) {
+            return 0;
+        }
+        if (cache[position] != Integer.MIN_VALUE) {
+            return cache[position];
+        }
+        if (visiting[position]) {
+            cache[position] = 0;
+            return 0;
+        }
+        int parent = parents[position];
+        if (parent < 0 || parent == position) {
+            cache[position] = 0;
+            return 0;
+        }
+        visiting[position] = true;
+        int depth = computeDepthForPosition(parent, parents, cache, visiting) + 1;
+        visiting[position] = false;
+        cache[position] = Math.max(0, depth);
+        return cache[position];
     }
 
     private static final class ContainerState {
