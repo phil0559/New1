@@ -440,8 +440,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @NonNull
     private String appendAttachmentCount(@NonNull String displayName,
             @NonNull RoomContentItem item) {
-        // Afficher systématiquement le nombre d’éléments rattachés après le nom du contenant.
+        // Afficher le nombre d’éléments rattachés seulement lorsqu’il est positif.
         int count = Math.max(0, item.getAttachedItemCount());
+        if (count <= 0) {
+            return displayName;
+        }
         return displayName + " (" + count + ")";
     }
 

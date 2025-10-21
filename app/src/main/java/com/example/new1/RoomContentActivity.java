@@ -69,13 +69,11 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -1759,9 +1757,6 @@ public class RoomContentActivity extends Activity {
                     dialog.dismiss();
                     return;
                 }
-                int attachedItemCount = isEditing && containerToEdit != null
-                        ? containerToEdit.getAttachedItemCount()
-                        : 0;
                 List<String> photoValues = selectedFields.contains(FIELD_PHOTOS)
                         ? new ArrayList<>(formState.photos)
                         : new ArrayList<>();
@@ -1781,7 +1776,7 @@ public class RoomContentActivity extends Activity {
                         null,
                         photoValues,
                         true,
-                        attachedItemCount);
+                        0);
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
                         dialog.dismiss();
@@ -2213,7 +2208,6 @@ public class RoomContentActivity extends Activity {
         }
         MovementGroup group = extractMovementGroup(roomContentItems, position);
         markItemsAsDisplayed(group.items);
-        adjustContainerCountForRemoval(roomContentItems, position);
         removeGroupAtPosition(roomContentItems, position, group.size);
         roomContentItems.addAll(group.items);
         sortRoomContentItems();
@@ -2232,7 +2226,6 @@ public class RoomContentActivity extends Activity {
         }
         MovementGroup group = extractMovementGroup(roomContentItems, position);
         markItemsAsDisplayed(group.items);
-        adjustContainerCountForRemoval(roomContentItems, position);
         removeGroupAtPosition(roomContentItems, position, group.size);
         sortRoomContentItems();
         if (roomContentAdapter != null) {
@@ -2247,32 +2240,16 @@ public class RoomContentActivity extends Activity {
         saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
     }
 
-    private void adjustContainerCountForRemoval(@NonNull List<RoomContentItem> items, int position) {
-        int containerIndex = findContainerIndexForItem(items, position);
-        if (containerIndex < 0 || containerIndex >= items.size()) {
-            return;
-        }
-        RoomContentItem container = items.get(containerIndex);
-        int currentCount = Math.max(0, container.getAttachedItemCount());
-        if (currentCount <= 0) {
-            return;
-        }
-        RoomContentItem updatedContainer = recreateContainerWithNewCount(container, currentCount - 1);
-        items.set(containerIndex, updatedContainer);
-    }
-
     @NonNull
     private MovementGroup extractMovementGroup(@NonNull List<RoomContentItem> items, int position) {
         RoomContentItem current = items.get(position);
-        if (current.isContainer()) {
-            ContainerExtraction extraction = extractContainerGroup(items, position);
-            List<RoomContentItem> groupItems = new ArrayList<>();
-            groupItems.add(extraction.container);
-            groupItems.addAll(extraction.attachments);
-            return new MovementGroup(groupItems);
+        RoomContentItem normalized = current;
+        if (current.isContainer() && current.getAttachedItemCount() > 0) {
+            normalized = recreateContainerWithNewCount(current, 0);
+            items.set(position, normalized);
         }
         List<RoomContentItem> singleton = new ArrayList<>();
-        singleton.add(current);
+        singleton.add(normalized);
         return new MovementGroup(singleton);
     }
 
@@ -2280,31 +2257,6 @@ public class RoomContentActivity extends Activity {
         for (int i = 0; i < count && startPosition < items.size(); i++) {
             items.remove(startPosition);
         }
-    }
-
-    private int findContainerIndexForItem(@NonNull List<RoomContentItem> items, int position) {
-        if (position < 0 || position >= items.size()) {
-            return -1;
-        }
-        Deque<ContainerFrame> stack = new ArrayDeque<>();
-        for (int i = 0; i < items.size(); i++) {
-            while (!stack.isEmpty() && stack.peek().remainingDirectChildren <= 0) {
-                stack.pop();
-            }
-            if (i == position) {
-                return stack.isEmpty() ? -1 : stack.peek().index;
-            }
-            RoomContentItem current = items.get(i);
-            if (!stack.isEmpty()) {
-                ContainerFrame parent = stack.peek();
-                parent.remainingDirectChildren = Math.max(0, parent.remainingDirectChildren - 1);
-            }
-            if (current.isContainer()) {
-                int directChildren = Math.max(0, current.getAttachedItemCount());
-                stack.push(new ContainerFrame(i, directChildren));
-            }
-        }
-        return -1;
     }
 
     @NonNull
@@ -2543,14 +2495,17 @@ public class RoomContentActivity extends Activity {
         if (items.size() <= 1) {
             return;
         }
-        List<ContentGroup> groups = buildContentGroups(items);
-        Collections.sort(groups, new Comparator<ContentGroup>() {
+        for (int i = 0; i < items.size(); i++) {
+            RoomContentItem item = items.get(i);
+            if (item.isContainer() && item.getAttachedItemCount() > 0) {
+                items.set(i, recreateContainerWithNewCount(item, 0));
+            }
+        }
+        Collections.sort(items, new Comparator<RoomContentItem>() {
             @Override
-            public int compare(ContentGroup first, ContentGroup second) {
-                RoomContentItem firstRepresentative = first.getRepresentative();
-                RoomContentItem secondRepresentative = second.getRepresentative();
-                String firstType = normalizeForSort(firstRepresentative.getType());
-                String secondType = normalizeForSort(secondRepresentative.getType());
+            public int compare(RoomContentItem first, RoomContentItem second) {
+                String firstType = normalizeForSort(first.getType());
+                String secondType = normalizeForSort(second.getType());
                 boolean firstHasType = !firstType.isEmpty();
                 boolean secondHasType = !secondType.isEmpty();
                 if (firstHasType && secondHasType) {
@@ -2563,113 +2518,16 @@ public class RoomContentActivity extends Activity {
                 } else if (secondHasType) {
                     return 1;
                 }
-                String firstName = normalizeForSort(firstRepresentative.getName());
-                String secondName = normalizeForSort(secondRepresentative.getName());
+                String firstName = normalizeForSort(first.getName());
+                String secondName = normalizeForSort(second.getName());
                 return firstName.compareToIgnoreCase(secondName);
             }
         });
-
-        items.clear();
-        for (ContentGroup group : groups) {
-            if (group.hasContainer()) {
-                RoomContentItem container = group.container;
-                int attachmentCount = Math.max(0, group.directAttachmentCount);
-                if (container.getAttachedItemCount() != attachmentCount) {
-                    container = recreateContainerWithNewCount(container, attachmentCount);
-                }
-                items.add(container);
-                items.addAll(group.attachments);
-            } else {
-                items.addAll(group.attachments);
-            }
-        }
-    }
-
-    @NonNull
-    private List<ContentGroup> buildContentGroups(@NonNull List<RoomContentItem> items) {
-        // Regrouper les contenants et leurs éléments associés pour préserver leur cohésion visuelle.
-        List<ContentGroup> groups = new ArrayList<>();
-        int index = 0;
-        while (index < items.size()) {
-            RoomContentItem current = items.get(index);
-            if (current.isContainer()) {
-                ContainerExtraction extraction = extractContainerGroup(items, index);
-                groups.add(new ContentGroup(extraction.container, extraction.attachments,
-                        extraction.directAttachmentCount));
-                index = extraction.nextIndex;
-            } else {
-                List<RoomContentItem> singleton = new ArrayList<>();
-                singleton.add(current);
-                groups.add(new ContentGroup(null, singleton, singleton.size()));
-                index++;
-            }
-        }
-        return groups;
-    }
-
-    @NonNull
-    private ContainerExtraction extractContainerGroup(@NonNull List<RoomContentItem> items,
-            int containerIndex) {
-        RoomContentItem container = items.get(containerIndex);
-        int declaredCount = Math.max(0, container.getAttachedItemCount());
-        List<RoomContentItem> attachments = new ArrayList<>();
-        int nextIndex = containerIndex + 1;
-        int processedChildren = 0;
-        while (nextIndex < items.size() && processedChildren < declaredCount) {
-            RoomContentItem candidate = items.get(nextIndex);
-            if (candidate.isContainer()) {
-                ContainerExtraction childExtraction = extractContainerGroup(items, nextIndex);
-                attachments.add(childExtraction.container);
-                attachments.addAll(childExtraction.attachments);
-                nextIndex = childExtraction.nextIndex;
-            } else {
-                attachments.add(candidate);
-                nextIndex++;
-            }
-            processedChildren++;
-        }
-        if (processedChildren != declaredCount) {
-            container = recreateContainerWithNewCount(container, processedChildren);
-        }
-        return new ContainerExtraction(container, attachments, processedChildren, nextIndex);
     }
 
     @NonNull
     private String normalizeForSort(@Nullable String value) {
         return value == null ? "" : value.trim();
-    }
-
-    private static final class ContentGroup {
-        @Nullable
-        RoomContentItem container;
-        @NonNull
-        final List<RoomContentItem> attachments;
-        final int directAttachmentCount;
-
-        ContentGroup(@Nullable RoomContentItem container,
-                @NonNull List<RoomContentItem> attachments,
-                int directAttachmentCount) {
-            this.container = container;
-            this.attachments = attachments;
-            this.directAttachmentCount = directAttachmentCount;
-        }
-
-        boolean hasContainer() {
-            return container != null;
-        }
-
-        int size() {
-            return hasContainer() ? 1 + attachments.size() : attachments.size();
-        }
-
-        @NonNull
-        RoomContentItem getRepresentative() {
-            // Utiliser le premier élément du groupe pour l’ordonnancement global.
-            if (hasContainer()) {
-                return container;
-            }
-            return attachments.get(0);
-        }
     }
 
     private static final class MovementGroup {
@@ -2684,38 +2542,8 @@ public class RoomContentActivity extends Activity {
     }
 
     private void markItemsAsDisplayed(@NonNull List<RoomContentItem> items) {
-        // Forcer l’affichage après un déplacement afin d’éviter les résidus d’état d’expansion.
         for (RoomContentItem item : items) {
             item.setDisplayed(true);
-        }
-    }
-
-    private static final class ContainerFrame {
-        final int index;
-        int remainingDirectChildren;
-
-        ContainerFrame(int index, int remainingDirectChildren) {
-            this.index = index;
-            this.remainingDirectChildren = remainingDirectChildren;
-        }
-    }
-
-    private static final class ContainerExtraction {
-        @NonNull
-        final RoomContentItem container;
-        @NonNull
-        final List<RoomContentItem> attachments;
-        final int directAttachmentCount;
-        final int nextIndex;
-
-        ContainerExtraction(@NonNull RoomContentItem container,
-                @NonNull List<RoomContentItem> attachments,
-                int directAttachmentCount,
-                int nextIndex) {
-            this.container = container;
-            this.attachments = attachments;
-            this.directAttachmentCount = directAttachmentCount;
-            this.nextIndex = nextIndex;
         }
     }
 
