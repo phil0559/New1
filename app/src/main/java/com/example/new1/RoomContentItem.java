@@ -28,6 +28,8 @@ public class RoomContentItem {
     private static final String KEY_SUMMARY = "summary";
     private static final String KEY_TRACKS = "tracks";
     private static final String KEY_PHOTOS = "photos";
+    private static final String KEY_RANK = "rank";
+    private static final String KEY_PARENT_RANK = "parentRank";
 
     private final String name;
     private final String comment;
@@ -57,6 +59,10 @@ public class RoomContentItem {
     private final List<String> photos;
     private final boolean container;
     private boolean displayed;
+    private long rank;
+    @Nullable
+    private Long parentRank;
+    private int attachedItemCount;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
@@ -124,6 +130,9 @@ public class RoomContentItem {
         }
         this.container = isContainer;
         this.displayed = true;
+        this.rank = -1L;
+        this.parentRank = null;
+        this.attachedItemCount = Math.max(0, ignoredAttachedItemCount);
     }
 
     @NonNull
@@ -201,11 +210,22 @@ public class RoomContentItem {
     }
 
     public int getAttachedItemCount() {
-        return 0;
+        return Math.max(0, attachedItemCount);
     }
 
     public boolean hasAttachedItems() {
-        return false;
+        return getAttachedItemCount() > 0;
+    }
+
+    public void setAttachedItemCount(int count) {
+        this.attachedItemCount = Math.max(0, count);
+    }
+
+    public void incrementAttachedItemCount() {
+        if (attachedItemCount == Integer.MAX_VALUE) {
+            return;
+        }
+        attachedItemCount++;
     }
 
     public boolean isDisplayed() {
@@ -222,6 +242,10 @@ public class RoomContentItem {
             object.put(KEY_NAME, name);
             object.put(KEY_COMMENT, comment);
             object.put(KEY_CONTAINER, container);
+            object.put(KEY_RANK, rank);
+            if (parentRank != null) {
+                object.put(KEY_PARENT_RANK, parentRank.longValue());
+            }
             // Ne pas réécrire le nombre d'attachements : les éléments sont
             // sauvegardés individuellement désormais.
             if (type != null) {
@@ -335,9 +359,12 @@ public class RoomContentItem {
             }
         }
         boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
-        // Ignorer toute donnée d'attachements potentiellement persistée par les
-        // versions précédentes : chaque élément est maintenant autonome.
-        return new RoomContentItem(name,
+        long rank = object.has(KEY_RANK) ? object.optLong(KEY_RANK, -1L) : -1L;
+        Long parentRank = null;
+        if (object.has(KEY_PARENT_RANK) && !object.isNull(KEY_PARENT_RANK)) {
+            parentRank = object.optLong(KEY_PARENT_RANK);
+        }
+        RoomContentItem item = new RoomContentItem(name,
                 comment,
                 type,
                 category,
@@ -353,9 +380,33 @@ public class RoomContentItem {
                 photos,
                 isContainer,
                 0);
+        item.setRank(rank);
+        item.setParentRank(parentRank);
+        return item;
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    public long getRank() {
+        return rank;
+    }
+
+    public void setRank(long rank) {
+        this.rank = rank;
+    }
+
+    @Nullable
+    public Long getParentRank() {
+        return parentRank;
+    }
+
+    public void setParentRank(@Nullable Long parentRank) {
+        if (parentRank != null && parentRank < 0) {
+            this.parentRank = null;
+        } else {
+            this.parentRank = parentRank;
+        }
     }
 }
