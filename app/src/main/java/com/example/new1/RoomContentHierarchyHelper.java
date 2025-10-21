@@ -124,7 +124,7 @@ final class RoomContentHierarchyHelper {
             if (item.getParentRank() != null) {
                 continue;
             }
-            if (!hasRankableDescendants(item, childrenByParent)) {
+            if (!isRankable(item, childrenByParent)) {
                 continue;
             }
             String label = String.valueOf(index);
@@ -161,7 +161,16 @@ final class RoomContentHierarchyHelper {
         if (!item.isContainer()) {
             return true;
         }
-        return hasRankableDescendants(item, childrenByParent);
+        List<RoomContentItem> children = childrenByParent.get(item.getRank());
+        if (children == null || children.isEmpty()) {
+            return true;
+        }
+        for (RoomContentItem child : children) {
+            if (isRankable(child, childrenByParent)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean hasRankableDescendants(@NonNull RoomContentItem item,
