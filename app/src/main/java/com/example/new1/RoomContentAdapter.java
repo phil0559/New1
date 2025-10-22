@@ -569,6 +569,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         RoomContentItem item = items.get(position);
         int containerPosition = findAttachedContainerPosition(position);
+        boolean isDirectParent = true;
         while (containerPosition >= 0) {
             int visibilityMask = getContainerVisibilityMask(containerPosition);
             if (visibilityMask == 0) {
@@ -579,10 +580,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     return true;
                 }
             } else {
-                if ((visibilityMask & VISIBILITY_FLAG_ITEMS) == 0) {
+                if ((visibilityMask & VISIBILITY_FLAG_CONTAINERS) == 0) {
+                    return true;
+                }
+                if (isDirectParent && (visibilityMask & VISIBILITY_FLAG_ITEMS) == 0) {
                     return true;
                 }
             }
+            isDirectParent = false;
             containerPosition = findAttachedContainerPosition(containerPosition);
         }
         return false;
