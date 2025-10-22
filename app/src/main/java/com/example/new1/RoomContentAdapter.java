@@ -68,6 +68,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final SparseIntArray containerVisibilityStates = new SparseIntArray();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
+    private final int cardBorderWidthPx;
     private final HierarchyStyle[] hierarchyStyles;
     private final Map<String, Integer> containerBannerColorCache = new HashMap<>();
     private final String containerTypeBoxLabel;
@@ -135,6 +136,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 .getDimensionPixelSize(R.dimen.room_content_hierarchy_indent);
         this.cardCornerRadiusPx = context.getResources()
                 .getDimension(R.dimen.room_content_card_corner_radius);
+        this.cardBorderWidthPx = context.getResources()
+                .getDimensionPixelSize(R.dimen.room_content_card_border_width);
         this.hierarchyStyles = createHierarchyStyles(context);
         this.containerTypeBoxLabel = context.getString(R.string.dialog_container_type_box);
         this.containerTypeBagLabel = context.getString(R.string.dialog_container_type_bag);
@@ -785,14 +788,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             bottomRadius = cardCornerRadiusPx;
         }
         Drawable drawable = createRoundedBackground(style.backgroundColor, topRadius,
-                topRadius, bottomRadius, bottomRadius);
+                topRadius, bottomRadius, bottomRadius, cardBorderWidthPx,
+                style.accentColor);
         target.setBackground(drawable);
     }
 
     private void applyStandaloneContentBackground(@NonNull View target,
             @NonNull HierarchyStyle style) {
         Drawable drawable = createRoundedBackground(style.backgroundColor, cardCornerRadiusPx,
-                cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx);
+                cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx, 0,
+                style.accentColor);
         target.setBackground(drawable);
     }
 
@@ -800,7 +805,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean isLastAttachment) {
         float bottomRadius = isLastAttachment ? cardCornerRadiusPx : 0f;
         Drawable drawable = createRoundedBackground(style.backgroundColor, 0f, 0f, bottomRadius,
-                bottomRadius);
+                bottomRadius, 0, style.accentColor);
         target.setBackground(drawable);
     }
 
@@ -820,7 +825,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     @NonNull
     private Drawable createRoundedBackground(@ColorInt int backgroundColor, float topLeft,
-            float topRight, float bottomRight, float bottomLeft) {
+            float topRight, float bottomRight, float bottomLeft, int strokeWidthPx,
+            @ColorInt int strokeColor) {
         GradientDrawable drawable = new GradientDrawable();
         drawable.setColor(backgroundColor);
         drawable.setCornerRadii(new float[] {
@@ -829,6 +835,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 bottomRight, bottomRight,
                 bottomLeft, bottomLeft
         });
+        if (strokeWidthPx > 0) {
+            drawable.setStroke(strokeWidthPx, strokeColor);
+        }
         return drawable;
     }
 
