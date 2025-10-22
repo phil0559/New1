@@ -16,6 +16,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
 import android.util.SparseBooleanArray;
+import android.util.SparseIntArray;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,6 +27,8 @@ import android.widget.PopupWindow;
 import android.widget.Toast;
 
 import com.google.android.material.card.MaterialCardView;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
@@ -48,6 +51,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     private static final float LABEL_RELATIVE_SIZE = 0.85f;
 
+    private static final int VISIBILITY_FLAG_CONTAINERS = 1;
+    private static final int VISIBILITY_FLAG_ITEMS = 1 << 1;
+    private static final int VISIBILITY_DEFAULT_MASK = VISIBILITY_FLAG_CONTAINERS
+            | VISIBILITY_FLAG_ITEMS;
+
     private final List<RoomContentItem> items;
     private final LayoutInflater inflater;
 
@@ -56,7 +64,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Nullable
     private final OnRoomContentInteractionListener interactionListener;
     private final SparseBooleanArray expandedStates = new SparseBooleanArray();
-    private final SparseBooleanArray containerCollapsedStates = new SparseBooleanArray();
+    private final SparseIntArray containerVisibilityStates = new SparseIntArray();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final HierarchyStyle[] hierarchyStyles;
@@ -167,7 +175,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (!hasComment && !hasMetadata) {
             expandedStates.delete(position);
         }
-        boolean isContainerExpanded = !containerCollapsedStates.get(position, false);
+        boolean isContainerExpanded = isContainerExpanded(position);
         boolean shouldDisplayDetails;
         if (canToggleContainer) {
             shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata);
@@ -523,10 +531,24 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private boolean isItemHiddenByCollapsedContainer(int position) {
+        if (position < 0 || position >= items.size()) {
+            return false;
+        }
+        RoomContentItem item = items.get(position);
         int containerPosition = findAttachedContainerPosition(position);
         while (containerPosition >= 0) {
-            if (containerCollapsedStates.get(containerPosition, false)) {
+            int visibilityMask = getContainerVisibilityMask(containerPosition);
+            if (visibilityMask == 0) {
                 return true;
+            }
+            if (item.isContainer()) {
+                if ((visibilityMask & VISIBILITY_FLAG_CONTAINERS) == 0) {
+                    return true;
+                }
+            } else {
+                if ((visibilityMask & VISIBILITY_FLAG_ITEMS) == 0) {
+                    return true;
+                }
             }
             containerPosition = findAttachedContainerPosition(containerPosition);
         }
@@ -574,20 +596,44 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private boolean isContainerExpanded(int position) {
-        return !containerCollapsedStates.get(position, false);
+        return getContainerVisibilityMask(position) != 0;
+    }
+
+    private int getContainerVisibilityMask(int position) {
+        if (position < 0) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        SparseIntArray visibilityStates = containerVisibilityStates;
+        if (visibilityStates == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        return visibilityStates.get(position, VISIBILITY_DEFAULT_MASK);
     }
 
     private void setContainerExpanded(int position, boolean expanded) {
-        if (expanded) {
-            containerCollapsedStates.delete(position);
-        } else {
-            containerCollapsedStates.put(position, true);
+        int visibilityMask = expanded ? VISIBILITY_DEFAULT_MASK : 0;
+        setContainerVisibilityMask(position, visibilityMask);
+    }
+
+    private void setContainerVisibilityMask(int position, int visibilityMask) {
+        if (position < 0 || position >= items.size()) {
+            return;
         }
-        updateAttachedItemsDisplayState(position, expanded);
+        SparseIntArray visibilityStates = containerVisibilityStates;
+        if (visibilityStates == null) {
+            return;
+        }
+        int normalizedMask = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalizedMask == VISIBILITY_DEFAULT_MASK) {
+            visibilityStates.delete(position);
+        } else {
+            visibilityStates.put(position, normalizedMask);
+        }
+        updateAttachedItemsDisplayState(position, normalizedMask);
         invalidateDecorations();
     }
 
-    private void updateAttachedItemsDisplayState(int containerPosition, boolean expanded) {
+    private void updateAttachedItemsDisplayState(int containerPosition, int visibilityMask) {
         if (containerPosition < 0 || containerPosition >= items.size()) {
             return;
         }
@@ -606,12 +652,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 break;
             }
             RoomContentItem attachedItem = items.get(index);
-            if (attachedItem.isContainer()) {
-                continue;
-            }
             int parentPosition = findAttachedContainerPosition(index);
             if (parentPosition == containerPosition) {
-                attachedItem.setDisplayed(expanded);
+                if (attachedItem.isContainer()) {
+                    boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
+                    attachedItem.setDisplayed(showContainers);
+                } else {
+                    boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
+                    attachedItem.setDisplayed(showItems);
+                }
             }
         }
     }
@@ -857,6 +906,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         final View filledIndicatorView;
         @Nullable
+        final ChipGroup filterChipGroup;
+        @Nullable
+        final Chip containersFilterChip;
+        @Nullable
+        final Chip itemsFilterChip;
+        @Nullable
         final OnRoomContentInteractionListener interactionListener;
         @Nullable
         private RoomContentItem currentItem;
@@ -870,6 +925,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultMarginBottom;
         @Nullable
         private PopupWindow optionsPopup;
+        private boolean suppressFilterCallbacks;
 
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
@@ -886,6 +942,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             menuView = itemView.findViewById(R.id.image_room_content_menu);
             addView = itemView.findViewById(R.id.image_room_content_add);
             filledIndicatorView = itemView.findViewById(R.id.view_room_container_filled_indicator);
+            filterChipGroup = itemView.findViewById(R.id.chip_group_room_content_filters);
+            containersFilterChip = itemView.findViewById(R.id.chip_room_content_filter_containers);
+            itemsFilterChip = itemView.findViewById(R.id.chip_room_content_filter_items);
             this.interactionListener = interactionListener;
             bannerContainer.setOnClickListener(view -> notifyEdit());
             if (photoView != null) {
@@ -893,6 +952,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             toggleView.setOnClickListener(view -> toggleExpansion());
             menuView.setOnClickListener(view -> toggleOptionsMenu());
+            if (containersFilterChip != null) {
+                containersFilterChip.setOnClickListener(
+                        view -> onFilterChipToggled(containersFilterChip, VISIBILITY_FLAG_CONTAINERS));
+            }
+            if (itemsFilterChip != null) {
+                itemsFilterChip.setOnClickListener(
+                        view -> onFilterChipToggled(itemsFilterChip, VISIBILITY_FLAG_ITEMS));
+            }
             if (addView != null) {
                 addView.setOnClickListener(view -> Toast.makeText(itemView.getContext(),
                         R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
@@ -932,6 +999,32 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
+            if (filterChipGroup != null) {
+                if (hasAttachedItems) {
+                    filterChipGroup.setVisibility(View.VISIBLE);
+                    suppressFilterCallbacks = true;
+                    int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(position);
+                    if (containersFilterChip != null) {
+                        containersFilterChip.setChecked(
+                                (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0);
+                    }
+                    if (itemsFilterChip != null) {
+                        itemsFilterChip.setChecked(
+                                (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0);
+                    }
+                    suppressFilterCallbacks = false;
+                } else {
+                    suppressFilterCallbacks = true;
+                    if (containersFilterChip != null) {
+                        containersFilterChip.setChecked(true);
+                    }
+                    if (itemsFilterChip != null) {
+                        itemsFilterChip.setChecked(true);
+                    }
+                    suppressFilterCallbacks = false;
+                    filterChipGroup.setVisibility(View.GONE);
+                }
+            }
             int depth = RoomContentAdapter.this.computeHierarchyDepth(position);
             HierarchyStyle currentStyle = RoomContentAdapter.this.resolveHierarchyStyle(depth);
             int parentPosition = RoomContentAdapter.this.findAttachedContainerPosition(position);
@@ -1164,6 +1257,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 notifyItemChanged(position);
             }
+        }
+
+        private void onFilterChipToggled(@NonNull Chip chip, int visibilityFlag) {
+            if (suppressFilterCallbacks) {
+                return;
+            }
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            boolean checked = chip.isChecked();
+            int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(position);
+            if (checked) {
+                visibilityMask |= visibilityFlag;
+            } else {
+                visibilityMask &= ~visibilityFlag;
+            }
+            RoomContentAdapter.this.setContainerVisibilityMask(position, visibilityMask);
+            notifyItemChanged(position);
+            RoomContentAdapter.this.notifyAttachedItemsChanged(position);
         }
 
         private int resolveBottomMargin(@NonNull RoomContentItem item, int position,
