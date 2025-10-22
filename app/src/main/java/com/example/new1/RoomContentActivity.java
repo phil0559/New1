@@ -2649,7 +2649,7 @@ public class RoomContentActivity extends Activity {
         boolean sameRoom = sameEstablishment && normalizedRoom.equalsIgnoreCase(normalizedCurrentRoom);
         if (sameRoom) {
             RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-            Set<Long> excludedRanks = collectGroupRanks(roomContentItems, position);
+            Set<Long> excludedRanks = collectExcludedContainerRanks(roomContentItems, item, position);
             for (RoomContentItem candidate : roomContentItems) {
                 if (!candidate.isContainer()) {
                     continue;
@@ -2681,7 +2681,16 @@ public class RoomContentActivity extends Activity {
     }
 
     @NonNull
-    private Set<Long> collectGroupRanks(@NonNull List<RoomContentItem> items, int position) {
+    static Set<Long> collectExcludedContainerRanks(@NonNull List<RoomContentItem> items,
+            @NonNull RoomContentItem item,
+            int position) {
+        Set<Long> ranks = collectGroupRanks(items, position);
+        collectAncestorRanks(item, items, ranks);
+        return ranks;
+    }
+
+    @NonNull
+    private static Set<Long> collectGroupRanks(@NonNull List<RoomContentItem> items, int position) {
         Set<Long> ranks = new HashSet<>();
         List<RoomContentItem> groupItems = RoomContentGroupingManager.extractGroup(items, position);
         if (groupItems.isEmpty() && position >= 0 && position < items.size()) {
@@ -2693,8 +2702,22 @@ public class RoomContentActivity extends Activity {
         return ranks;
     }
 
+    private static void collectAncestorRanks(@NonNull RoomContentItem item,
+            @NonNull List<RoomContentItem> items,
+            @NonNull Set<Long> destination) {
+        Long parentRank = item.getParentRank();
+        while (parentRank != null) {
+            destination.add(parentRank);
+            RoomContentItem parent = findContainerByRank(items, parentRank);
+            if (parent == null) {
+                break;
+            }
+            parentRank = parent.getParentRank();
+        }
+    }
+
     @Nullable
-    private RoomContentItem findContainerByRank(@NonNull List<RoomContentItem> items, long rank) {
+    private static RoomContentItem findContainerByRank(@NonNull List<RoomContentItem> items, long rank) {
         for (RoomContentItem candidate : items) {
             if (!candidate.isContainer()) {
                 continue;
