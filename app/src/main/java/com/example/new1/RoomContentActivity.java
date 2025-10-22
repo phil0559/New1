@@ -89,8 +89,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RoomContentActivity extends Activity {
-    private static final String PREFS_NAME = "room_content_prefs";
-    private static final String KEY_ROOM_CONTENT_PREFIX = "room_content_";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
 
@@ -2470,8 +2468,8 @@ public class RoomContentActivity extends Activity {
     private List<RoomContentItem> loadRoomContentFor(@Nullable String establishment,
             @Nullable String room) {
         List<RoomContentItem> result = new ArrayList<>();
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String key = buildRoomContentKeyFor(establishment, room);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        String key = RoomContentStorage.buildKey(establishment, room);
         String storedValue = preferences.getString(key, null);
         if (storedValue == null || storedValue.trim().isEmpty()) {
             return result;
@@ -2501,14 +2499,10 @@ public class RoomContentActivity extends Activity {
         for (RoomContentItem item : items) {
             array.put(item.toJson());
         }
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         preferences.edit()
-                .putString(buildRoomContentKeyFor(establishment, room), array.toString())
+                .putString(RoomContentStorage.buildKey(establishment, room), array.toString())
                 .apply();
-    }
-
-    private String buildRoomContentKeyFor(@Nullable String establishment, @Nullable String room) {
-        return KEY_ROOM_CONTENT_PREFIX + sanitizeForKey(establishment) + "_" + sanitizeForKey(room);
     }
 
     private String buildRoomsKeyForEstablishment(@Nullable String establishment) {
@@ -2713,7 +2707,7 @@ public class RoomContentActivity extends Activity {
     }
 
     private void loadRoomContent() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         String storedValue = preferences.getString(buildRoomContentKey(), null);
         roomContentItems.clear();
         if (storedValue == null || storedValue.trim().isEmpty()) {
@@ -2747,7 +2741,7 @@ public class RoomContentActivity extends Activity {
         for (RoomContentItem item : roomContentItems) {
             array.put(item.toJson());
         }
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         preferences.edit()
                 .putString(buildRoomContentKey(), array.toString())
                 .apply();
@@ -3140,22 +3134,12 @@ public class RoomContentActivity extends Activity {
         refreshPhotoSection(currentFormState);
     }
 
-    private String buildRoomContentKey() {
-        return KEY_ROOM_CONTENT_PREFIX
-                + sanitizeForKey(establishmentName)
-                + "_"
-                + sanitizeForKey(roomName);
+    private String buildRoomContentKeyFor(@Nullable String establishment, @Nullable String room) {
+        return RoomContentStorage.buildKey(establishment, room);
     }
 
-    private String sanitizeForKey(@Nullable String value) {
-        if (value == null) {
-            return "default";
-        }
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
-            return "default";
-        }
-        return trimmed.replaceAll("[^A-Za-z0-9]", "_");
+    private String buildRoomContentKey() {
+        return RoomContentStorage.buildKey(establishmentName, roomName);
     }
 
     private void launchBarcodeScanner() {
@@ -4653,7 +4637,7 @@ public class RoomContentActivity extends Activity {
 
     private void loadTypeFieldConfigurationsFromPreferences() {
         typeFieldConfigurations.clear();
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         String stored = preferences.getString(KEY_TYPE_FIELD_CONFIGS, null);
         if (stored == null || stored.trim().isEmpty()) {
             return;
@@ -4689,7 +4673,7 @@ public class RoomContentActivity extends Activity {
     }
 
     private void persistTypeFieldConfigurations() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         JSONObject root = new JSONObject();
         for (Map.Entry<String, Set<String>> entry : typeFieldConfigurations.entrySet()) {
             String label = entry.getKey();
@@ -4717,7 +4701,7 @@ public class RoomContentActivity extends Activity {
 
     private void loadTypeDateFormatsFromPreferences() {
         typeDateFormats.clear();
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         String stored = preferences.getString(KEY_TYPE_DATE_FORMATS, null);
         if (stored == null || stored.trim().isEmpty()) {
             return;
@@ -4746,7 +4730,7 @@ public class RoomContentActivity extends Activity {
     }
 
     private void persistTypeDateFormats() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         JSONObject root = new JSONObject();
         for (Map.Entry<String, String> entry : typeDateFormats.entrySet()) {
             String label = entry.getKey();
@@ -5310,7 +5294,7 @@ public class RoomContentActivity extends Activity {
                 array.put(trimmed);
             }
         }
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         if (array.length() > 0) {
             editor.putString(KEY_CUSTOM_CATEGORIES, array.toString());
@@ -5322,7 +5306,7 @@ public class RoomContentActivity extends Activity {
 
     @NonNull
     private List<String> loadStoredCategories() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         String stored = preferences.getString(KEY_CUSTOM_CATEGORIES, null);
         List<String> result = new ArrayList<>();
         if (stored == null || stored.trim().isEmpty()) {
