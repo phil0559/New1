@@ -791,10 +791,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         target.setBackground(drawable);
     }
 
-    private void applyFilledIndicatorStyle(@NonNull View indicatorView,
-            @NonNull HierarchyStyle style) {
+    private void applyFilledIndicatorStyle(@NonNull View indicatorView) {
         Drawable background = indicatorView.getBackground();
-        int color = style.accentColor;
+        int color = ContextCompat.getColor(context, R.color.room_container_border_dark);
         if (background instanceof GradientDrawable) {
             GradientDrawable drawable = (GradientDrawable) background.mutate();
             drawable.setColor(color);
@@ -1156,8 +1155,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 RoomContentAdapter.this.applyContainerBannerColor(bannerContainer, currentStyle,
                         item.getType());
                 if (filledIndicatorView != null) {
-                    RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView,
-                            currentStyle);
+                    RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView);
                 }
                 if (addView != null) {
                     addView.setVisibility(View.VISIBLE);
