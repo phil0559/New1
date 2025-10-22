@@ -41,7 +41,7 @@
     <color name="room_content_card_background">#F6F8FA</color>
     <color name="room_content_card_border">#26000000</color>
     <color name="room_content_card_container_background">#EAF2FC</color>
-    <color name="room_content_card_container_border">#334C3A2A</color>
+    <color name="room_content_card_container_border">#FF0000</color>
     <color name="room_content_hierarchy_level_0_background">#E2ECF9</color>
     <color name="room_content_hierarchy_level_0_border">#6691C2</color>
     <color name="room_content_hierarchy_level_0_banner">#D6E5F7</color>
