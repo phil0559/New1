@@ -818,9 +818,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private void applyAttachmentBackground(@NonNull View target, @NonNull HierarchyStyle style,
             boolean isLastAttachment) {
         float bottomRadius = isLastAttachment ? cardCornerRadiusPx : 0f;
-        boolean hideBottomStroke = !isLastAttachment;
         Drawable drawable = createFramedBackground(style.backgroundColor, 0f, 0f, bottomRadius,
-                bottomRadius, cardBorderWidthPx, style.accentColor, true, hideBottomStroke);
+                bottomRadius, 0, style.accentColor, false, false);
         target.setBackground(drawable);
     }
 
