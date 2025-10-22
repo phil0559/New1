@@ -100,6 +100,31 @@
                     android:src="@drawable/ic_chevron_down"
                     android:tint="@color/icon_brown" />
             </LinearLayout>
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_room_content_filters"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:singleLine="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_room_content_filter_containers"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/room_content_filter_containers" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_room_content_filter_items"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/room_content_filter_items" />
+
+            </com.google.android.material.chip.ChipGroup>
         </LinearLayout>
 
         <View
