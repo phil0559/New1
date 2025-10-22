@@ -6,6 +6,7 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,7 +117,13 @@ final class RoomContentHierarchyHelper {
             }
             siblings.add(item);
         }
-        int index = 1;
+        for (Map.Entry<Long, List<RoomContentItem>> entry : childrenByParent.entrySet()) {
+            List<RoomContentItem> ordered = new ArrayList<>(entry.getValue());
+            ordered.sort(DISPLAY_ORDER_COMPARATOR);
+            entry.setValue(ordered);
+        }
+
+        List<RoomContentItem> topLevelContainers = new ArrayList<>();
         for (RoomContentItem item : items) {
             if (!item.isContainer()) {
                 continue;
@@ -124,13 +131,20 @@ final class RoomContentHierarchyHelper {
             if (item.getParentRank() != null) {
                 continue;
             }
-            if (!isRankable(item, childrenByParent)) {
+            topLevelContainers.add(item);
+        }
+        topLevelContainers.sort(DISPLAY_ORDER_COMPARATOR);
+
+        int index = 1;
+        for (RoomContentItem container : topLevelContainers) {
+            if (!isRankable(container, childrenByParent)) {
+                container.setDisplayRank(null);
                 continue;
             }
             String label = String.valueOf(index);
             index++;
-            item.setDisplayRank(label);
-            assignDisplayRanksRecursively(item, label, childrenByParent);
+            container.setDisplayRank(label);
+            assignDisplayRanksRecursively(container, label, childrenByParent);
         }
     }
 
@@ -199,4 +213,16 @@ final class RoomContentHierarchyHelper {
         } while (usedRanks.contains(candidate));
         return candidate;
     }
+
+    private static final Comparator<RoomContentItem> DISPLAY_ORDER_COMPARATOR =
+            (first, second) -> {
+                long firstRank = first.getRank();
+                long secondRank = second.getRank();
+                if (firstRank != secondRank) {
+                    return Long.compare(firstRank, secondRank);
+                }
+                String firstName = first.getName() != null ? first.getName() : "";
+                String secondName = second.getName() != null ? second.getName() : "";
+                return firstName.compareToIgnoreCase(secondName);
+            };
 }
