@@ -223,6 +223,7 @@ public class EstablishmentContentActivity extends Activity {
 
                 Room updatedRoom = new Room(name, comment, new ArrayList<>(formState.photos));
                 if (isEditing) {
+                    migrateRoomContent(roomToEdit, updatedRoom);
                     rooms.set(position, updatedRoom);
                     roomAdapter.notifyItemChanged(position);
                 } else {
@@ -242,6 +243,36 @@ public class EstablishmentContentActivity extends Activity {
         });
 
         dialog.show();
+    }
+
+    private void migrateRoomContent(@Nullable Room previousRoom, @NonNull Room updatedRoom) {
+        if (previousRoom == null) {
+            return;
+        }
+        String previousName = previousRoom.getName();
+        String newName = updatedRoom.getName();
+        if (previousName == null || newName == null) {
+            return;
+        }
+        String trimmedPrevious = previousName.trim();
+        String trimmedNew = newName.trim();
+        if (trimmedPrevious.equals(trimmedNew)) {
+            return;
+        }
+        String oldKey = RoomContentStorage.buildKey(establishmentName, previousName);
+        String newKey = RoomContentStorage.buildKey(establishmentName, newName);
+        if (oldKey.equals(newKey)) {
+            return;
+        }
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        String storedValue = preferences.getString(oldKey, null);
+        if (storedValue == null) {
+            return;
+        }
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString(newKey, storedValue);
+        editor.remove(oldKey);
+        editor.apply();
     }
 
     private void showDeleteRoomConfirmation(@NonNull Room room, int position) {
