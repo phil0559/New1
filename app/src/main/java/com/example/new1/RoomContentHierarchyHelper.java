@@ -6,7 +6,6 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -117,13 +116,9 @@ final class RoomContentHierarchyHelper {
             }
             siblings.add(item);
         }
-        for (Map.Entry<Long, List<RoomContentItem>> entry : childrenByParent.entrySet()) {
-            List<RoomContentItem> ordered = new ArrayList<>(entry.getValue());
-            ordered.sort(DISPLAY_ORDER_COMPARATOR);
-            entry.setValue(ordered);
-        }
 
         List<RoomContentItem> topLevelContainers = new ArrayList<>();
+        Set<Long> seenTopLevelRanks = new HashSet<>();
         for (RoomContentItem item : items) {
             if (!item.isContainer()) {
                 continue;
@@ -131,9 +126,11 @@ final class RoomContentHierarchyHelper {
             if (item.getParentRank() != null) {
                 continue;
             }
+            if (!seenTopLevelRanks.add(item.getRank())) {
+                continue;
+            }
             topLevelContainers.add(item);
         }
-        topLevelContainers.sort(DISPLAY_ORDER_COMPARATOR);
 
         int index = 1;
         for (RoomContentItem container : topLevelContainers) {
@@ -214,18 +211,4 @@ final class RoomContentHierarchyHelper {
         return candidate;
     }
 
-    private static final Comparator<RoomContentItem> DISPLAY_ORDER_COMPARATOR =
-            (first, second) -> {
-                if (first.isContainer() != second.isContainer()) {
-                    return first.isContainer() ? 1 : -1;
-                }
-                long firstRank = first.getRank();
-                long secondRank = second.getRank();
-                if (firstRank != secondRank) {
-                    return Long.compare(firstRank, secondRank);
-                }
-                String firstName = first.getName() != null ? first.getName() : "";
-                String secondName = second.getName() != null ? second.getName() : "";
-                return firstName.compareToIgnoreCase(secondName);
-            };
 }

@@ -34,6 +34,31 @@ public class RoomContentHierarchyHelperTest {
         assertEquals("1.2", attachment.getDisplayRank());
     }
 
+    @Test
+    public void displayRanksFollowCurrentOrderingInsteadOfStoredRanks() {
+        RoomContentItem parent = createContainer("Parent");
+        parent.setRank(1L);
+
+        RoomContentItem firstChild = createContainer("Conteneur C");
+        firstChild.setRank(30L);
+        firstChild.setParentRank(parent.getRank());
+
+        RoomContentItem secondChild = createContainer("Conteneur B");
+        secondChild.setRank(20L);
+        secondChild.setParentRank(parent.getRank());
+
+        List<RoomContentItem> items = new ArrayList<>();
+        items.add(parent);
+        items.add(firstChild);
+        items.add(secondChild);
+
+        RoomContentHierarchyHelper.normalizeHierarchy(items);
+
+        assertEquals("1", parent.getDisplayRank());
+        assertEquals("1.1", firstChild.getDisplayRank());
+        assertEquals("1.2", secondChild.getDisplayRank());
+    }
+
     private RoomContentItem createContainer(String name) {
         return new RoomContentItem(name, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, true, 0);
