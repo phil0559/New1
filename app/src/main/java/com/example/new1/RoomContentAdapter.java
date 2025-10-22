@@ -3,7 +3,11 @@ package com.example.new1;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -787,25 +791,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         } else {
             bottomRadius = cardCornerRadiusPx;
         }
-        Drawable drawable = createRoundedBackground(style.backgroundColor, topRadius,
+        boolean hideTopStroke = joinsParentFrame;
+        boolean hideBottomStroke = hasAttachedItems && isExpanded;
+        Drawable drawable = createFramedBackground(style.backgroundColor, topRadius,
                 topRadius, bottomRadius, bottomRadius, cardBorderWidthPx,
-                style.accentColor);
+                style.accentColor, hideTopStroke, hideBottomStroke);
         target.setBackground(drawable);
     }
 
     private void applyStandaloneContentBackground(@NonNull View target,
             @NonNull HierarchyStyle style) {
-        Drawable drawable = createRoundedBackground(style.backgroundColor, cardCornerRadiusPx,
+        Drawable drawable = createFramedBackground(style.backgroundColor, cardCornerRadiusPx,
                 cardCornerRadiusPx, cardCornerRadiusPx, cardCornerRadiusPx, 0,
-                style.accentColor);
+                style.accentColor, false, false);
         target.setBackground(drawable);
     }
 
     private void applyAttachmentBackground(@NonNull View target, @NonNull HierarchyStyle style,
             boolean isLastAttachment) {
         float bottomRadius = isLastAttachment ? cardCornerRadiusPx : 0f;
-        Drawable drawable = createRoundedBackground(style.backgroundColor, 0f, 0f, bottomRadius,
-                bottomRadius, 0, style.accentColor);
+        boolean hideBottomStroke = !isLastAttachment;
+        Drawable drawable = createFramedBackground(style.backgroundColor, 0f, 0f, bottomRadius,
+                bottomRadius, cardBorderWidthPx, style.accentColor, true, hideBottomStroke);
         target.setBackground(drawable);
     }
 
@@ -824,9 +831,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     @NonNull
-    private Drawable createRoundedBackground(@ColorInt int backgroundColor, float topLeft,
+    private Drawable createFramedBackground(@ColorInt int backgroundColor, float topLeft,
             float topRight, float bottomRight, float bottomLeft, int strokeWidthPx,
-            @ColorInt int strokeColor) {
+            @ColorInt int strokeColor, boolean hideTopStroke, boolean hideBottomStroke) {
         GradientDrawable drawable = new GradientDrawable();
         drawable.setColor(backgroundColor);
         drawable.setCornerRadii(new float[] {
@@ -835,10 +842,87 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 bottomRight, bottomRight,
                 bottomLeft, bottomLeft
         });
-        if (strokeWidthPx > 0) {
-            drawable.setStroke(strokeWidthPx, strokeColor);
+        if (strokeWidthPx <= 0) {
+            return drawable;
         }
-        return drawable;
+        drawable.setStroke(strokeWidthPx, strokeColor);
+        if (!hideTopStroke && !hideBottomStroke) {
+            return drawable;
+        }
+        return new MaskedStrokeDrawable(drawable, backgroundColor, strokeWidthPx,
+                hideTopStroke, hideBottomStroke);
+    }
+
+    // Masque les portions du trait afin de fusionner visuellement les cadres adjacents.
+    private static class MaskedStrokeDrawable extends Drawable {
+
+        private final GradientDrawable baseDrawable;
+        private final Paint maskPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final int strokeWidth;
+        private final boolean hideTopStroke;
+        private final boolean hideBottomStroke;
+        private final int backgroundColor;
+        private int alpha = 255;
+
+        MaskedStrokeDrawable(@NonNull GradientDrawable baseDrawable,
+                @ColorInt int backgroundColor, int strokeWidth, boolean hideTopStroke,
+                boolean hideBottomStroke) {
+            this.baseDrawable = (GradientDrawable) baseDrawable.mutate();
+            this.strokeWidth = strokeWidth;
+            this.hideTopStroke = hideTopStroke;
+            this.hideBottomStroke = hideBottomStroke;
+            this.backgroundColor = backgroundColor;
+            maskPaint.setStyle(Paint.Style.FILL);
+        }
+
+        @Override
+        public void draw(@NonNull Canvas canvas) {
+            Rect bounds = getBounds();
+            baseDrawable.setBounds(bounds);
+            baseDrawable.setAlpha(alpha);
+            baseDrawable.draw(canvas);
+            int maskedColor = multiplyAlpha(backgroundColor, alpha);
+            maskPaint.setColor(maskedColor);
+            if (hideTopStroke) {
+                canvas.drawRect(bounds.left, bounds.top, bounds.right,
+                        bounds.top + strokeWidth, maskPaint);
+            }
+            if (hideBottomStroke) {
+                canvas.drawRect(bounds.left, bounds.bottom - strokeWidth, bounds.right,
+                        bounds.bottom, maskPaint);
+            }
+        }
+
+        @Override
+        protected void onBoundsChange(@NonNull Rect bounds) {
+            super.onBoundsChange(bounds);
+            baseDrawable.setBounds(bounds);
+        }
+
+        @Override
+        public void setAlpha(int alpha) {
+            this.alpha = alpha;
+            baseDrawable.setAlpha(alpha);
+            invalidateSelf();
+        }
+
+        @Override
+        public void setColorFilter(@Nullable ColorFilter colorFilter) {
+            baseDrawable.setColorFilter(colorFilter);
+            maskPaint.setColorFilter(colorFilter);
+            invalidateSelf();
+        }
+
+        @Override
+        public int getOpacity() {
+            return PixelFormat.TRANSLUCENT;
+        }
+
+        private static int multiplyAlpha(@ColorInt int color, int alpha) {
+            int originalAlpha = Color.alpha(color);
+            int combinedAlpha = originalAlpha * alpha / 255;
+            return (color & 0x00FFFFFF) | (combinedAlpha << 24);
+        }
     }
 
     @NonNull
