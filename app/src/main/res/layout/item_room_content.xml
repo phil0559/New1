@@ -12,9 +12,7 @@
     app:cardBackgroundColor="@android:color/transparent"
     app:cardCornerRadius="18dp"
     app:cardElevation="4dp"
-    app:cardUseCompatPadding="false"
-    app:strokeWidth="4dp"
-    app:strokeColor="@color/room_content_card_container_border">
+    app:cardUseCompatPadding="false">
 
     <LinearLayout
         android:id="@+id/container_room_content_root"
