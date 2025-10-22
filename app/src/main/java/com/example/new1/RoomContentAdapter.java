@@ -1168,25 +1168,77 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         private int resolveBottomMargin(@NonNull RoomContentItem item, int position,
                 boolean isContainerExpanded) {
+            int margin = defaultMarginBottom;
+            int nextVisiblePosition = findNextVisiblePosition(position);
             if (item.isContainer()) {
-                return (isContainerExpanded && item.hasAttachedItems()) ? 0 : defaultMarginBottom;
+                if (isContainerExpanded && item.hasAttachedItems()) {
+                    margin = 0;
+                }
+            } else {
+                RoomContentItem container = RoomContentAdapter.this.findAttachedContainer(position);
+                if (container != null) {
+                    int containerPosition = RoomContentAdapter.this
+                            .findAttachedContainerPosition(position);
+                    if (containerPosition >= 0) {
+                        boolean containerExpanded = RoomContentAdapter.this
+                                .isContainerExpanded(containerPosition)
+                                && container.hasAttachedItems();
+                        if (containerExpanded) {
+                            boolean isLastAttachment = RoomContentAdapter.this
+                                    .isLastDirectChild(containerPosition, position);
+                            margin = isLastAttachment ? defaultMarginBottom : 0;
+                        }
+                    }
+                }
             }
-            RoomContentItem container = RoomContentAdapter.this.findAttachedContainer(position);
-            if (container == null) {
-                return defaultMarginBottom;
+            if (margin != 0 && nextVisiblePosition >= 0
+                    && sharesTopLevelGroupWith(position, nextVisiblePosition)) {
+                margin = 0;
             }
-            int containerPosition = RoomContentAdapter.this.findAttachedContainerPosition(position);
-            if (containerPosition < 0) {
-                return defaultMarginBottom;
+            return margin;
+        }
+
+        private int findNextVisiblePosition(int position) {
+            int size = RoomContentAdapter.this.items.size();
+            for (int index = position + 1; index < size; index++) {
+                if (RoomContentAdapter.this.isItemHiddenByCollapsedContainer(index)) {
+                    continue;
+                }
+                RoomContentItem candidate = RoomContentAdapter.this.items.get(index);
+                if (!candidate.isContainer() && !candidate.isDisplayed()) {
+                    continue;
+                }
+                return index;
             }
-            boolean containerExpanded = RoomContentAdapter.this.isContainerExpanded(containerPosition)
-                    && container.hasAttachedItems();
-            if (!containerExpanded) {
-                return defaultMarginBottom;
+            return -1;
+        }
+
+        private boolean sharesTopLevelGroupWith(int position, int otherPosition) {
+            int anchor = findTopLevelAncestorPosition(position);
+            int otherAnchor = findTopLevelAncestorPosition(otherPosition);
+            return anchor >= 0 && anchor == otherAnchor;
+        }
+
+        private int findTopLevelAncestorPosition(int position) {
+            if (position < 0 || position >= RoomContentAdapter.this.items.size()) {
+                return -1;
             }
-            boolean isLastAttachment = RoomContentAdapter.this.isLastDirectChild(containerPosition,
-                    position);
-            return isLastAttachment ? defaultMarginBottom : 0;
+            int current = position;
+            int parent = RoomContentAdapter.this.findAttachedContainerPosition(current);
+            int safety = 0;
+            while (parent >= 0 && parent < RoomContentAdapter.this.items.size()) {
+                current = parent;
+                int nextParent = RoomContentAdapter.this.findAttachedContainerPosition(current);
+                if (nextParent == parent) {
+                    break;
+                }
+                parent = nextParent;
+                safety++;
+                if (safety >= RoomContentAdapter.this.items.size()) {
+                    break;
+                }
+            }
+            return current;
         }
 
         private void toggleOptionsMenu() {
