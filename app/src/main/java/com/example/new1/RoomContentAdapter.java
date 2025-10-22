@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.ViewHolder> {
@@ -68,6 +69,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final HierarchyStyle[] hierarchyStyles;
+    private final Map<String, Integer> containerBannerColorCache = new HashMap<>();
+    private final String containerTypeBoxLabel;
+    private final String containerTypeBagLabel;
+    private final int containerBannerDefaultColor;
+    private final int containerBannerBoxColor;
+    private final int containerBannerBagColor;
+    private final int[] containerBannerPalette;
+    private final int[] itemBannerColors;
     @Nullable
     private int[] hierarchyParentPositions;
     @Nullable
@@ -127,6 +136,30 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         this.cardCornerRadiusPx = context.getResources()
                 .getDimension(R.dimen.room_content_card_corner_radius);
         this.hierarchyStyles = createHierarchyStyles(context);
+        this.containerTypeBoxLabel = context.getString(R.string.dialog_container_type_box);
+        this.containerTypeBagLabel = context.getString(R.string.dialog_container_type_bag);
+        this.containerBannerDefaultColor = ContextCompat.getColor(context,
+                R.color.room_container_banner_default);
+        this.containerBannerBoxColor = ContextCompat.getColor(context,
+                R.color.room_container_banner_box);
+        this.containerBannerBagColor = ContextCompat.getColor(context,
+                R.color.room_container_banner_bag);
+        this.containerBannerPalette = new int[] {
+                ContextCompat.getColor(context, R.color.room_container_banner_palette_0),
+                ContextCompat.getColor(context, R.color.room_container_banner_palette_1),
+                ContextCompat.getColor(context, R.color.room_container_banner_palette_2),
+                ContextCompat.getColor(context, R.color.room_container_banner_palette_3),
+                ContextCompat.getColor(context, R.color.room_container_banner_palette_4),
+                ContextCompat.getColor(context, R.color.room_container_banner_palette_5)
+        };
+        this.itemBannerColors = new int[] {
+                ContextCompat.getColor(context, R.color.room_content_banner_default),
+                ContextCompat.getColor(context, R.color.room_content_banner_other),
+                ContextCompat.getColor(context, R.color.room_content_banner_book),
+                ContextCompat.getColor(context, R.color.room_content_banner_cd),
+                ContextCompat.getColor(context, R.color.room_content_banner_disc),
+                ContextCompat.getColor(context, R.color.room_content_banner_comic)
+        };
         registerAdapterDataObserver(hierarchyInvalidatingObserver);
     }
 
@@ -707,8 +740,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private void applyContainerBannerColor(@NonNull View bannerView,
-            @NonNull HierarchyStyle style) {
-        int color = style.bannerColor;
+            @NonNull HierarchyStyle style, @Nullable String type) {
+        int color = resolveContainerBannerColor(type, style.bannerColor);
         Drawable background = bannerView.getBackground();
         if (background instanceof GradientDrawable) {
             GradientDrawable drawable = (GradientDrawable) background.mutate();
@@ -860,6 +893,74 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return R.color.room_content_banner_other;
         }
         return R.color.room_content_banner_default;
+    }
+
+    @ColorInt
+    private int resolveContainerBannerColor(@Nullable String type, @ColorInt int fallbackColor) {
+        if (type == null) {
+            return fallbackColor;
+        }
+        String trimmedType = type.trim();
+        if (trimmedType.isEmpty()) {
+            return fallbackColor;
+        }
+        String normalizedKey = trimmedType.toLowerCase(Locale.ROOT);
+        Integer cachedColor = containerBannerColorCache.get(normalizedKey);
+        if (cachedColor != null) {
+            return cachedColor;
+        }
+        int resolvedColor;
+        if (trimmedType.equalsIgnoreCase(containerTypeBoxLabel)) {
+            resolvedColor = containerBannerBoxColor;
+        } else if (trimmedType.equalsIgnoreCase(containerTypeBagLabel)) {
+            resolvedColor = containerBannerBagColor;
+        } else {
+            resolvedColor = generateContainerBannerColor(normalizedKey);
+        }
+        containerBannerColorCache.put(normalizedKey, resolvedColor);
+        return resolvedColor;
+    }
+
+    @ColorInt
+    private int generateContainerBannerColor(@NonNull String normalizedKey) {
+        int hash = normalizedKey.hashCode();
+        int positiveHash = hash & 0x7fffffff;
+        float hue = positiveHash % 360;
+        float saturation = 0.5f;
+        float value = 0.88f;
+        if (containerBannerPalette.length > 0) {
+            int paletteIndex = positiveHash % containerBannerPalette.length;
+            float[] hsv = new float[3];
+            Color.colorToHSV(containerBannerPalette[paletteIndex], hsv);
+            saturation = clamp(hsv[1], 0.35f, 0.7f);
+            value = clamp(hsv[2], 0.8f, 0.95f);
+        }
+        float[] hsvColor = new float[] { hue, saturation, value };
+        int generatedColor = Color.HSVToColor(hsvColor);
+        int attempts = 0;
+        while (isItemBannerColor(generatedColor) && attempts < 12) {
+            hue = (hue + 30f) % 360f;
+            hsvColor[0] = hue;
+            generatedColor = Color.HSVToColor(hsvColor);
+            attempts++;
+        }
+        if (isItemBannerColor(generatedColor)) {
+            return containerBannerDefaultColor;
+        }
+        return generatedColor;
+    }
+
+    private boolean isItemBannerColor(@ColorInt int color) {
+        for (int candidate : itemBannerColors) {
+            if (candidate == color) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static float clamp(float value, float min, float max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static class HierarchyStyle {
@@ -1047,7 +1148,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
                         hasAttachedItems, isContainerExpanded, joinsParentFrame,
                         isLastChildInParentGroup);
-                RoomContentAdapter.this.applyContainerBannerColor(bannerContainer, currentStyle);
+                RoomContentAdapter.this.applyContainerBannerColor(bannerContainer, currentStyle,
+                        item.getType());
                 if (filledIndicatorView != null) {
                     RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView,
                             currentStyle);
