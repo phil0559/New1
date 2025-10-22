@@ -146,6 +146,14 @@
             android:paddingBottom="12dp"
             android:visibility="gone">
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_room_content_children"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/text_room_content_comment"
                 android:layout_width="match_parent"

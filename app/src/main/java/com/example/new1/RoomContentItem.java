@@ -57,6 +57,8 @@ public class RoomContentItem {
     private final List<String> tracks;
     @NonNull
     private final List<String> photos;
+    @NonNull
+    private final List<RoomContentItem> children;
     private final boolean container;
     private boolean displayed;
     private long rank;
@@ -130,6 +132,7 @@ public class RoomContentItem {
         } else {
             this.photos = new ArrayList<>(photos);
         }
+        this.children = new ArrayList<>();
         this.container = isContainer;
         this.displayed = true;
         this.rank = -1L;
@@ -396,6 +399,31 @@ public class RoomContentItem {
         item.setParentRank(parentRank);
         item.setDisplayRank(null);
         return item;
+    }
+
+    @NonNull
+    public List<RoomContentItem> getChildren() {
+        return Collections.unmodifiableList(children);
+    }
+
+    public void setChildren(@Nullable List<RoomContentItem> children) {
+        this.children.clear();
+        if (children == null) {
+            return;
+        }
+        for (RoomContentItem child : children) {
+            if (child != null) {
+                this.children.add(child);
+            }
+        }
+    }
+
+    public void clearChildren() {
+        children.clear();
+    }
+
+    public void addChild(@NonNull RoomContentItem child) {
+        children.add(child);
     }
 
     private static boolean isNullOrEmpty(@Nullable String value) {

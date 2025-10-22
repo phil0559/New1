@@ -41,6 +41,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.PopupWindowCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayDeque;
@@ -184,6 +185,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         CharSequence commentText = formatComment(item.getComment());
         boolean hasComment = commentText != null;
+        List<RoomContentItem> children = item.getChildren();
+        boolean hasChildren = !children.isEmpty();
 
         List<CharSequence> metadataLines = new ArrayList<>();
         if (item.isContainer()) {
@@ -218,7 +221,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         boolean isContainerExpanded = isContainerExpanded(position);
         boolean shouldDisplayDetails;
         if (canToggleContainer) {
-            shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata);
+            shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata || hasChildren);
         } else {
             boolean isExpanded = (hasComment || hasMetadata)
                     && expandedStates.get(position, false);
@@ -232,6 +235,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 ? isContainerExpanded
                 : ((hasComment || hasMetadata) && expandedStates.get(position, false));
         holder.updateToggle(hasToggle, isToggleExpanded, toggleLabel);
+
+        boolean shouldShowChildren = isContainerExpanded && hasChildren;
 
         if (shouldDisplayDetails) {
             if (hasComment) {
@@ -257,6 +262,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             holder.metadataView.setVisibility(View.GONE);
             holder.metadataView.setText(null);
         }
+
+        holder.bindChildren(children, shouldDisplayDetails && shouldShowChildren);
     }
 
     @Override
@@ -301,6 +308,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     public void onViewRecycled(@NonNull ViewHolder holder) {
         super.onViewRecycled(holder);
         holder.dismissOptionsMenu();
+        holder.releaseChildrenAdapter();
     }
 
     private void ensureHierarchyComputed() {
@@ -1110,6 +1118,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final TextView nameView;
         final TextView commentView;
         final TextView metadataView;
+        @Nullable
+        final RecyclerView childrenRecyclerView;
         final ImageView toggleView;
         final ImageView menuView;
         @Nullable
@@ -1126,6 +1136,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final OnRoomContentInteractionListener interactionListener;
         @Nullable
         private RoomContentItem currentItem;
+        @Nullable
+        private RoomContentChildrenAdapter childrenAdapter;
         private final int defaultPaddingStart;
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
@@ -1145,6 +1157,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
             cardBackground = itemView.findViewById(R.id.container_room_content_root);
             detailsContainer = itemView.findViewById(R.id.container_room_content_details);
+            childrenRecyclerView = itemView.findViewById(R.id.recycler_room_content_children);
             photoView = itemView.findViewById(R.id.image_room_content_photo);
             nameView = itemView.findViewById(R.id.text_room_content_name);
             commentView = itemView.findViewById(R.id.text_room_content_comment);
@@ -1360,6 +1373,39 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     ? R.string.content_description_room_content_collapse
                     : R.string.content_description_room_content_expand;
             toggleView.setContentDescription(itemView.getContext().getString(descriptionRes, name));
+        }
+
+        void bindChildren(@NonNull List<RoomContentItem> children, boolean displayChildren) {
+            if (childrenRecyclerView == null) {
+                return;
+            }
+            if (displayChildren) {
+                if (childrenRecyclerView.getLayoutManager() == null) {
+                    childrenRecyclerView.setLayoutManager(
+                            new LinearLayoutManager(childrenRecyclerView.getContext()));
+                }
+                if (childrenAdapter == null) {
+                    childrenAdapter = new RoomContentChildrenAdapter(
+                            childrenRecyclerView.getContext());
+                    childrenRecyclerView.setAdapter(childrenAdapter);
+                }
+                childrenAdapter.submitChildren(children);
+                childrenRecyclerView.setVisibility(View.VISIBLE);
+            } else {
+                if (childrenRecyclerView.getAdapter() != null) {
+                    childrenRecyclerView.setAdapter(null);
+                }
+                childrenAdapter = null;
+                childrenRecyclerView.setVisibility(View.GONE);
+            }
+        }
+
+        void releaseChildrenAdapter() {
+            if (childrenRecyclerView != null) {
+                childrenRecyclerView.setAdapter(null);
+                childrenRecyclerView.setVisibility(View.GONE);
+            }
+            childrenAdapter = null;
         }
 
         private void updatePhoto(@NonNull RoomContentItem item) {
