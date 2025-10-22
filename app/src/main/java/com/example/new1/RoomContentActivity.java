@@ -1144,9 +1144,12 @@ public class RoomContentActivity extends Activity {
                         dialog.dismiss();
                         return;
                     }
-                    roomContentItems.remove(positionToEdit);
+                    RoomContentItem existingItem = roomContentItems.get(positionToEdit);
+                    preserveHierarchyMetadata(existingItem, item);
+                    roomContentItems.set(positionToEdit, item);
+                } else {
+                    roomContentItems.add(item);
                 }
-                roomContentItems.add(item);
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -1787,9 +1790,12 @@ public class RoomContentActivity extends Activity {
                         dialog.dismiss();
                         return;
                     }
-                    roomContentItems.remove(positionToEdit);
+                    RoomContentItem existingItem = roomContentItems.get(positionToEdit);
+                    preserveHierarchyMetadata(existingItem, newItem);
+                    roomContentItems.set(positionToEdit, newItem);
+                } else {
+                    roomContentItems.add(newItem);
                 }
-                roomContentItems.add(newItem);
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -2756,6 +2762,15 @@ public class RoomContentActivity extends Activity {
         if (roomContentAdapter != null) {
             roomContentAdapter.notifyDataSetChanged();
         }
+    }
+
+    private void preserveHierarchyMetadata(@NonNull RoomContentItem source,
+                                           @NonNull RoomContentItem destination) {
+        destination.setRank(source.getRank());
+        destination.setParentRank(source.getParentRank());
+        destination.setDisplayed(source.isDisplayed());
+        destination.setAttachedItemCount(source.getAttachedItemCount());
+        destination.setDisplayRank(source.getDisplayRank());
     }
 
     private void saveRoomContent() {
