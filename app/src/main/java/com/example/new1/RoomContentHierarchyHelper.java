@@ -216,6 +216,9 @@ final class RoomContentHierarchyHelper {
 
     private static final Comparator<RoomContentItem> DISPLAY_ORDER_COMPARATOR =
             (first, second) -> {
+                if (first.isContainer() != second.isContainer()) {
+                    return first.isContainer() ? 1 : -1;
+                }
                 long firstRank = first.getRank();
                 long secondRank = second.getRank();
                 if (firstRank != secondRank) {
