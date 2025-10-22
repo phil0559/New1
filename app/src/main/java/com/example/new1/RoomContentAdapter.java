@@ -721,6 +721,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         invalidateDecorations();
     }
 
+    public void collapseAllContainers() {
+        containerVisibilityStates.clear();
+        for (int index = 0; index < items.size(); index++) {
+            RoomContentItem item = items.get(index);
+            if (!item.isContainer()) {
+                continue;
+            }
+            setContainerVisibilityMask(index, 0);
+        }
+    }
+
     private void applyLabelStyle(@NonNull Spannable spannable, int start, int end) {
         if (start >= end) {
             return;

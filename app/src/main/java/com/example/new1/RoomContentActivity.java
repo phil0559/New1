@@ -2760,6 +2760,7 @@ public class RoomContentActivity extends Activity {
         sortRoomContentItems();
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         if (roomContentAdapter != null) {
+            roomContentAdapter.collapseAllContainers();
             roomContentAdapter.notifyDataSetChanged();
         }
     }
