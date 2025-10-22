@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -193,7 +194,13 @@ public class EstablishmentActivity extends Activity {
                         dialog.dismiss();
                         return;
                     }
-                    establishments.set(position, new Establishment(name, comment, new ArrayList<>(formState.photos)));
+                    Establishment updatedEstablishment = new Establishment(
+                            name,
+                            comment,
+                            new ArrayList<>(formState.photos)
+                    );
+                    migrateEstablishmentRooms(existingEstablishment, updatedEstablishment);
+                    establishments.set(position, updatedEstablishment);
                     establishmentAdapter.notifyItemChanged(position);
                 } else {
                     establishments.add(new Establishment(name, comment, new ArrayList<>(formState.photos)));
@@ -296,6 +303,88 @@ public class EstablishmentActivity extends Activity {
 
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         preferences.edit().putString(KEY_ESTABLISHMENTS, array.toString()).apply();
+    }
+
+    private void migrateEstablishmentRooms(@Nullable Establishment previousEstablishment,
+            @NonNull Establishment updatedEstablishment) {
+        if (previousEstablishment == null) {
+            return;
+        }
+
+        String previousName = previousEstablishment.getName();
+        String newName = updatedEstablishment.getName();
+        if (previousName == null || newName == null) {
+            return;
+        }
+
+        String trimmedPrevious = previousName.trim();
+        String trimmedNew = newName.trim();
+        if (trimmedPrevious.equals(trimmedNew)) {
+            return;
+        }
+
+        String oldRoomsKey = EstablishmentContentActivity.buildRoomsKey(trimmedPrevious);
+        String newRoomsKey = EstablishmentContentActivity.buildRoomsKey(trimmedNew);
+        if (oldRoomsKey.equals(newRoomsKey)) {
+            return;
+        }
+
+        SharedPreferences roomsPreferences =
+                getSharedPreferences(EstablishmentContentActivity.PREFS_NAME, MODE_PRIVATE);
+        String storedRoomsValue = roomsPreferences.getString(oldRoomsKey, null);
+        if (storedRoomsValue == null) {
+            return;
+        }
+
+        SharedPreferences.Editor roomsEditor = roomsPreferences.edit();
+        roomsEditor.putString(newRoomsKey, storedRoomsValue);
+        roomsEditor.remove(oldRoomsKey);
+        roomsEditor.apply();
+
+        migrateRoomContentsForEstablishment(trimmedPrevious, trimmedNew, storedRoomsValue);
+    }
+
+    private void migrateRoomContentsForEstablishment(String previousEstablishmentName,
+            String newEstablishmentName, String storedRoomsValue) {
+        SharedPreferences contentPreferences =
+                getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor contentEditor = contentPreferences.edit();
+        boolean hasChanges = false;
+
+        try {
+            JSONArray roomsArray = new JSONArray(storedRoomsValue);
+            for (int i = 0; i < roomsArray.length(); i++) {
+                JSONObject item = roomsArray.optJSONObject(i);
+                if (item == null) {
+                    continue;
+                }
+
+                String roomName = item.optString("name", "");
+                if (roomName.isEmpty()) {
+                    continue;
+                }
+
+                String oldKey = RoomContentStorage.buildKey(previousEstablishmentName, roomName);
+                String newKey = RoomContentStorage.buildKey(newEstablishmentName, roomName);
+                if (oldKey.equals(newKey)) {
+                    continue;
+                }
+
+                String storedContent = contentPreferences.getString(oldKey, null);
+                if (storedContent == null) {
+                    continue;
+                }
+
+                contentEditor.putString(newKey, storedContent);
+                contentEditor.remove(oldKey);
+                hasChanges = true;
+            }
+        } catch (JSONException ignored) {
+        }
+
+        if (hasChanges) {
+            contentEditor.apply();
+        }
     }
 
     private void updateEmptyState() {

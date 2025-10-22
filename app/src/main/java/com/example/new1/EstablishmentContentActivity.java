@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EstablishmentContentActivity extends Activity {
-    private static final String PREFS_NAME = "rooms_prefs";
-    private static final String KEY_ROOMS = "rooms";
+    static final String PREFS_NAME = "rooms_prefs";
+    static final String KEY_ROOMS = "rooms";
     private static final int REQUEST_TAKE_PHOTO = 2001;
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
@@ -573,11 +573,15 @@ public class EstablishmentContentActivity extends Activity {
         refreshPhotoSection(currentFormState);
     }
 
-    private String getRoomsKey() {
+    static String buildRoomsKey(@Nullable String establishmentName) {
         String name = establishmentName != null ? establishmentName.trim() : "";
         if (name.isEmpty()) {
             return KEY_ROOMS + "_default";
         }
         return KEY_ROOMS + "_" + name;
+    }
+
+    private String getRoomsKey() {
+        return buildRoomsKey(establishmentName);
     }
 }
