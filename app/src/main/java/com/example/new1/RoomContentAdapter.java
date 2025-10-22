@@ -580,7 +580,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     return true;
                 }
             } else {
-                if ((visibilityMask & VISIBILITY_FLAG_CONTAINERS) == 0) {
+                // Laisser visibles les éléments directement attachés même si les contenants
+                // sont masqués.
+                if ((visibilityMask & VISIBILITY_FLAG_CONTAINERS) == 0 && !isDirectParent) {
                     return true;
                 }
                 if (isDirectParent && (visibilityMask & VISIBILITY_FLAG_ITEMS) == 0) {
