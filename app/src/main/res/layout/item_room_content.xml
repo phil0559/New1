@@ -18,12 +18,13 @@
             android:id="@+id/card_room_content"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="4dp"
             android:clickable="true"
             android:focusable="true"
             android:foreground="?attr/selectableItemBackground"
-            app:cardBackgroundColor="@android:color/transparent"
-            app:cardCornerRadius="18dp"
-            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/room_content_card_background"
+            app:cardCornerRadius="@dimen/room_content_card_corner_radius"
+            app:cardElevation="3dp"
             app:cardUseCompatPadding="false">
 
             <LinearLayout

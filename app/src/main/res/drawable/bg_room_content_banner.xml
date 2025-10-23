@@ -2,6 +2,6 @@
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
     <solid android:color="@color/room_content_banner_default" />
     <corners
-        android:topLeftRadius="18dp"
-        android:topRightRadius="18dp" />
+        android:topLeftRadius="@dimen/room_content_card_corner_radius"
+        android:topRightRadius="@dimen/room_content_card_corner_radius" />
 </shape>
