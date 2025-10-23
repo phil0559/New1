@@ -54,4 +54,8 @@
     <color name="room_content_hierarchy_level_3_background">#F5EFE4</color>
     <color name="room_content_hierarchy_level_3_border">#C3A67C</color>
     <color name="room_content_hierarchy_level_3_banner">#E9DECA</color>
+    <color name="group_border">#C0C4CC</color>
+    <color name="group_background_level1">#F5F8FF</color>
+    <color name="group_background_level2">#F7FAFF</color>
+    <color name="group_background_level3">#FAFBFF</color>
 </resources>
