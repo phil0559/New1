@@ -1292,7 +1292,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 boolean joinsParentFrame = parentExpanded && parentStyleForFrame != null;
                 boolean isLastChildInParentGroup = joinsParentFrame
                         && RoomContentAdapter.this.isLastDirectChild(parentPosition, position);
-                if (hasAttachedItems) {
+                boolean hasVisibleGroupMembers = hasAttachedItems && hasDisplayedChildren(item);
+                boolean shouldFrameGroup = hasVisibleGroupMembers && isContainerExpanded;
+                if (shouldFrameGroup) {
                     applyGroupCardStyle();
                 }
                 RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
@@ -1408,6 +1410,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             cardView.setCardBackgroundColor(Color.WHITE);
             int inset = RoomContentAdapter.this.groupBorderInsetPx;
             cardView.setContentPadding(inset, inset, inset, inset);
+        }
+
+        private boolean hasDisplayedChildren(@NonNull RoomContentItem containerItem) {
+            for (RoomContentItem child : containerItem.getChildren()) {
+                if (child != null && child.isDisplayed()) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void resetCardStyle() {
