@@ -30,6 +30,7 @@ Chaque situation illustre la règle suivante :
 │  ├─ 81.4.2 – Casque (élément)
 │  └─ 81.4.3 – Sac 81-A1 (conteneur, enfants=1)
 │     └─ 81.4.3.1 – Chargeur (élément)
+│     🟩══════════════════════════════════════════════════════════════ (dessous de l’élément – situation 2b)
 └─ 81.5 – Boîte 81-B (conteneur, enfants=1)
    └─ 81.5.1 – Clés (élément)
 ```
@@ -43,6 +44,7 @@ Chaque situation illustre la règle suivante :
 │  ├─ 81.4.1 – Casque (élément)
 │  └─ 81.4.2 – Sac 81-A1 (conteneur, enfants=1)
 │     └─ 81.4.2.1 – Chargeur (élément)
+│     🟩══════════════════════════════════════════════════════════════ (dessous du groupe conteneur+élément – situation 3b)
 └─ 81.5 – Boîte 81-B (conteneur, enfants=2)
    ├─ 81.5.1 – Clés (élément)
    └─ 81.5.2 – Figurine (élément)
