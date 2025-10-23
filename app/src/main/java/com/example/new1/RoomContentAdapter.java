@@ -1291,31 +1291,37 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             nameView.setText(displayName);
             resetCardStyle();
+            int parentPosition = RoomContentAdapter.this
+                    .findAttachedContainerPosition(position);
+            RoomContentItem parentItem = parentPosition >= 0
+                    ? RoomContentAdapter.this.items.get(parentPosition)
+                    : null;
+            boolean parentExpanded = parentItem != null
+                    && RoomContentAdapter.this.isContainerExpanded(parentPosition)
+                    && parentItem.hasAttachedItems();
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
             boolean showGroupBorder = hasAttachedItems;
             boolean isFirstInGroup = showGroupBorder;
             boolean isLastInGroup = showGroupBorder && !isContainerExpanded;
-            if (!item.isContainer()) {
-                showGroupBorder = false;
-                int containerPosition = RoomContentAdapter.this
-                        .findAttachedContainerPosition(position);
-                if (containerPosition >= 0) {
-                    RoomContentItem containerItem = RoomContentAdapter.this.items
-                            .get(containerPosition);
-                    boolean containerExpanded = RoomContentAdapter.this
-                            .isContainerExpanded(containerPosition)
-                            && containerItem.hasAttachedItems();
-                    if (containerExpanded) {
-                        showGroupBorder = true;
-                        isFirstInGroup = false;
-                        isLastInGroup = RoomContentAdapter.this
-                                .isLastDirectChild(containerPosition, position);
-                    }
+            if (item.isContainer()) {
+                if (!hasAttachedItems && parentExpanded && parentPosition >= 0) {
+                    showGroupBorder = true;
+                    isFirstInGroup = false;
+                    isLastInGroup = RoomContentAdapter.this
+                            .isLastDirectChild(parentPosition, position);
+                } else if (isContainerExpanded) {
+                    isLastInGroup = false;
                 }
-            } else if (isContainerExpanded) {
-                isLastInGroup = false;
+            } else {
+                showGroupBorder = false;
+                if (parentExpanded && parentPosition >= 0) {
+                    showGroupBorder = true;
+                    isFirstInGroup = false;
+                    isLastInGroup = RoomContentAdapter.this
+                            .isLastDirectChild(parentPosition, position);
+                }
             }
             updateGroupWrapperBorder(showGroupBorder, isFirstInGroup, isLastInGroup);
             if (filterChipGroup != null) {
@@ -1346,17 +1352,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             int depth = RoomContentAdapter.this.computeHierarchyDepth(position);
             HierarchyStyle currentStyle = RoomContentAdapter.this.resolveHierarchyStyle(depth);
-            int parentPosition = RoomContentAdapter.this.findAttachedContainerPosition(position);
             HierarchyStyle parentStyleForFrame = null;
-            boolean parentExpanded = false;
-            if (parentPosition >= 0) {
-                RoomContentItem parentItem = RoomContentAdapter.this.items.get(parentPosition);
-                parentExpanded = RoomContentAdapter.this.isContainerExpanded(parentPosition)
-                        && parentItem.hasAttachedItems();
-                if (parentExpanded) {
-                    parentStyleForFrame = RoomContentAdapter.this.resolveHierarchyStyle(
-                            RoomContentAdapter.this.computeHierarchyDepth(parentPosition));
-                }
+            if (parentExpanded && parentPosition >= 0) {
+                parentStyleForFrame = RoomContentAdapter.this.resolveHierarchyStyle(
+                        RoomContentAdapter.this.computeHierarchyDepth(parentPosition));
             }
             View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
