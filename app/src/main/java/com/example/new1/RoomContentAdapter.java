@@ -631,6 +631,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return false;
     }
 
+    /**
+     * Vérifie si le conteneur possède au moins un enfant direct actuellement affiché.
+     */
+    private boolean hasVisibleDirectChildren(int containerPosition) {
+        ensureHierarchyComputed();
+        if (containerPosition < 0 || containerPosition >= items.size()) {
+            return false;
+        }
+        for (int index = containerPosition + 1; index < items.size(); index++) {
+            if (!isDescendantOf(containerPosition, index)) {
+                break;
+            }
+            if (findAttachedContainerPosition(index) == containerPosition) {
+                RoomContentItem child = items.get(index);
+                if (child != null && child.isDisplayed()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private boolean isLastDirectChild(int parentPosition, int position) {
         if (parentPosition < 0 || position <= parentPosition || position >= items.size()) {
             return true;
@@ -1292,7 +1314,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 boolean joinsParentFrame = parentExpanded && parentStyleForFrame != null;
                 boolean isLastChildInParentGroup = joinsParentFrame
                         && RoomContentAdapter.this.isLastDirectChild(parentPosition, position);
-                boolean hasVisibleGroupMembers = hasAttachedItems && hasDisplayedChildren(item);
+                boolean hasVisibleGroupMembers = hasAttachedItems
+                        && RoomContentAdapter.this.hasVisibleDirectChildren(position);
                 boolean shouldFrameGroup = hasVisibleGroupMembers && isContainerExpanded;
                 if (shouldFrameGroup) {
                     applyGroupCardStyle();
@@ -1410,15 +1433,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             cardView.setCardBackgroundColor(Color.WHITE);
             int inset = RoomContentAdapter.this.groupBorderInsetPx;
             cardView.setContentPadding(inset, inset, inset, inset);
-        }
-
-        private boolean hasDisplayedChildren(@NonNull RoomContentItem containerItem) {
-            for (RoomContentItem child : containerItem.getChildren()) {
-                if (child != null && child.isDisplayed()) {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private void resetCardStyle() {
