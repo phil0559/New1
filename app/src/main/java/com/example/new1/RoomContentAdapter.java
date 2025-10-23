@@ -1138,7 +1138,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     class ViewHolder extends RecyclerView.ViewHolder {
         @Nullable
-        @Nullable
         final ViewGroup groupWrapperView;
         final MaterialCardView cardView;
         final View bannerContainer;
