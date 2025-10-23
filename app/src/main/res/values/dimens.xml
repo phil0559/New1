@@ -7,9 +7,9 @@
     <dimen name="dialog_barcode_input_padding">24dp</dimen>
     <dimen name="list_item_action_icon_size">32dp</dimen>
     <dimen name="room_content_hierarchy_indent">20dp</dimen>
-    <dimen name="room_content_card_corner_radius">18dp</dimen>
-    <dimen name="room_content_card_border_width">4dp</dimen>
-    <dimen name="room_content_card_border_width_filled">4dp</dimen>
+    <dimen name="room_content_card_corner_radius">10dp</dimen>
+    <dimen name="room_content_card_border_width">2dp</dimen>
+    <dimen name="room_content_card_border_width_filled">2dp</dimen>
     <dimen name="room_content_group_border_inset">4dp</dimen>
     <dimen name="room_content_hierarchy_frame_inset">8dp</dimen>
     <dimen name="room_content_list_bottom_padding">96dp</dimen>
