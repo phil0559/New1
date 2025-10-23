@@ -33,7 +33,6 @@ import android.widget.Toast;
 
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
-import com.google.android.material.chip.ChipGroup;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
@@ -1158,7 +1157,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         final View filledIndicatorView;
         @Nullable
-        final ChipGroup filterChipGroup;
+        final ViewGroup filterChipGroup;
         @Nullable
         final Chip containersFilterChip;
         @Nullable
