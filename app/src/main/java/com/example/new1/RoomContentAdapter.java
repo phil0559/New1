@@ -1,6 +1,7 @@
 package com.example.new1;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -74,6 +75,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final int cardBorderWidthPx;
+    private final int groupBorderInsetPx;
+    private final int groupStrokeColor;
     private final HierarchyStyle[] hierarchyStyles;
     private final Map<String, Integer> containerBannerColorCache = new HashMap<>();
     private final String containerTypeBoxLabel;
@@ -143,6 +146,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 .getDimension(R.dimen.room_content_card_corner_radius);
         this.cardBorderWidthPx = context.getResources()
                 .getDimensionPixelSize(R.dimen.room_content_card_border_width);
+        this.groupBorderInsetPx = context.getResources()
+                .getDimensionPixelSize(R.dimen.room_content_group_border_inset);
+        this.groupStrokeColor = ContextCompat.getColor(context,
+                R.color.room_content_card_container_border);
         this.hierarchyStyles = createHierarchyStyles(context);
         this.containerTypeBoxLabel = context.getString(R.string.dialog_container_type_box);
         this.containerTypeBagLabel = context.getString(R.string.dialog_container_type_bag);
@@ -801,8 +808,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         boolean hideTopStroke = joinsParentFrame;
         boolean hideBottomStroke = hasAttachedItems && isExpanded;
+        int internalStrokeWidth = hasAttachedItems ? 0 : cardBorderWidthPx;
         Drawable drawable = createFramedBackground(style.backgroundColor, topRadius,
-                topRadius, bottomRadius, bottomRadius, cardBorderWidthPx,
+                topRadius, bottomRadius, bottomRadius, internalStrokeWidth,
                 style.accentColor, hideTopStroke, hideBottomStroke);
         target.setBackground(drawable);
     }
@@ -1146,6 +1154,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultMarginRight;
         private final int defaultMarginBottom;
         @Nullable
+        private final ColorStateList defaultCardBackgroundColor;
+        @Nullable
+        private final ColorStateList defaultStrokeColor;
+        private final int defaultStrokeWidth;
+        private final int defaultContentPaddingLeft;
+        private final int defaultContentPaddingTop;
+        private final int defaultContentPaddingRight;
+        private final int defaultContentPaddingBottom;
+        @Nullable
         private PopupWindow optionsPopup;
         private boolean suppressFilterCallbacks;
 
@@ -1204,6 +1221,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 defaultMarginRight = 0;
                 defaultMarginBottom = 0;
             }
+            defaultCardBackgroundColor = cardView.getCardBackgroundColor();
+            defaultStrokeColor = cardView.getStrokeColorStateList();
+            defaultStrokeWidth = cardView.getStrokeWidth();
+            defaultContentPaddingLeft = cardView.getContentPaddingLeft();
+            defaultContentPaddingTop = cardView.getContentPaddingTop();
+            defaultContentPaddingRight = cardView.getContentPaddingRight();
+            defaultContentPaddingBottom = cardView.getContentPaddingBottom();
         }
 
         void bind(@NonNull RoomContentItem item, int position) {
@@ -1219,6 +1243,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 displayName = rankLabel + " · " + baseName;
             }
             nameView.setText(displayName);
+            resetCardStyle();
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
@@ -1267,6 +1292,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 boolean joinsParentFrame = parentExpanded && parentStyleForFrame != null;
                 boolean isLastChildInParentGroup = joinsParentFrame
                         && RoomContentAdapter.this.isLastDirectChild(parentPosition, position);
+                if (hasAttachedItems) {
+                    applyGroupCardStyle();
+                }
                 RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
                         hasAttachedItems, isContainerExpanded, joinsParentFrame,
                         isLastChildInParentGroup);
@@ -1372,6 +1400,30 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     ? R.string.content_description_room_content_collapse
                     : R.string.content_description_room_content_expand;
             toggleView.setContentDescription(itemView.getContext().getString(descriptionRes, name));
+        }
+
+        private void applyGroupCardStyle() {
+            cardView.setStrokeColor(RoomContentAdapter.this.groupStrokeColor);
+            cardView.setStrokeWidth(RoomContentAdapter.this.cardBorderWidthPx);
+            cardView.setCardBackgroundColor(Color.WHITE);
+            int inset = RoomContentAdapter.this.groupBorderInsetPx;
+            cardView.setContentPadding(inset, inset, inset, inset);
+        }
+
+        private void resetCardStyle() {
+            cardView.setStrokeWidth(defaultStrokeWidth);
+            if (defaultStrokeColor != null) {
+                cardView.setStrokeColor(defaultStrokeColor);
+            } else {
+                cardView.setStrokeColor(Color.TRANSPARENT);
+            }
+            if (defaultCardBackgroundColor != null) {
+                cardView.setCardBackgroundColor(defaultCardBackgroundColor);
+            } else {
+                cardView.setCardBackgroundColor(Color.TRANSPARENT);
+            }
+            cardView.setContentPadding(defaultContentPaddingLeft, defaultContentPaddingTop,
+                    defaultContentPaddingRight, defaultContentPaddingBottom);
         }
 
         void bindChildren(@NonNull List<RoomContentItem> children, boolean displayChildren) {
