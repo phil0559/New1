@@ -1137,7 +1137,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
-        final MaterialCardView groupCardView;
+        @Nullable
+        final MaterialCardView groupWrapperView;
         final MaterialCardView cardView;
         final View bannerContainer;
         @Nullable
@@ -1201,7 +1202,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
             super(itemView);
-            groupCardView = (MaterialCardView) itemView;
+            groupWrapperView = itemView.findViewById(R.id.group_wrapper);
             cardView = itemView.findViewById(R.id.card_room_content);
             bannerContainer = itemView.findViewById(R.id.container_room_content_banner);
             cardBackground = itemView.findViewById(R.id.container_room_content_root);
@@ -1261,13 +1262,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultContentPaddingTop = cardView != null ? cardView.getContentPaddingTop() : 0;
             defaultContentPaddingRight = cardView != null ? cardView.getContentPaddingRight() : 0;
             defaultContentPaddingBottom = cardView != null ? cardView.getContentPaddingBottom() : 0;
-            defaultGroupCardBackgroundColor = groupCardView.getCardBackgroundColor();
-            defaultGroupStrokeColor = groupCardView.getStrokeColorStateList();
-            defaultGroupStrokeWidth = groupCardView.getStrokeWidth();
-            defaultGroupContentPaddingLeft = groupCardView.getContentPaddingLeft();
-            defaultGroupContentPaddingTop = groupCardView.getContentPaddingTop();
-            defaultGroupContentPaddingRight = groupCardView.getContentPaddingRight();
-            defaultGroupContentPaddingBottom = groupCardView.getContentPaddingBottom();
+            if (groupWrapperView != null) {
+                defaultGroupCardBackgroundColor = groupWrapperView.getCardBackgroundColor();
+                defaultGroupStrokeColor = groupWrapperView.getStrokeColorStateList();
+                defaultGroupStrokeWidth = groupWrapperView.getStrokeWidth();
+                defaultGroupContentPaddingLeft = groupWrapperView.getContentPaddingLeft();
+                defaultGroupContentPaddingTop = groupWrapperView.getContentPaddingTop();
+                defaultGroupContentPaddingRight = groupWrapperView.getContentPaddingRight();
+                defaultGroupContentPaddingBottom = groupWrapperView.getContentPaddingBottom();
+            } else {
+                defaultGroupCardBackgroundColor = null;
+                defaultGroupStrokeColor = null;
+                defaultGroupStrokeWidth = 0;
+                defaultGroupContentPaddingLeft = 0;
+                defaultGroupContentPaddingTop = 0;
+                defaultGroupContentPaddingRight = 0;
+                defaultGroupContentPaddingBottom = 0;
+            }
         }
 
         void bind(@NonNull RoomContentItem item, int position) {
@@ -1287,6 +1298,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
                     && RoomContentAdapter.this.isContainerExpanded(position);
+            boolean shouldHighlightGroup = hasAttachedItems && isContainerExpanded;
+            updateGroupWrapperBorder(shouldHighlightGroup);
             if (filterChipGroup != null) {
                 if (hasAttachedItems) {
                     filterChipGroup.setVisibility(View.VISIBLE);
@@ -1327,15 +1340,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                             RoomContentAdapter.this.computeHierarchyDepth(parentPosition));
                 }
             }
-            boolean isRootGroup = hasAttachedItems && parentPosition < 0;
             View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
                 boolean joinsParentFrame = parentExpanded && parentStyleForFrame != null;
                 boolean isLastChildInParentGroup = joinsParentFrame
                         && RoomContentAdapter.this.isLastDirectChild(parentPosition, position);
-                if (isRootGroup) {
-                    applyGroupCardStyle();
-                }
                 RoomContentAdapter.this.applyContainerBackground(backgroundTarget, currentStyle,
                         hasAttachedItems, isContainerExpanded, joinsParentFrame,
                         isLastChildInParentGroup);
@@ -1443,16 +1452,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             toggleView.setContentDescription(itemView.getContext().getString(descriptionRes, name));
         }
 
-        private void applyGroupCardStyle() {
-            groupCardView.setStrokeColor(RoomContentAdapter.this.groupStrokeColor);
-            groupCardView.setStrokeWidth(RoomContentAdapter.this.cardBorderWidthPx);
-            groupCardView.setCardBackgroundColor(Color.WHITE);
+        private void applyGroupWrapperBorder() {
+            if (groupWrapperView == null) {
+                return;
+            }
+            groupWrapperView.setStrokeColor(RoomContentAdapter.this.groupStrokeColor);
+            groupWrapperView.setStrokeWidth(RoomContentAdapter.this.cardBorderWidthPx);
+            groupWrapperView.setCardBackgroundColor(Color.WHITE);
             int inset = RoomContentAdapter.this.groupBorderInsetPx;
-            groupCardView.setContentPadding(inset, inset, inset, inset);
+            groupWrapperView.setContentPadding(inset, inset, inset, inset);
         }
 
         private void resetCardStyle() {
-            resetGroupCardStyle();
+            resetGroupWrapperStyle();
             if (cardView == null) {
                 return;
             }
@@ -1471,21 +1483,35 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     defaultContentPaddingRight, defaultContentPaddingBottom);
         }
 
-        private void resetGroupCardStyle() {
-            groupCardView.setStrokeWidth(defaultGroupStrokeWidth);
+        private void resetGroupWrapperStyle() {
+            if (groupWrapperView == null) {
+                return;
+            }
+            groupWrapperView.setStrokeWidth(defaultGroupStrokeWidth);
             if (defaultGroupStrokeColor != null) {
-                groupCardView.setStrokeColor(defaultGroupStrokeColor);
+                groupWrapperView.setStrokeColor(defaultGroupStrokeColor);
             } else {
-                groupCardView.setStrokeColor(Color.TRANSPARENT);
+                groupWrapperView.setStrokeColor(Color.TRANSPARENT);
             }
             if (defaultGroupCardBackgroundColor != null) {
-                groupCardView.setCardBackgroundColor(defaultGroupCardBackgroundColor);
+                groupWrapperView.setCardBackgroundColor(defaultGroupCardBackgroundColor);
             } else {
-                groupCardView.setCardBackgroundColor(Color.TRANSPARENT);
+                groupWrapperView.setCardBackgroundColor(Color.TRANSPARENT);
             }
-            groupCardView.setContentPadding(defaultGroupContentPaddingLeft,
+            groupWrapperView.setContentPadding(defaultGroupContentPaddingLeft,
                     defaultGroupContentPaddingTop, defaultGroupContentPaddingRight,
                     defaultGroupContentPaddingBottom);
+        }
+
+        private void updateGroupWrapperBorder(boolean showBorder) {
+            if (groupWrapperView == null) {
+                return;
+            }
+            if (showBorder) {
+                applyGroupWrapperBorder();
+            } else {
+                resetGroupWrapperStyle();
+            }
         }
 
         void bindChildren(@NonNull List<RoomContentItem> children, boolean displayChildren) {
