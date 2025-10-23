@@ -830,7 +830,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         boolean hideTopStroke = joinsParentFrame;
         boolean hideBottomStroke = hasAttachedItems && isExpanded;
-        int internalStrokeWidth = hasAttachedItems ? 0 : cardBorderWidthPx;
+        int internalStrokeWidth = hasAttachedItems && isExpanded ? 0 : cardBorderWidthPx;
         Drawable drawable = createFramedBackground(style.backgroundColor, topRadius,
                 topRadius, bottomRadius, bottomRadius, internalStrokeWidth,
                 style.accentColor, hideTopStroke, hideBottomStroke);
