@@ -74,7 +74,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final int cardBorderWidthPx;
-    private final int groupBorderInsetPx;
     private final int groupStrokeColor;
     private final HierarchyStyle[] hierarchyStyles;
     private final Map<String, Integer> containerBannerColorCache = new HashMap<>();
@@ -145,8 +144,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 .getDimension(R.dimen.room_content_card_corner_radius);
         this.cardBorderWidthPx = context.getResources()
                 .getDimensionPixelSize(R.dimen.room_content_card_border_width);
-        this.groupBorderInsetPx = context.getResources()
-                .getDimensionPixelSize(R.dimen.room_content_group_border_inset);
         this.groupStrokeColor = ContextCompat.getColor(context,
                 R.color.room_content_card_container_border);
         this.hierarchyStyles = createHierarchyStyles(context);
@@ -1198,7 +1195,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
             super(itemView);
-            View potentialGroupWrapper = itemView.findViewById(R.id.group_wrapper);
+            View potentialGroupWrapper = itemView.findViewById(R.id.groupFullWrapper);
             groupWrapperView = potentialGroupWrapper instanceof ViewGroup
                     ? (ViewGroup) potentialGroupWrapper
                     : null;
@@ -1472,23 +1469,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (groupWrapperView == null) {
                 return;
             }
-            GradientDrawable drawable = new GradientDrawable();
-            drawable.setColor(Color.WHITE);
-            float topRadius = isFirstInGroup ? RoomContentAdapter.this.cardCornerRadiusPx : 0f;
-            float bottomRadius = isLastInGroup ? RoomContentAdapter.this.cardCornerRadiusPx : 0f;
-            drawable.setCornerRadii(new float[] {
-                    topRadius, topRadius,
-                    topRadius, topRadius,
-                    bottomRadius, bottomRadius,
-                    bottomRadius, bottomRadius
-            });
-            drawable.setStroke(RoomContentAdapter.this.cardBorderWidthPx,
-                    RoomContentAdapter.this.groupStrokeColor);
+            Drawable drawable = ContextCompat.getDrawable(groupWrapperView.getContext(),
+                    R.drawable.group_background);
             groupWrapperView.setBackground(drawable);
-            int inset = RoomContentAdapter.this.groupBorderInsetPx;
-            int topPadding = isFirstInGroup ? inset : 0;
-            int bottomPadding = isLastInGroup ? inset : 0;
-            groupWrapperView.setPadding(inset, topPadding, inset, bottomPadding);
+            groupWrapperView.setPadding(defaultGroupPaddingLeft, defaultGroupPaddingTop,
+                    defaultGroupPaddingRight, defaultGroupPaddingBottom);
         }
 
         private void resetCardStyle() {
