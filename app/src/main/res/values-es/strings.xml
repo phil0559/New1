@@ -91,7 +91,7 @@
     <string name="dialog_move_room_content_container_label">Contenedor</string>
     <string name="dialog_move_room_content_no_container">Sin contenedor</string>
     <string name="dialog_move_room_content_move_button">Mover</string>
-    <string name="dialog_move_room_content_empty_establishments">No hay ningún establecimiento disponible para mover este elemento.</string>
+    <string name="dialog_move_room_content_empty_establishments"><![CDATA[No hay ningún establecimiento disponible para mover este elemento.]]></string>
     <string name="dialog_move_room_content_empty_rooms">No hay ninguna habitación disponible en este establecimiento.</string>
     <string name="dialog_move_room_content_success">Elemento movido correctamente.</string>
     <string name="dialog_label_room_content_name">Nombre del elemento</string>

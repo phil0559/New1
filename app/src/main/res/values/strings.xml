@@ -109,7 +109,7 @@
     <string name="dialog_move_room_content_container_label">Contenant</string>
     <string name="dialog_move_room_content_no_container">Aucun contenant</string>
     <string name="dialog_move_room_content_move_button">Déplacer</string>
-    <string name="dialog_move_room_content_empty_establishments">Aucun établissement disponible pour déplacer cet élément.</string>
+    <string name="dialog_move_room_content_empty_establishments"><![CDATA[Aucun établissement disponible pour déplacer cet élément.]]></string>
     <string name="dialog_move_room_content_empty_rooms">Aucune pièce disponible dans cet établissement.</string>
     <string name="dialog_move_room_content_success">Élément déplacé avec succès.</string>
     <string name="dialog_add_room_content_title">Ajouter un élément</string>
