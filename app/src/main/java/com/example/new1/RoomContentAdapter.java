@@ -27,6 +27,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
@@ -41,6 +42,7 @@ import androidx.annotation.ColorRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -1229,6 +1231,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private PopupWindow optionsPopup;
         @Nullable
         private PopupWindow furniturePopup;
+        @Nullable
+        private PopupWindow furniturePhotoMenuPopup;
         private boolean suppressFilterCallbacks;
         private final int defaultPhotoVisibility;
         private final int defaultMenuVisibility;
@@ -1712,6 +1716,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (currentItem == null) {
                 return;
             }
+            dismissFurniturePhotoMenu();
             if (furniturePopup != null && furniturePopup.isShowing()) {
                 furniturePopup.dismiss();
                 return;
@@ -1721,6 +1726,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             TextView nameTextView = popupView.findViewById(R.id.text_furniture_popup_name);
             if (nameTextView != null) {
                 nameTextView.setText(currentItem.getName());
+            }
+            ImageView photosIcon = popupView.findViewById(R.id.icon_furniture_popup_photos);
+            if (photosIcon != null) {
+                photosIcon.setOnClickListener(view -> showFurniturePhotoMenu(photosIcon));
             }
             LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
             if (columnsContainer != null) {
@@ -1739,10 +1748,141 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             float elevation = itemView.getResources().getDisplayMetrics().density * 6f;
             popupWindow.setElevation(elevation);
-            popupWindow.setOnDismissListener(() -> furniturePopup = null);
+            popupWindow.setOnDismissListener(() -> {
+                furniturePopup = null;
+                dismissFurniturePhotoMenu();
+            });
             furniturePopup = popupWindow;
             dismissOptionsMenu();
             popupWindow.showAtLocation(itemView, Gravity.CENTER, 0, 0);
+        }
+
+        private void showFurniturePhotoMenu(@NonNull View anchor) {
+            if (currentItem == null) {
+                return;
+            }
+            if (furniturePhotoMenuPopup != null && furniturePhotoMenuPopup.isShowing()) {
+                furniturePhotoMenuPopup.dismiss();
+                return;
+            }
+            LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
+            View popupView = layoutInflater.inflate(R.layout.popup_furniture_photos_menu, null);
+            PopupWindow popupWindow = new PopupWindow(
+                    popupView,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
+            );
+            popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            popupWindow.setOutsideTouchable(true);
+            popupWindow.setOnDismissListener(() -> furniturePhotoMenuPopup = null);
+            furniturePhotoMenuPopup = popupWindow;
+
+            View manageButton = popupView.findViewById(R.id.button_furniture_photos_manage);
+            if (manageButton != null) {
+                manageButton.setOnClickListener(view -> {
+                    popupWindow.dismiss();
+                    notifyEdit();
+                });
+            }
+
+            View viewButton = popupView.findViewById(R.id.button_furniture_photos_view);
+            boolean hasPhotos = currentItem.getPhotos() != null && !currentItem.getPhotos().isEmpty();
+            if (viewButton != null) {
+                if (hasPhotos) {
+                    viewButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        showFurniturePhotoPreview(0);
+                    });
+                } else {
+                    viewButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        Toast.makeText(anchor.getContext(),
+                                R.string.furniture_popup_photos_empty,
+                                Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+
+            popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int popupHeight = popupView.getMeasuredHeight();
+            int verticalOffset = (int) (anchor.getResources().getDisplayMetrics().density * 8);
+
+            Rect displayFrame = new Rect();
+            anchor.getWindowVisibleDisplayFrame(displayFrame);
+            int[] location = new int[2];
+            anchor.getLocationOnScreen(location);
+            int anchorBottom = location[1] + anchor.getHeight();
+            int spaceBelow = displayFrame.bottom - anchorBottom;
+            int spaceAbove = location[1] - displayFrame.top;
+
+            int yOffset = verticalOffset;
+            if (spaceBelow < popupHeight + verticalOffset && spaceAbove >= popupHeight + verticalOffset) {
+                yOffset = -(anchor.getHeight() + popupHeight + verticalOffset);
+            }
+
+            PopupWindowCompat.showAsDropDown(popupWindow, anchor, 0, yOffset, Gravity.END);
+        }
+
+        private void showFurniturePhotoPreview(int startIndex) {
+            if (currentItem == null) {
+                return;
+            }
+            List<String> photos = currentItem.getPhotos();
+            if (photos.isEmpty()) {
+                Toast.makeText(itemView.getContext(), R.string.furniture_popup_photos_empty,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
+            View previewView = layoutInflater.inflate(R.layout.dialog_photo_preview, null);
+            ImageView previewImage = previewView.findViewById(R.id.image_photo_preview);
+            ImageButton previousButton = previewView.findViewById(R.id.button_previous_photo);
+            ImageButton nextButton = previewView.findViewById(R.id.button_next_photo);
+            ImageButton deleteButton = previewView.findViewById(R.id.button_delete_photo);
+            if (deleteButton != null) {
+                deleteButton.setVisibility(View.GONE);
+            }
+            AlertDialog previewDialog = new AlertDialog.Builder(itemView.getContext())
+                    .setView(previewView)
+                    .create();
+            final int[] currentIndex = {Math.max(0, Math.min(startIndex, photos.size() - 1))};
+            Runnable updateImage = () -> {
+                Bitmap bitmap = decodePhoto(photos.get(currentIndex[0]));
+                if (bitmap != null) {
+                    previewImage.setImageBitmap(bitmap);
+                } else {
+                    previewImage.setImageDrawable(null);
+                }
+                boolean hasMultiple = photos.size() > 1;
+                if (previousButton != null) {
+                    previousButton.setEnabled(hasMultiple);
+                }
+                if (nextButton != null) {
+                    nextButton.setEnabled(hasMultiple);
+                }
+            };
+            if (previousButton != null) {
+                previousButton.setOnClickListener(view -> {
+                    if (photos.size() <= 1) {
+                        return;
+                    }
+                    currentIndex[0] = (currentIndex[0] - 1 + photos.size()) % photos.size();
+                    updateImage.run();
+                });
+            }
+            if (nextButton != null) {
+                nextButton.setOnClickListener(view -> {
+                    if (photos.size() <= 1) {
+                        return;
+                    }
+                    currentIndex[0] = (currentIndex[0] + 1) % photos.size();
+                    updateImage.run();
+                });
+            }
+            updateImage.run();
+            previewDialog.show();
         }
 
         private void populateFurniturePopupColumns(@NonNull LinearLayout container,
@@ -1872,11 +2012,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return section;
         }
 
+        private void dismissFurniturePhotoMenu() {
+            if (furniturePhotoMenuPopup != null) {
+                furniturePhotoMenuPopup.dismiss();
+                furniturePhotoMenuPopup = null;
+            }
+        }
+
         void dismissFurniturePopup() {
             if (furniturePopup != null) {
                 furniturePopup.dismiss();
                 furniturePopup = null;
             }
+            dismissFurniturePhotoMenu();
         }
 
         private void notifyEdit() {

@@ -228,4 +228,7 @@
     <string name="furniture_popup_top_title">Superior</string>
     <string name="furniture_popup_bottom_title">Inferior</string>
     <string name="furniture_popup_level_title">Nivel %1$d</string>
+    <string name="furniture_popup_photos_menu_manage">Menú de fotos</string>
+    <string name="furniture_popup_photos_menu_view">Visualización de fotos</string>
+    <string name="furniture_popup_photos_empty">No hay fotos disponibles.</string>
 </resources>
