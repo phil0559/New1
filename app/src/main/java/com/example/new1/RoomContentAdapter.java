@@ -210,9 +210,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         List<CharSequence> metadataLines = new ArrayList<>();
         if (!isFurniture) {
-            if (item.isContainer()) {
-                addAttachmentSummaryLine(metadataLines, item.getAttachedItemCount());
-            }
             addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
             addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
             addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
@@ -460,13 +457,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         metadataLines.add(createMetadataLine(templateRes, trimmed));
     }
 
-    private void addAttachmentSummaryLine(@NonNull List<CharSequence> metadataLines, int count) {
-        if (count <= 0) {
-            return;
-        }
-        metadataLines.add(createAttachmentSummaryLine(count));
-    }
-
     @Nullable
     private CharSequence formatMetadataLines(@NonNull List<CharSequence> metadataLines) {
         if (metadataLines.isEmpty()) {
@@ -505,33 +495,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         applyLabelStyle(builder, labelStart, labelEnd);
         if (!valuePart.isEmpty()) {
             appendValueWithLineBreaks(builder, valuePart);
-        }
-        return builder;
-    }
-
-    @NonNull
-    private CharSequence createAttachmentSummaryLine(int count) {
-        String formatted = context.getString(R.string.room_container_attached_summary, count);
-        int colonIndex = formatted.indexOf(':');
-        String labelPart;
-        String valuePart;
-        if (colonIndex >= 0) {
-            labelPart = formatted.substring(0, colonIndex).trim();
-            valuePart = formatted.substring(colonIndex + 1).trim();
-        } else {
-            labelPart = formatted.trim();
-            valuePart = "";
-        }
-
-        SpannableStringBuilder builder = new SpannableStringBuilder();
-        builder.append('\u2022').append(' ');
-        int labelStart = builder.length();
-        builder.append(labelPart);
-        builder.append(" : ");
-        int labelEnd = builder.length();
-        applyLabelStyle(builder, labelStart, labelEnd);
-        if (!valuePart.isEmpty()) {
-            builder.append(valuePart);
         }
         return builder;
     }
@@ -576,17 +539,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return context.getString(R.string.dialog_room_content_item_placeholder);
         }
         return trimmedName;
-    }
-
-    @NonNull
-    private String appendAttachmentCount(@NonNull String displayName,
-            @NonNull RoomContentItem item) {
-        // Afficher le nombre d’éléments rattachés seulement lorsqu’il est positif.
-        int count = Math.max(0, item.getAttachedItemCount());
-        if (count <= 0) {
-            return displayName;
-        }
-        return displayName + " (" + count + ")";
     }
 
     @Nullable
@@ -1333,14 +1285,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (filterChipGroup != null) {
                 filterChipGroup.setVisibility(defaultFilterVisibility);
             }
-            String baseName = resolveItemName(item);
-            if (item.isContainer()) {
-                baseName = appendAttachmentCount(baseName, item);
-            }
-            String displayName = baseName;
+            String displayName = resolveItemName(item);
             String rankLabel = item.getDisplayRank();
             if (rankLabel != null && !rankLabel.trim().isEmpty()) {
-                displayName = rankLabel + " · " + baseName;
+                displayName = rankLabel + " · " + displayName;
             }
             String placementLabel = formatFurniturePlacement(item);
             if (placementLabel != null && !placementLabel.isEmpty()) {

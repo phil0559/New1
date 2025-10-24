@@ -87,7 +87,6 @@
     <string name="room_container_deleted_confirmation">Contenant supprimé.</string>
     <string name="room_furniture_added_confirmation">Mobilier ajouté à la pièce.</string>
     <string name="room_furniture_updated_confirmation">Mobilier mis à jour.</string>
-    <string name="room_container_attached_summary">Éléments rattachés : %1$d</string>
     <string name="room_content_metadata_type">Type : %1$s</string>
     <string name="room_content_metadata_category">Catégorie : %1$s</string>
     <string name="room_content_metadata_series">Série : %1$s</string>
