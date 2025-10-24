@@ -86,17 +86,6 @@
                             android:layout_weight="1" />
 
                         <ImageView
-                            android:id="@+id/image_room_content_add"
-                            android:layout_width="@dimen/list_item_action_icon_size"
-                            android:layout_height="@dimen/list_item_action_icon_size"
-                            android:layout_marginStart="12dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@null"
-                            android:padding="4dp"
-                            android:src="@drawable/ic_add"
-                            android:tint="@color/icon_brown" />
-
-                        <ImageView
                             android:id="@+id/image_room_content_menu"
                             android:layout_width="@dimen/list_item_action_icon_size"
                             android:layout_height="@dimen/list_item_action_icon_size"
