@@ -1909,14 +1909,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (position == RecyclerView.NO_POSITION) {
                     continue;
                 }
-                int groupStart = resolveDecoratedGroupStart(position);
-                if (groupStart < 0 || groups.indexOfKey(groupStart) >= 0) {
-                    continue;
-                }
-                int groupEnd = findLastDisplayedDirectChildPosition(groupStart);
-                if (groupEnd > groupStart) {
-                    groups.put(groupStart, groupEnd);
-                }
+                collectDecoratedGroupsForPosition(position, groups);
             }
             for (int i = 0; i < groups.size(); i++) {
                 int groupStart = groups.keyAt(i);
@@ -1937,22 +1930,39 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
         }
 
-        private int resolveDecoratedGroupStart(int position) {
+        private void collectDecoratedGroupsForPosition(int position,
+                @NonNull SparseIntArray groups) {
             if (position < 0 || position >= items.size()) {
-                return -1;
+                return;
             }
-            RoomContentItem item = items.get(position);
-            if (item == null) {
-                return -1;
+            int currentPosition = position;
+            int safety = 0;
+            while (currentPosition >= 0 && currentPosition < items.size()
+                    && safety < items.size()) {
+                RoomContentItem currentItem = items.get(currentPosition);
+                if (currentItem == null) {
+                    break;
+                }
+                int containerPosition = currentItem.isContainer()
+                        ? currentPosition
+                        : findAttachedContainerPosition(currentPosition);
+                if (containerPosition < 0 || containerPosition >= items.size()) {
+                    break;
+                }
+                if (shouldDecorateContainer(containerPosition)
+                        && groups.indexOfKey(containerPosition) < 0) {
+                    int groupEnd = findLastDisplayedDirectChildPosition(containerPosition);
+                    if (groupEnd > containerPosition) {
+                        groups.put(containerPosition, groupEnd);
+                    }
+                }
+                int parentPosition = findAttachedContainerPosition(containerPosition);
+                if (parentPosition < 0 || parentPosition == currentPosition) {
+                    break;
+                }
+                currentPosition = parentPosition;
+                safety++;
             }
-            if (item.isContainer()) {
-                return shouldDecorateContainer(position) ? position : -1;
-            }
-            int containerPosition = findAttachedContainerPosition(position);
-            if (containerPosition >= 0 && shouldDecorateContainer(containerPosition)) {
-                return containerPosition;
-            }
-            return -1;
         }
 
         private boolean shouldDecorateContainer(int containerPosition) {
