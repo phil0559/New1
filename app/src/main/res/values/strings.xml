@@ -142,7 +142,7 @@
     <string name="dialog_label_furniture_has_top">Présence d’un dessus</string>
     <string name="dialog_label_furniture_has_bottom">Présence d’un dessous</string>
     <string name="dialog_furniture_type_shelf">- Étagère</string>
-    <string name="popup_add_room_content_option_furniture">Mobilier</string>
+    <string name="popup_add_room_content_option_furniture">- Mobilier</string>
     <string name="error_furniture_name_required">Le nom du mobilier est obligatoire</string>
     <string name="dialog_barcode_section_title">Code-barres</string>
     <string name="dialog_button_barcode">Flasher</string>
