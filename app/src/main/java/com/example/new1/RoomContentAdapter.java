@@ -1188,8 +1188,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final ImageView toggleView;
         final ImageView menuView;
         @Nullable
-        final ImageView addView;
-        @Nullable
         final View filledIndicatorView;
         @Nullable
         final ViewGroup filterChipGroup;
@@ -1237,7 +1235,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultPhotoVisibility;
         private final int defaultMenuVisibility;
         private final int defaultToggleVisibility;
-        private final int defaultAddVisibility;
         private final int defaultFilterVisibility;
 
         ViewHolder(@NonNull View itemView,
@@ -1258,7 +1255,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             metadataView = itemView.findViewById(R.id.text_room_content_metadata);
             toggleView = itemView.findViewById(R.id.image_room_content_toggle);
             menuView = itemView.findViewById(R.id.image_room_content_menu);
-            addView = itemView.findViewById(R.id.image_room_content_add);
             filledIndicatorView = itemView.findViewById(R.id.view_room_container_filled_indicator);
             filterChipGroup = itemView.findViewById(R.id.chip_group_room_content_filters);
             containersFilterChip = itemView.findViewById(R.id.chip_room_content_filter_containers);
@@ -1278,10 +1274,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 itemsFilterChip.setOnClickListener(
                         view -> onFilterChipToggled(itemsFilterChip, VISIBILITY_FLAG_ITEMS));
             }
-            if (addView != null) {
-                addView.setOnClickListener(view -> Toast.makeText(itemView.getContext(),
-                        R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
-            }
             defaultPaddingStart = photoView != null ? photoView.getPaddingStart() : 0;
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
@@ -1289,7 +1281,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultPhotoVisibility = photoView != null ? photoView.getVisibility() : View.GONE;
             defaultMenuVisibility = menuView.getVisibility();
             defaultToggleVisibility = toggleView.getVisibility();
-            defaultAddVisibility = addView != null ? addView.getVisibility() : View.GONE;
             defaultFilterVisibility = filterChipGroup != null
                     ? filterChipGroup.getVisibility()
                     : View.GONE;
@@ -1339,9 +1330,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             menuView.setVisibility(defaultMenuVisibility);
             toggleView.setVisibility(defaultToggleVisibility);
-            if (addView != null) {
-                addView.setVisibility(defaultAddVisibility);
-            }
             if (filterChipGroup != null) {
                 filterChipGroup.setVisibility(defaultFilterVisibility);
             }
@@ -1444,11 +1432,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (filledIndicatorView != null) {
                     RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView);
                 }
-                if (addView != null) {
-                    addView.setVisibility(View.VISIBLE);
-                    addView.setEnabled(true);
-                    addView.setAlpha(1f);
-                }
             } else {
                 RoomContentItem attachedContainer = RoomContentAdapter.this
                         .findAttachedContainer(position);
@@ -1477,9 +1460,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                             currentStyle);
                 }
                 applyBannerColor(bannerContainer, item.getType());
-                if (addView != null) {
-                    addView.setVisibility(View.GONE);
-                }
             }
             boolean hiddenByHierarchy = RoomContentAdapter.this
                     .isItemHiddenByCollapsedContainer(position);
@@ -1522,9 +1502,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     photoView.setVisibility(View.GONE);
                 }
                 menuView.setVisibility(View.GONE);
-                if (addView != null) {
-                    addView.setVisibility(View.GONE);
-                }
                 toggleView.setVisibility(View.GONE);
                 if (filterChipGroup != null) {
                     filterChipGroup.setVisibility(View.GONE);
