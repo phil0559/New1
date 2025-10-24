@@ -59,6 +59,41 @@ public class RoomContentHierarchyHelperTest {
         assertEquals("1.2", secondChild.getDisplayRank());
     }
 
+    @Test
+    public void normalizeHierarchyPopulatesChildrenRelationships() {
+        RoomContentItem furniture = createContainer("Bibliothèque");
+        furniture.setRank(10L);
+
+        RoomContentItem topLevelAttachment = createAttachment("Livre A");
+        topLevelAttachment.setRank(20L);
+        topLevelAttachment.setParentRank(furniture.getRank());
+
+        RoomContentItem shelf = createContainer("Étagère 1");
+        shelf.setRank(30L);
+        shelf.setParentRank(furniture.getRank());
+
+        RoomContentItem nestedAttachment = createAttachment("Livre B");
+        nestedAttachment.setRank(40L);
+        nestedAttachment.setParentRank(shelf.getRank());
+
+        List<RoomContentItem> items = new ArrayList<>();
+        items.add(furniture);
+        items.add(topLevelAttachment);
+        items.add(shelf);
+        items.add(nestedAttachment);
+
+        RoomContentHierarchyHelper.normalizeHierarchy(items);
+
+        List<RoomContentItem> furnitureChildren = furniture.getChildren();
+        assertEquals(2, furnitureChildren.size());
+        assertEquals(topLevelAttachment, furnitureChildren.get(0));
+        assertEquals(shelf, furnitureChildren.get(1));
+
+        List<RoomContentItem> shelfChildren = shelf.getChildren();
+        assertEquals(1, shelfChildren.size());
+        assertEquals(nestedAttachment, shelfChildren.get(0));
+    }
+
     private RoomContentItem createContainer(String name) {
         return new RoomContentItem(name, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, true, 0);
