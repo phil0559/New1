@@ -105,8 +105,8 @@
     <string name="dialog_delete_room_container_message">Voulez-vous supprimer le contenant %1$s ?</string>
     <string name="dialog_move_room_content_title">Déplacer l’élément</string>
     <string name="dialog_move_room_content_establishment_label">Établissement</string>
-    <string name="dialog_move_room_content_room_label">Pièce</string>
-    <string name="dialog_move_room_content_container_label">Contenant</string>
+    <string name="dialog_move_room_content_room_label">Choisissez la pièce de destination</string>
+    <string name="dialog_move_room_content_container_label">Choisissez le contenant parent ou le mobilier où placer l’élément.</string>
     <string name="dialog_move_room_content_no_container">Aucun contenant</string>
     <string name="dialog_move_room_content_move_button">Déplacer</string>
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[Aucun établissement disponible pour déplacer cet élément.]]></string>
