@@ -17,4 +17,8 @@
         <item>@string/dialog_container_type_box</item>
         <item>@string/dialog_container_type_bag</item>
     </string-array>
+
+    <string-array name="furniture_type_defaults">
+        <item>@string/dialog_furniture_type_shelf</item>
+    </string-array>
 </resources>

@@ -47,6 +47,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -193,35 +194,40 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         RoomContentItem item = items.get(position);
         holder.bind(item, position);
 
-        CharSequence commentText = formatComment(item.getComment());
+        boolean isFurniture = item.isFurniture();
+        CharSequence commentText = isFurniture ? null : formatComment(item.getComment());
         boolean hasComment = commentText != null;
-        List<RoomContentItem> children = item.getChildren();
+        List<RoomContentItem> children = isFurniture
+                ? Collections.emptyList()
+                : item.getChildren();
         boolean hasChildren = !children.isEmpty();
 
         List<CharSequence> metadataLines = new ArrayList<>();
-        if (item.isContainer()) {
-            addAttachmentSummaryLine(metadataLines, item.getAttachedItemCount());
+        if (!isFurniture) {
+            if (item.isContainer()) {
+                addAttachmentSummaryLine(metadataLines, item.getAttachedItemCount());
+            }
+            addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_author, item.getAuthor());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_publisher, item.getPublisher());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_edition, item.getEdition());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_publication_date,
+                    item.getPublicationDate());
+            addMetadataLine(metadataLines, R.string.room_content_metadata_summary, item.getSummary());
+            List<String> tracks = item.getTracks();
+            if (!tracks.isEmpty()) {
+                addMetadataLine(metadataLines, R.string.room_content_metadata_tracks,
+                        TextUtils.join("\n", tracks));
+            }
+            addMetadataLine(metadataLines, R.string.room_content_metadata_barcode, item.getBarcode());
         }
-        addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_author, item.getAuthor());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_publisher, item.getPublisher());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_edition, item.getEdition());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_publication_date,
-                item.getPublicationDate());
-        addMetadataLine(metadataLines, R.string.room_content_metadata_summary, item.getSummary());
-        List<String> tracks = item.getTracks();
-        if (!tracks.isEmpty()) {
-            addMetadataLine(metadataLines, R.string.room_content_metadata_tracks,
-                    TextUtils.join("\n", tracks));
-        }
-        addMetadataLine(metadataLines, R.string.room_content_metadata_barcode, item.getBarcode());
         CharSequence metadataText = formatMetadataLines(metadataLines);
         boolean hasMetadata = metadataText != null;
 
         boolean isContainer = item.isContainer();
-        boolean canToggleContainer = isContainer && item.hasAttachedItems();
+        boolean canToggleContainer = !isFurniture && isContainer && item.hasAttachedItems();
         if (canToggleContainer) {
             expandedStates.delete(position);
         }
@@ -1216,6 +1222,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         private PopupWindow optionsPopup;
         private boolean suppressFilterCallbacks;
+        private final int defaultPhotoVisibility;
+        private final int defaultMenuVisibility;
+        private final int defaultToggleVisibility;
+        private final int defaultAddVisibility;
+        private final int defaultFilterVisibility;
 
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
@@ -1263,6 +1274,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultPaddingTop = photoView != null ? photoView.getPaddingTop() : 0;
             defaultPaddingEnd = photoView != null ? photoView.getPaddingEnd() : 0;
             defaultPaddingBottom = photoView != null ? photoView.getPaddingBottom() : 0;
+            defaultPhotoVisibility = photoView != null ? photoView.getVisibility() : View.GONE;
+            defaultMenuVisibility = menuView.getVisibility();
+            defaultToggleVisibility = toggleView.getVisibility();
+            defaultAddVisibility = addView != null ? addView.getVisibility() : View.GONE;
+            defaultFilterVisibility = filterChipGroup != null
+                    ? filterChipGroup.getVisibility()
+                    : View.GONE;
             ViewGroup.LayoutParams params = itemView.getLayoutParams();
             if (params instanceof RecyclerView.LayoutParams) {
                 RecyclerView.LayoutParams layoutParams = (RecyclerView.LayoutParams) params;
@@ -1303,6 +1321,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         void bind(@NonNull RoomContentItem item, int position) {
             currentItem = item;
             dismissOptionsMenu();
+            if (photoView != null) {
+                photoView.setVisibility(defaultPhotoVisibility);
+            }
+            menuView.setVisibility(defaultMenuVisibility);
+            toggleView.setVisibility(defaultToggleVisibility);
+            if (addView != null) {
+                addView.setVisibility(defaultAddVisibility);
+            }
+            if (filterChipGroup != null) {
+                filterChipGroup.setVisibility(defaultFilterVisibility);
+            }
             String baseName = resolveItemName(item);
             if (item.isContainer()) {
                 baseName = appendAttachmentCount(baseName, item);
@@ -1471,13 +1500,33 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 boolean showIndicator = item.isContainer() && item.hasAttachedItems() && !isExpanded;
                 filledIndicatorView.setVisibility(showIndicator ? View.VISIBLE : View.GONE);
             }
-            updatePhoto(item);
-            if (photoView != null) {
-                photoView.setContentDescription(itemView.getContext()
-                        .getString(R.string.content_description_room_content_photos, displayName));
+            if (item.isFurniture()) {
+                if (photoView != null) {
+                    photoView.setVisibility(View.GONE);
+                }
+                menuView.setVisibility(View.GONE);
+                if (addView != null) {
+                    addView.setVisibility(View.GONE);
+                }
+                toggleView.setVisibility(View.GONE);
+                if (filterChipGroup != null) {
+                    filterChipGroup.setVisibility(View.GONE);
+                }
             }
-            menuView.setContentDescription(itemView.getContext()
-                    .getString(R.string.content_description_room_content_menu, displayName));
+            updatePhoto(item);
+            if (!item.isFurniture()) {
+                if (photoView != null) {
+                    photoView.setContentDescription(itemView.getContext()
+                            .getString(R.string.content_description_room_content_photos, displayName));
+                }
+                menuView.setContentDescription(itemView.getContext()
+                        .getString(R.string.content_description_room_content_menu, displayName));
+            } else {
+                if (photoView != null) {
+                    photoView.setContentDescription(null);
+                }
+                menuView.setContentDescription(null);
+            }
         }
 
         void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
