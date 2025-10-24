@@ -1297,7 +1297,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             this.interactionListener = interactionListener;
             bannerContainer.setOnClickListener(view -> handleBannerClick());
             bannerContainer.setOnLongClickListener(view -> {
-                if (currentItem != null && currentItem.isContainer()) {
+                if (currentItem != null && currentItem.isContainer()
+                        && !currentItem.isFurniture()) {
                     toggleContainerPopup();
                     return true;
                 }
@@ -1307,7 +1308,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 photoView.setOnClickListener(view -> notifyEdit());
             }
             toggleView.setOnClickListener(view -> {
-                if (currentItem != null && currentItem.isContainer()) {
+                if (currentItem != null && currentItem.isContainer()
+                        && !currentItem.isFurniture()) {
                     cycleContainerViewState();
                 } else {
                     toggleExpansion();
@@ -1576,7 +1578,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
             RoomContentItem item = currentItem;
-            if (item != null && item.isContainer() && item.hasAttachedItems()) {
+            if (item != null && item.isContainer() && item.hasAttachedItems()
+                    && !item.isFurniture()) {
                 toggleView.setVisibility(View.VISIBLE);
                 toggleView.setEnabled(true);
                 toggleView.setRotation(0f);
@@ -2538,6 +2541,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         private void cycleContainerViewState() {
             if (currentItem == null || !currentItem.isContainer()
+                    || currentItem.isFurniture()
                     || !currentItem.hasAttachedItems()) {
                 toggleExpansion();
                 return;
