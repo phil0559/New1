@@ -141,6 +141,11 @@
     <string name="dialog_label_furniture_columns">Nombre de colonnes</string>
     <string name="dialog_label_furniture_has_top">Présence d’un dessus</string>
     <string name="dialog_label_furniture_has_bottom">Présence d’un dessous</string>
+    <string name="furniture_popup_columns_title">Colonne</string>
+    <string name="furniture_popup_column_short">C</string>
+    <string name="furniture_popup_top_title">Dessus</string>
+    <string name="furniture_popup_bottom_title">Dessous</string>
+    <string name="furniture_popup_level_title">Niveau %1$d</string>
     <string name="dialog_furniture_type_shelf">- Étagère</string>
     <string name="popup_add_room_content_option_furniture">- Mobilier</string>
     <string name="error_furniture_name_required">Le nom du mobilier est obligatoire</string>

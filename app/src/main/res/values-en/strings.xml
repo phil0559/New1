@@ -223,4 +223,9 @@
     <string name="popup_room_content_move">Move</string>
     <string name="popup_room_content_edit">Edit</string>
     <string name="popup_room_content_delete">Delete</string>
+    <string name="furniture_popup_columns_title">Column</string>
+    <string name="furniture_popup_column_short">C</string>
+    <string name="furniture_popup_top_title">Top</string>
+    <string name="furniture_popup_bottom_title">Bottom</string>
+    <string name="furniture_popup_level_title">Level %1$d</string>
 </resources>
