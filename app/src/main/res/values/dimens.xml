@@ -26,4 +26,5 @@
     <dimen name="furniture_popup_column_chip_size">42dp</dimen>
     <dimen name="furniture_popup_column_chip_spacing">8dp</dimen>
     <dimen name="furniture_popup_column_drawable_padding">6dp</dimen>
+    <dimen name="furniture_popup_section_indicator_height">4dp</dimen>
 </resources>

@@ -1990,6 +1990,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             Integer furnitureLevels = item.getFurnitureLevels();
             int levelCount = furnitureLevels != null && furnitureLevels > 0 ? furnitureLevels : 0;
             boolean hasBottom = item.hasFurnitureBottom();
+            List<RoomContentItem> children = item.getChildren();
             if (!hasTop && levelCount <= 0 && !hasBottom) {
                 container.setVisibility(View.GONE);
                 return;
@@ -1997,17 +1998,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             container.setVisibility(View.VISIBLE);
             if (hasTop) {
                 View section = createFurnitureSection(layoutInflater, container,
-                        context.getString(R.string.furniture_popup_top_title), false);
+                        context.getString(R.string.furniture_popup_top_title), false,
+                        Collections.emptyList());
                 container.addView(section);
             }
             for (int index = 1; index <= levelCount; index++) {
                 String title = context.getString(R.string.furniture_popup_level_title, index);
-                View section = createFurnitureSection(layoutInflater, container, title, true);
+                List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children, index);
+                View section = createFurnitureSection(layoutInflater, container, title, true,
+                        levelItems);
                 container.addView(section);
             }
             if (hasBottom) {
                 View section = createFurnitureSection(layoutInflater, container,
-                        context.getString(R.string.furniture_popup_bottom_title), false);
+                        context.getString(R.string.furniture_popup_bottom_title), false,
+                        Collections.emptyList());
                 container.addView(section);
             }
         }
@@ -2016,7 +2021,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private View createFurnitureSection(@NonNull LayoutInflater layoutInflater,
                 @NonNull LinearLayout parent,
                 @NonNull String title,
-                boolean isLevel) {
+                boolean isLevel,
+                @NonNull List<RoomContentItem> levelItems) {
             View section = layoutInflater.inflate(R.layout.item_furniture_section, parent, false);
             TextView titleView = section.findViewById(R.id.text_section_title);
             if (titleView != null) {
@@ -2034,7 +2040,156 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 params.topMargin = spacing;
             }
             section.setLayoutParams(params);
+            View headerView = section.findViewById(R.id.container_section_header);
+            ImageView chevronView = section.findViewById(R.id.icon_section_chevron);
+            LinearLayout contentContainer = section.findViewById(R.id.container_section_content);
+            View indicatorView = section.findViewById(R.id.view_section_indicator);
+            if (isLevel) {
+                populateFurnitureSectionContent(contentContainer, levelItems);
+                boolean hasContent = !levelItems.isEmpty();
+                if (indicatorView != null) {
+                    indicatorView.setVisibility(hasContent ? View.VISIBLE : View.GONE);
+                }
+                if (chevronView != null) {
+                    chevronView.setVisibility(View.VISIBLE);
+                    chevronView.setRotation(0f);
+                }
+                if (headerView != null && chevronView != null && contentContainer != null) {
+                    setupSectionToggle(headerView, contentContainer, chevronView);
+                } else if (headerView != null) {
+                    headerView.setOnClickListener(null);
+                }
+            } else {
+                if (chevronView != null) {
+                    chevronView.setVisibility(View.GONE);
+                    chevronView.setRotation(0f);
+                }
+                if (contentContainer != null) {
+                    contentContainer.setVisibility(View.GONE);
+                    contentContainer.removeAllViews();
+                }
+                if (indicatorView != null) {
+                    indicatorView.setVisibility(View.GONE);
+                }
+                if (headerView != null) {
+                    headerView.setOnClickListener(null);
+                }
+            }
             return section;
+        }
+
+        @NonNull
+        private List<RoomContentItem> collectFurnitureItemsForLevel(
+                @Nullable List<RoomContentItem> children,
+                int desiredLevel) {
+            if (children == null || children.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<RoomContentItem> matches = new ArrayList<>();
+            for (RoomContentItem child : children) {
+                if (child == null) {
+                    continue;
+                }
+                Integer childLevel = child.getContainerLevel();
+                if (childLevel != null && childLevel == desiredLevel) {
+                    matches.add(child);
+                }
+            }
+            if (matches.isEmpty()) {
+                return Collections.emptyList();
+            }
+            Collections.sort(matches, (left, right) -> {
+                int columnComparison = compareNullableIntegers(left.getContainerColumn(),
+                        right.getContainerColumn());
+                if (columnComparison != 0) {
+                    return columnComparison;
+                }
+                String leftName = RoomContentAdapter.this.resolveItemName(left);
+                String rightName = RoomContentAdapter.this.resolveItemName(right);
+                return leftName.compareToIgnoreCase(rightName);
+            });
+            return matches;
+        }
+
+        private void populateFurnitureSectionContent(@Nullable LinearLayout container,
+                @NonNull List<RoomContentItem> items) {
+            if (container == null) {
+                return;
+            }
+            container.removeAllViews();
+            LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
+            if (items.isEmpty()) {
+                View emptyView = layoutInflater.inflate(R.layout.item_furniture_section_empty,
+                        container, false);
+                container.addView(emptyView);
+                return;
+            }
+            for (RoomContentItem child : items) {
+                if (child == null) {
+                    continue;
+                }
+                View entryView = layoutInflater.inflate(R.layout.item_room_content_child,
+                        container, false);
+                TextView nameView = entryView.findViewById(R.id.text_room_content_child_name);
+                TextView commentView = entryView.findViewById(R.id.text_room_content_child_comment);
+                if (nameView != null) {
+                    String name = RoomContentAdapter.this.resolveItemName(child);
+                    Integer column = child.getContainerColumn();
+                    if (column != null) {
+                        Context context = entryView.getContext();
+                        String columnLabel = context.getString(
+                                R.string.room_content_furniture_column_short, column);
+                        nameView.setText(columnLabel + " · " + name);
+                    } else {
+                        nameView.setText(name);
+                    }
+                }
+                if (commentView != null) {
+                    String comment = child.getComment();
+                    String trimmed = comment != null ? comment.trim() : "";
+                    if (!trimmed.isEmpty()) {
+                        commentView.setVisibility(View.VISIBLE);
+                        commentView.setText(trimmed);
+                    } else {
+                        commentView.setVisibility(View.GONE);
+                        commentView.setText(null);
+                    }
+                }
+                container.addView(entryView);
+            }
+        }
+
+        private void setupSectionToggle(@NonNull View headerView,
+                @NonNull LinearLayout contentContainer,
+                @NonNull ImageView chevronView) {
+            headerView.setClickable(true);
+            headerView.setFocusable(true);
+            contentContainer.setVisibility(View.GONE);
+            chevronView.setRotation(0f);
+            headerView.setOnClickListener(view -> {
+                boolean expanded = contentContainer.getVisibility() == View.VISIBLE;
+                chevronView.animate().cancel();
+                if (expanded) {
+                    contentContainer.setVisibility(View.GONE);
+                    chevronView.animate().rotation(0f).setDuration(150).start();
+                } else {
+                    contentContainer.setVisibility(View.VISIBLE);
+                    chevronView.animate().rotation(-180f).setDuration(150).start();
+                }
+            });
+        }
+
+        private int compareNullableIntegers(@Nullable Integer left, @Nullable Integer right) {
+            if (left == null && right == null) {
+                return 0;
+            }
+            if (left == null) {
+                return 1;
+            }
+            if (right == null) {
+                return -1;
+            }
+            return Integer.compare(left, right);
         }
 
         private void dismissFurniturePhotoMenu() {
