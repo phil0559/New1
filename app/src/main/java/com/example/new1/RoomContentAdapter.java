@@ -1469,8 +1469,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (groupWrapperView == null) {
                 return;
             }
+            int backgroundRes;
+            if (isFirstInGroup && isLastInGroup) {
+                backgroundRes = R.drawable.group_background;
+            } else if (isFirstInGroup) {
+                backgroundRes = R.drawable.bg_room_container_group_header;
+            } else if (isLastInGroup) {
+                backgroundRes = R.drawable.bg_room_content_group_footer;
+            } else {
+                backgroundRes = R.drawable.bg_room_content_group_middle;
+            }
             Drawable drawable = ContextCompat.getDrawable(groupWrapperView.getContext(),
-                    R.drawable.group_background);
+                    backgroundRes);
+            if (drawable != null) {
+                drawable = drawable.mutate();
+            }
             groupWrapperView.setBackground(drawable);
             groupWrapperView.setPadding(defaultGroupPaddingLeft, defaultGroupPaddingTop,
                     defaultGroupPaddingRight, defaultGroupPaddingBottom);
