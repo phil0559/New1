@@ -2527,7 +2527,7 @@ public class RoomContentActivity extends Activity {
                     RoomContentItem furniture = targetOption.container;
                     Integer maxLevels = furniture.getFurnitureLevels();
                     Integer maxColumns = furniture.getFurnitureColumns();
-                    if (maxLevels != null && maxLevels > 0) {
+                    if (maxLevels == null || maxLevels > 0) {
                         Integer parsedLevel = parsePositiveInteger(furnitureLevelInput != null
                                 ? furnitureLevelInput.getText()
                                 : null);
@@ -3173,7 +3173,7 @@ public class RoomContentActivity extends Activity {
         RoomContentItem furniture = option.container;
         Integer maxLevels = furniture.getFurnitureLevels();
         Integer maxColumns = furniture.getFurnitureColumns();
-        boolean showLevel = maxLevels != null && maxLevels > 0;
+        boolean showLevel = maxLevels == null || maxLevels > 0;
         boolean showColumn = maxColumns != null && maxColumns > 0;
         if (!showLevel && !showColumn) {
             detailsContainer.setVisibility(View.GONE);
