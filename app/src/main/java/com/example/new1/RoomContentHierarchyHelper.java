@@ -23,6 +23,7 @@ final class RoomContentHierarchyHelper {
         ensureRanks(items);
         sanitizeParentLinks(items);
         rebuildAttachedCounts(items);
+        rebuildChildrenRelationships(items);
         assignDisplayRanks(items);
     }
 
@@ -77,6 +78,25 @@ final class RoomContentHierarchyHelper {
                 continue;
             }
             parent.incrementAttachedItemCount();
+        }
+    }
+
+    private static void rebuildChildrenRelationships(@NonNull List<RoomContentItem> items) {
+        Map<Long, RoomContentItem> byRank = new HashMap<>();
+        for (RoomContentItem item : items) {
+            item.clearChildren();
+            byRank.put(item.getRank(), item);
+        }
+        for (RoomContentItem item : items) {
+            Long parentRank = item.getParentRank();
+            if (parentRank == null) {
+                continue;
+            }
+            RoomContentItem parent = byRank.get(parentRank);
+            if (parent == null || parent == item || !parent.isContainer()) {
+                continue;
+            }
+            parent.addChild(item);
         }
     }
 
