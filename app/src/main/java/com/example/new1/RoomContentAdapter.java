@@ -39,6 +39,7 @@ import com.google.android.material.chip.Chip;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -78,6 +79,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final OnRoomContentInteractionListener interactionListener;
     private final SparseBooleanArray expandedStates = new SparseBooleanArray();
     private final SparseIntArray containerVisibilityStates = new SparseIntArray();
+    private final SparseIntArray containerLastVisibilityStates = new SparseIntArray();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final float cardElevationLevel0Px;
@@ -673,7 +675,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private void setContainerExpanded(int position, boolean expanded) {
-        int visibilityMask = expanded ? VISIBILITY_DEFAULT_MASK : 0;
+        int visibilityMask;
+        if (expanded) {
+            visibilityMask = getLastNonEmptyVisibilityMask(position);
+        } else {
+            visibilityMask = 0;
+        }
         setContainerVisibilityMask(position, visibilityMask);
     }
 
@@ -686,6 +693,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         int normalizedMask = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalizedMask != 0) {
+            containerLastVisibilityStates.put(position, normalizedMask);
+        }
         if (normalizedMask == VISIBILITY_DEFAULT_MASK) {
             visibilityStates.delete(position);
         } else {
@@ -693,6 +703,74 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         updateAttachedItemsDisplayState(position, normalizedMask);
         invalidateDecorations();
+    }
+
+    private int getLastNonEmptyVisibilityMask(int position) {
+        if (position < 0 || position >= items.size()) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        int stored = containerLastVisibilityStates.get(position, VISIBILITY_DEFAULT_MASK);
+        if (stored == 0) {
+            stored = VISIBILITY_DEFAULT_MASK;
+        }
+        containerLastVisibilityStates.put(position, stored);
+        return stored;
+    }
+
+    private int resolveContainerDisplayMask(int position) {
+        int currentMask = getContainerVisibilityMask(position);
+        if (currentMask != 0) {
+            return currentMask;
+        }
+        return getLastNonEmptyVisibilityMask(position);
+    }
+
+    private int getNextContainerVisibilityMask(int currentMask) {
+        int normalized = currentMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalized == VISIBILITY_FLAG_CONTAINERS) {
+            return VISIBILITY_FLAG_ITEMS;
+        }
+        if (normalized == VISIBILITY_FLAG_ITEMS) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        return VISIBILITY_FLAG_CONTAINERS;
+    }
+
+    private void cycleContainerVisibilityState(int position) {
+        if (position < 0 || position >= items.size()) {
+            return;
+        }
+        int currentMask = getContainerVisibilityMask(position);
+        if (currentMask == 0) {
+            setContainerExpanded(position, true);
+            return;
+        }
+        int nextMask = getNextContainerVisibilityMask(currentMask);
+        setContainerVisibilityMask(position, nextMask);
+    }
+
+    @DrawableRes
+    private int resolveContainerViewStateIcon(int visibilityMask) {
+        int normalized = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalized == VISIBILITY_FLAG_CONTAINERS) {
+            return R.drawable.ic_container_view_state_containers;
+        }
+        if (normalized == VISIBILITY_FLAG_ITEMS) {
+            return R.drawable.ic_container_view_state_items;
+        }
+        return R.drawable.ic_container_view_state_full;
+    }
+
+    @StringRes
+    private int resolveContainerViewStateDescriptionRes(int visibilityMask) {
+        int normalized = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalized == VISIBILITY_FLAG_CONTAINERS) {
+            return R.string.content_description_room_content_view_state_containers;
+        }
+        if (normalized == VISIBILITY_FLAG_ITEMS) {
+            return R.string.content_description_room_content_view_state_items;
+        }
+        return R.string.content_description_room_content_view_state_full;
     }
 
     private void updateAttachedItemsDisplayState(int containerPosition, int visibilityMask) {
@@ -745,6 +823,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     public void collapseAllContainers() {
         containerVisibilityStates.clear();
+        containerLastVisibilityStates.clear();
         for (int index = 0; index < items.size(); index++) {
             RoomContentItem item = items.get(index);
             if (!item.isContainer()) {
@@ -1217,10 +1296,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             itemsFilterChip = itemView.findViewById(R.id.chip_room_content_filter_items);
             this.interactionListener = interactionListener;
             bannerContainer.setOnClickListener(view -> handleBannerClick());
+            bannerContainer.setOnLongClickListener(view -> {
+                if (currentItem != null && currentItem.isContainer()) {
+                    toggleContainerPopup();
+                    return true;
+                }
+                return false;
+            });
             if (photoView != null) {
                 photoView.setOnClickListener(view -> notifyEdit());
             }
-            toggleView.setOnClickListener(view -> toggleExpansion());
+            toggleView.setOnClickListener(view -> {
+                if (currentItem != null && currentItem.isContainer()) {
+                    cycleContainerViewState();
+                } else {
+                    toggleExpansion();
+                }
+            });
             menuView.setOnClickListener(view -> toggleOptionsMenu(menuView));
             if (containersFilterChip != null) {
                 containersFilterChip.setOnClickListener(
@@ -1450,8 +1542,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 filledIndicatorView.setVisibility(showIndicator ? View.VISIBLE : View.GONE);
             }
             if (item.isContainer()) {
-                menuView.setVisibility(View.GONE);
-                toggleView.setVisibility(View.GONE);
+                menuView.setVisibility(View.VISIBLE);
+                toggleView.setRotation(0f);
                 if (filterChipGroup != null) {
                     filterChipGroup.setVisibility(View.GONE);
                 }
@@ -1483,6 +1575,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         void updateToggle(boolean hasDetails, boolean isExpanded, @NonNull String name) {
+            RoomContentItem item = currentItem;
+            if (item != null && item.isContainer() && item.hasAttachedItems()) {
+                toggleView.setVisibility(View.VISIBLE);
+                toggleView.setEnabled(true);
+                toggleView.setRotation(0f);
+                int position = getBindingAdapterPosition();
+                int mask = position != RecyclerView.NO_POSITION
+                        ? RoomContentAdapter.this.resolveContainerDisplayMask(position)
+                        : VISIBILITY_DEFAULT_MASK;
+                toggleView.setImageResource(RoomContentAdapter.this
+                        .resolveContainerViewStateIcon(mask));
+                int descriptionRes = RoomContentAdapter.this
+                        .resolveContainerViewStateDescriptionRes(mask);
+                toggleView.setContentDescription(itemView.getContext()
+                        .getString(descriptionRes, name));
+                return;
+            }
             if (!hasDetails) {
                 toggleView.setVisibility(View.GONE);
                 toggleView.setContentDescription(null);
@@ -1492,6 +1601,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             toggleView.setVisibility(View.VISIBLE);
             toggleView.setEnabled(true);
+            toggleView.setImageResource(R.drawable.ic_chevron_down);
             toggleView.setRotation(isExpanded ? 180f : 0f);
             int descriptionRes = isExpanded
                     ? R.string.content_description_room_content_collapse
@@ -1504,6 +1614,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (toggleButton == null) {
                 return;
             }
+            RoomContentItem item = currentItem;
+            if (item != null && item.isContainer() && item.hasAttachedItems()) {
+                toggleButton.setVisibility(View.VISIBLE);
+                toggleButton.setEnabled(true);
+                toggleButton.setRotation(0f);
+                int position = getBindingAdapterPosition();
+                int mask = position != RecyclerView.NO_POSITION
+                        ? RoomContentAdapter.this.resolveContainerDisplayMask(position)
+                        : VISIBILITY_DEFAULT_MASK;
+                toggleButton.setImageResource(RoomContentAdapter.this
+                        .resolveContainerViewStateIcon(mask));
+                int descriptionRes = RoomContentAdapter.this
+                        .resolveContainerViewStateDescriptionRes(mask);
+                toggleButton.setContentDescription(toggleButton.getContext()
+                        .getString(descriptionRes, name));
+                return;
+            }
             if (!hasDetails) {
                 toggleButton.setVisibility(View.GONE);
                 toggleButton.setContentDescription(null);
@@ -1513,6 +1640,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             toggleButton.setVisibility(View.VISIBLE);
             toggleButton.setEnabled(true);
+            toggleButton.setImageResource(R.drawable.ic_chevron_down);
             toggleButton.setRotation(isExpanded ? 180f : 0f);
             int descriptionRes = isExpanded
                     ? R.string.content_description_room_content_collapse
@@ -1707,7 +1835,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             if (currentItem.isContainer()) {
-                toggleContainerPopup();
+                toggleExpansion();
                 return;
             }
             if (currentItem.isFurniture()) {
@@ -1801,7 +1929,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     hasMetadata, isExpanded);
             if (toggleButton != null) {
                 toggleButton.setOnClickListener(view -> {
-                    toggleExpansion();
+                    if (currentItem != null && currentItem.isContainer()
+                            && currentItem.hasAttachedItems()) {
+                        cycleContainerViewState();
+                    } else {
+                        toggleExpansion();
+                    }
                     boolean expanded = RoomContentAdapter.this.isContainerExpanded(position);
                     updatePopupToggle(toggleButton, hasToggle, expanded, displayNameString);
                     updateContainerPopupDetails(popupView, commentText, metadataText, hasComment,
@@ -2401,6 +2534,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 notifyItemChanged(position);
             }
+        }
+
+        private void cycleContainerViewState() {
+            if (currentItem == null || !currentItem.isContainer()
+                    || !currentItem.hasAttachedItems()) {
+                toggleExpansion();
+                return;
+            }
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            RoomContentAdapter.this.cycleContainerVisibilityState(position);
+            notifyItemChanged(position);
+            RoomContentAdapter.this.notifyAttachedItemsChanged(position);
         }
 
         private void onFilterChipToggled(@NonNull Chip chip, int visibilityFlag) {
