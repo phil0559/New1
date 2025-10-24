@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/text_column_chip"
+    android:layout_width="@dimen/furniture_popup_column_chip_size"
+    android:layout_height="@dimen/furniture_popup_column_chip_size"
+    android:gravity="center"
+    android:textColor="@color/text_dark"
+    android:textSize="14sp"
+    android:textStyle="bold"
+    android:background="@drawable/bg_furniture_column_chip"
+    android:padding="8dp"
+    android:maxLines="1"
+    android:ellipsize="end" />

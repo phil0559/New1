@@ -223,4 +223,9 @@
     <string name="popup_room_content_move">Verschieben</string>
     <string name="popup_room_content_edit">Bearbeiten</string>
     <string name="popup_room_content_delete">Löschen</string>
+    <string name="furniture_popup_columns_title">Spalte</string>
+    <string name="furniture_popup_column_short">S</string>
+    <string name="furniture_popup_top_title">Oberseite</string>
+    <string name="furniture_popup_bottom_title">Unterseite</string>
+    <string name="furniture_popup_level_title">Ebene %1$d</string>
 </resources>
