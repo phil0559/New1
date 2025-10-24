@@ -11,6 +11,7 @@
     <dimen name="room_content_card_border_width">2dp</dimen>
     <dimen name="room_content_card_border_width_filled">2dp</dimen>
     <dimen name="room_content_group_border_inset">4dp</dimen>
+    <dimen name="room_content_group_stroke_width">2dp</dimen>
     <dimen name="room_content_hierarchy_frame_inset">8dp</dimen>
     <dimen name="room_content_list_bottom_padding">96dp</dimen>
     <dimen name="room_content_card_elevation_level_0">6dp</dimen>
