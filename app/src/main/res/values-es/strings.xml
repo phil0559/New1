@@ -94,6 +94,15 @@
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[No hay ningún establecimiento disponible para mover este elemento.]]></string>
     <string name="dialog_move_room_content_empty_rooms">No hay ninguna habitación disponible en este establecimiento.</string>
     <string name="dialog_move_room_content_success">Elemento movido correctamente.</string>
+    <string name="dialog_move_room_content_furniture_section_label">Posición en el mueble</string>
+    <string name="dialog_move_room_content_level_label">Nivel</string>
+    <string name="dialog_move_room_content_column_label">Columna</string>
+    <string name="dialog_move_room_content_level_hint">p.&#8239;ej. 1</string>
+    <string name="dialog_move_room_content_column_hint">p.&#8239;ej. 1</string>
+    <string name="error_move_room_content_invalid_level">Ingrese un nivel válido.</string>
+    <string name="error_move_room_content_invalid_column">Ingrese una columna válida.</string>
+    <string name="room_content_furniture_level_short">Nivel %1$d</string>
+    <string name="room_content_furniture_column_short">Columna %1$d</string>
     <string name="dialog_label_room_content_name">Nombre del elemento</string>
     <string name="dialog_label_room_content_comment">Comentario</string>
     <string name="dialog_label_room_content_photos_default">Fotos del elemento (0)</string>

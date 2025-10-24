@@ -94,6 +94,15 @@
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[Keine Einrichtung verfügbar, um dieses Element zu verschieben.]]></string>
     <string name="dialog_move_room_content_empty_rooms">In dieser Einrichtung ist kein Raum verfügbar.</string>
     <string name="dialog_move_room_content_success">Element erfolgreich verschoben.</string>
+    <string name="dialog_move_room_content_furniture_section_label">Position im Möbel</string>
+    <string name="dialog_move_room_content_level_label">Ebene</string>
+    <string name="dialog_move_room_content_column_label">Spalte</string>
+    <string name="dialog_move_room_content_level_hint">z.&#8239;B. 1</string>
+    <string name="dialog_move_room_content_column_hint">z.&#8239;B. 1</string>
+    <string name="error_move_room_content_invalid_level">Bitte eine gültige Ebene angeben.</string>
+    <string name="error_move_room_content_invalid_column">Bitte eine gültige Spalte angeben.</string>
+    <string name="room_content_furniture_level_short">Ebene %1$d</string>
+    <string name="room_content_furniture_column_short">Spalte %1$d</string>
     <string name="dialog_label_room_content_name">Name des Elements</string>
     <string name="dialog_label_room_content_comment">Kommentar</string>
     <string name="dialog_label_room_content_photos_default">Fotos des Elements (0)</string>
