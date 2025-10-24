@@ -73,8 +73,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final SparseIntArray containerVisibilityStates = new SparseIntArray();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
-    private final int cardBorderWidthPx;
-    private final int groupStrokeColor;
+    private final float cardElevationLevel0Px;
+    private final float cardElevationLevel1Px;
+    private final float cardElevationLevel2Px;
     private final HierarchyStyle[] hierarchyStyles;
     private final Map<String, Integer> containerBannerColorCache = new HashMap<>();
     private final String containerTypeBoxLabel;
@@ -142,10 +143,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 .getDimensionPixelSize(R.dimen.room_content_hierarchy_indent);
         this.cardCornerRadiusPx = context.getResources()
                 .getDimension(R.dimen.room_content_card_corner_radius);
-        this.cardBorderWidthPx = context.getResources()
-                .getDimensionPixelSize(R.dimen.room_content_card_border_width);
-        this.groupStrokeColor = ContextCompat.getColor(context,
-                R.color.room_content_card_container_border);
+        this.cardElevationLevel0Px = context.getResources()
+                .getDimension(R.dimen.room_content_card_elevation_level_0);
+        this.cardElevationLevel1Px = context.getResources()
+                .getDimension(R.dimen.room_content_card_elevation_level_1);
+        this.cardElevationLevel2Px = context.getResources()
+                .getDimension(R.dimen.room_content_card_elevation_level_2);
         this.hierarchyStyles = createHierarchyStyles(context);
         this.containerTypeBoxLabel = context.getString(R.string.dialog_container_type_box);
         this.containerTypeBagLabel = context.getString(R.string.dialog_container_type_bag);
@@ -824,9 +827,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         } else {
             bottomRadius = cardCornerRadiusPx;
         }
-        boolean hideTopStroke = joinsParentFrame;
-        boolean hideBottomStroke = hasAttachedItems && isExpanded;
-        int internalStrokeWidth = hasAttachedItems && isExpanded ? 0 : cardBorderWidthPx;
+        boolean hideTopStroke = false;
+        boolean hideBottomStroke = false;
+        int internalStrokeWidth = 0;
         Drawable drawable = createFramedBackground(style.backgroundColor, topRadius,
                 topRadius, bottomRadius, bottomRadius, internalStrokeWidth,
                 style.accentColor, hideTopStroke, hideBottomStroke);
@@ -971,6 +974,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         int index = Math.max(0, Math.min(depth, hierarchyStyles.length - 1));
         return hierarchyStyles[index];
+    }
+
+    private float resolveCardElevation(int depth) {
+        if (depth <= 0) {
+            return cardElevationLevel0Px;
+        }
+        if (depth == 1) {
+            return cardElevationLevel1Px;
+        }
+        return cardElevationLevel2Px;
     }
 
     @NonNull
@@ -1183,7 +1196,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultContentPaddingRight;
         private final int defaultContentPaddingBottom;
         @Nullable
-        private final Drawable defaultGroupWrapperBackground;
+        private final Drawable.ConstantState groupWrapperBorderState;
         private final int defaultGroupPaddingLeft;
         private final int defaultGroupPaddingTop;
         private final int defaultGroupPaddingRight;
@@ -1259,13 +1272,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultContentPaddingRight = cardView != null ? cardView.getContentPaddingRight() : 0;
             defaultContentPaddingBottom = cardView != null ? cardView.getContentPaddingBottom() : 0;
             if (groupWrapperView != null) {
-                defaultGroupWrapperBackground = groupWrapperView.getBackground();
+                Drawable background = groupWrapperView.getBackground();
+                groupWrapperBorderState = background != null ? background.getConstantState() : null;
                 defaultGroupPaddingLeft = groupWrapperView.getPaddingLeft();
                 defaultGroupPaddingTop = groupWrapperView.getPaddingTop();
                 defaultGroupPaddingRight = groupWrapperView.getPaddingRight();
                 defaultGroupPaddingBottom = groupWrapperView.getPaddingBottom();
+                groupWrapperView.setBackground(null);
             } else {
-                defaultGroupWrapperBackground = null;
+                groupWrapperBorderState = null;
                 defaultGroupPaddingLeft = 0;
                 defaultGroupPaddingTop = 0;
                 defaultGroupPaddingRight = 0;
@@ -1352,6 +1367,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (parentExpanded && parentPosition >= 0) {
                 parentStyleForFrame = RoomContentAdapter.this.resolveHierarchyStyle(
                         RoomContentAdapter.this.computeHierarchyDepth(parentPosition));
+            }
+            if (cardView != null) {
+                float elevation = RoomContentAdapter.this.resolveCardElevation(depth);
+                cardView.setCardElevation(elevation);
+                cardView.setMaxCardElevation(elevation);
             }
             View backgroundTarget = cardBackground != null ? cardBackground : itemView;
             if (item.isContainer()) {
@@ -1469,18 +1489,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (groupWrapperView == null) {
                 return;
             }
-            int backgroundRes;
-            if (isFirstInGroup && isLastInGroup) {
-                backgroundRes = R.drawable.group_background;
-            } else if (isFirstInGroup) {
-                backgroundRes = R.drawable.bg_room_container_group_header;
-            } else if (isLastInGroup) {
-                backgroundRes = R.drawable.bg_room_content_group_footer;
-            } else {
-                backgroundRes = R.drawable.bg_room_content_group_middle;
+            Drawable drawable = null;
+            if (groupWrapperBorderState != null) {
+                drawable = groupWrapperBorderState.newDrawable();
             }
-            Drawable drawable = ContextCompat.getDrawable(groupWrapperView.getContext(),
-                    backgroundRes);
+            if (drawable == null) {
+                drawable = ContextCompat.getDrawable(groupWrapperView.getContext(),
+                        R.drawable.group_background);
+            }
             if (drawable != null) {
                 drawable = drawable.mutate();
             }
@@ -1513,7 +1529,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (groupWrapperView == null) {
                 return;
             }
-            groupWrapperView.setBackground(defaultGroupWrapperBackground);
+            groupWrapperView.setBackground(null);
             groupWrapperView.setPadding(defaultGroupPaddingLeft, defaultGroupPaddingTop,
                     defaultGroupPaddingRight, defaultGroupPaddingBottom);
         }

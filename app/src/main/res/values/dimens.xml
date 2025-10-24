@@ -13,4 +13,7 @@
     <dimen name="room_content_group_border_inset">4dp</dimen>
     <dimen name="room_content_hierarchy_frame_inset">8dp</dimen>
     <dimen name="room_content_list_bottom_padding">96dp</dimen>
+    <dimen name="room_content_card_elevation_level_0">6dp</dimen>
+    <dimen name="room_content_card_elevation_level_1">3dp</dimen>
+    <dimen name="room_content_card_elevation_level_2">1dp</dimen>
 </resources>
