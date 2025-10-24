@@ -1490,19 +1490,31 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             Drawable drawable = null;
-            if (groupWrapperBorderState != null) {
+            if (isFirstInGroup && isLastInGroup && groupWrapperBorderState != null) {
                 drawable = groupWrapperBorderState.newDrawable();
             }
             if (drawable == null) {
-                drawable = ContextCompat.getDrawable(groupWrapperView.getContext(),
-                        R.drawable.group_background);
+                int backgroundResId;
+                if (isFirstInGroup && isLastInGroup) {
+                    backgroundResId = R.drawable.group_background;
+                } else if (isFirstInGroup) {
+                    backgroundResId = R.drawable.bg_room_container_group_header;
+                } else if (isLastInGroup) {
+                    backgroundResId = R.drawable.bg_room_content_group_footer;
+                } else {
+                    backgroundResId = R.drawable.bg_room_content_group_middle;
+                }
+                drawable = ContextCompat.getDrawable(groupWrapperView.getContext(), backgroundResId);
             }
             if (drawable != null) {
                 drawable = drawable.mutate();
             }
             groupWrapperView.setBackground(drawable);
-            groupWrapperView.setPadding(defaultGroupPaddingLeft, defaultGroupPaddingTop,
-                    defaultGroupPaddingRight, defaultGroupPaddingBottom);
+
+            int paddingTop = isFirstInGroup ? defaultGroupPaddingTop : 0;
+            int paddingBottom = isLastInGroup ? defaultGroupPaddingBottom : 0;
+            groupWrapperView.setPadding(defaultGroupPaddingLeft, paddingTop,
+                    defaultGroupPaddingRight, paddingBottom);
         }
 
         private void resetCardStyle() {
