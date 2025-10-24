@@ -2322,6 +2322,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     true);
             popupWindow.setOutsideTouchable(true);
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            View editButton = popupView.findViewById(R.id.button_popup_room_content_edit);
+            if (editButton != null) {
+                boolean showEdit = currentItem != null && currentItem.isContainer();
+                editButton.setVisibility(showEdit ? View.VISIBLE : View.GONE);
+                if (showEdit) {
+                    editButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        notifyEdit();
+                    });
+                }
+            }
             View copyButton = popupView.findViewById(R.id.button_popup_room_content_copy);
             if (copyButton != null) {
                 copyButton.setOnClickListener(view -> {
