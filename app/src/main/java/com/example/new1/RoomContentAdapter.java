@@ -20,6 +20,7 @@ import android.text.TextUtils;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 import android.view.Gravity;
@@ -1729,10 +1730,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (sectionsContainer != null) {
                 populateFurnitureSections(sectionsContainer, currentItem);
             }
-            PopupWindow popupWindow = new PopupWindow(popupView,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    true);
+            DisplayMetrics displayMetrics = popupView.getResources().getDisplayMetrics();
+            int popupWidth = (int) (displayMetrics.widthPixels * 0.9f);
+            int popupHeight = (int) (displayMetrics.heightPixels * 0.9f);
+            PopupWindow popupWindow = new PopupWindow(popupView, popupWidth, popupHeight, true);
             popupWindow.setOutsideTouchable(true);
             popupWindow.setFocusable(true);
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
