@@ -1650,6 +1650,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (photoView == null) {
                 return;
             }
+            if (item.isFurniture() || item.isContainer()) {
+                photoView.setVisibility(View.GONE);
+                return;
+            }
+            photoView.setVisibility(View.VISIBLE);
             List<String> photos = item.getPhotos();
             if (photos.isEmpty()) {
                 resetPhoto();
@@ -1669,6 +1674,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (photoView == null) {
                 return;
             }
+            photoView.setVisibility(View.VISIBLE);
             photoView.setImageResource(R.drawable.ic_establishment_photos);
             photoView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             photoView.setPadding(defaultPaddingStart, defaultPaddingTop, defaultPaddingEnd,
