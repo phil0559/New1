@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.CompoundButton;
+import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -40,6 +41,7 @@ import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.util.SparseArray;
 
 import android.view.Gravity;
 
@@ -49,6 +51,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.radiobutton.MaterialRadioButton;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
@@ -1917,6 +1920,9 @@ public class RoomContentActivity extends Activity {
         });
 
         dialog.show();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
     }
 
     private boolean applyBarcodeValue(@NonNull EditText input,
@@ -2043,8 +2049,8 @@ public class RoomContentActivity extends Activity {
         View dialogView = inflateDialogView(R.layout.dialog_move_room_content);
         Spinner establishmentSpinner = dialogView.findViewById(R.id.spinner_move_establishment);
         Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
-        Spinner containerSpinner = dialogView.findViewById(R.id.spinner_move_container);
-        View containerLabel = dialogView.findViewById(R.id.label_move_container);
+        RadioGroup containerRadioGroup = dialogView.findViewById(R.id.radio_group_move_container);
+        TextView containerLabel = dialogView.findViewById(R.id.label_move_container);
 
         List<String> establishmentOptions = loadEstablishmentNames();
         if (establishmentOptions.isEmpty()) {
@@ -2084,7 +2090,7 @@ public class RoomContentActivity extends Activity {
                 selectedRoomHolder[0] = roomSpinner.getSelectedItem() != null
                         ? roomSpinner.getSelectedItem().toString()
                         : null;
-                updateMoveDialogContainers(dialog, containerSpinner, containerLabel,
+                updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                         selectedEstablishmentHolder[0], selectedRoomHolder[0], item, position,
                         selectedContainerHolder);
             }
@@ -2096,7 +2102,7 @@ public class RoomContentActivity extends Activity {
                 selectedRoomHolder[0] = roomSpinner.getSelectedItem() != null
                         ? roomSpinner.getSelectedItem().toString()
                         : null;
-                updateMoveDialogContainers(dialog, containerSpinner, containerLabel, null,
+                updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel, null,
                         selectedRoomHolder[0], item, position, selectedContainerHolder);
             }
         };
@@ -2107,7 +2113,7 @@ public class RoomContentActivity extends Activity {
             public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
                 Object value = parent.getItemAtPosition(spinnerPosition);
                 selectedRoomHolder[0] = value != null ? value.toString() : null;
-                updateMoveDialogContainers(dialog, containerSpinner, containerLabel,
+                updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                         selectedEstablishmentHolder[0], selectedRoomHolder[0], item, position,
                         selectedContainerHolder);
             }
@@ -2115,7 +2121,7 @@ public class RoomContentActivity extends Activity {
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 selectedRoomHolder[0] = null;
-                updateMoveDialogContainers(dialog, containerSpinner, containerLabel,
+                updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                         selectedEstablishmentHolder[0], null, item, position,
                         selectedContainerHolder);
             }
@@ -2132,7 +2138,7 @@ public class RoomContentActivity extends Activity {
         selectedRoomHolder[0] = roomSpinner.getSelectedItem() != null
                 ? roomSpinner.getSelectedItem().toString()
                 : selectedRoomHolder[0];
-        updateMoveDialogContainers(dialog, containerSpinner, containerLabel,
+        updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                 selectedEstablishmentHolder[0], selectedRoomHolder[0], item, position,
                 selectedContainerHolder);
 
@@ -2557,78 +2563,83 @@ public class RoomContentActivity extends Activity {
     }
 
     private void updateMoveDialogContainers(@NonNull AlertDialog dialog,
-            @Nullable Spinner containerSpinner,
-            @Nullable View containerLabel,
+            @Nullable RadioGroup containerGroup,
+            @Nullable TextView containerLabel,
             @Nullable String establishment,
             @Nullable String room,
             @NonNull RoomContentItem item,
             int position,
             @NonNull ContainerSelection selection) {
-        if (containerSpinner == null) {
+        if (containerGroup == null) {
             return;
         }
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position);
-        List<String> labels = new ArrayList<>();
-        labels.add(getString(R.string.dialog_move_room_content_no_container));
-        for (ContainerOption option : options) {
-            labels.add(option.label);
-        }
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, labels);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        containerSpinner.setAdapter(adapter);
-        boolean hasOptions = !options.isEmpty();
-        containerSpinner.setEnabled(hasOptions);
+        Context context = containerGroup.getContext();
+        containerGroup.setOnCheckedChangeListener(null);
+        containerGroup.removeAllViews();
         if (containerLabel != null) {
-            containerLabel.setVisibility(hasOptions ? View.VISIBLE : View.GONE);
+            containerLabel.setVisibility(View.VISIBLE);
         }
-        if (!hasOptions) {
-            containerSpinner.setOnItemSelectedListener(null);
-            containerSpinner.setSelection(0, false);
-            selection.selectedOption = null;
-            selection.desiredRank = null;
-            return;
-        }
+
+        SparseArray<ContainerOption> optionMap = new SparseArray<>();
+        int topMargin = (int) (context.getResources().getDisplayMetrics().density * 8);
+
+        MaterialRadioButton noContainerButton = new MaterialRadioButton(context);
+        noContainerButton.setId(View.generateViewId());
+        noContainerButton.setUseMaterialThemeColors(true);
+        noContainerButton.setText(R.string.dialog_move_room_content_no_container);
+        RadioGroup.LayoutParams noneParams = new RadioGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        noneParams.topMargin = 0;
+        containerGroup.addView(noContainerButton, noneParams);
 
         Long desiredRank = selection.desiredRank != null
                 ? selection.desiredRank
                 : item.getParentRank();
-        int selectedIndex = 0;
-        if (desiredRank != null) {
-            for (int i = 0; i < options.size(); i++) {
-                if (options.get(i).rank == desiredRank) {
-                    selectedIndex = i + 1;
-                    selection.selectedOption = options.get(i);
-                    selection.desiredRank = desiredRank;
-                    break;
-                }
-            }
-        } else {
+        int checkedId = View.NO_ID;
+        if (desiredRank == null) {
+            checkedId = noContainerButton.getId();
             selection.selectedOption = null;
+            selection.desiredRank = null;
         }
 
-        List<ContainerOption> immutableOptions = new ArrayList<>(options);
-        containerSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
-                int optionIndex = spinnerPosition - 1;
-                if (optionIndex >= 0 && optionIndex < immutableOptions.size()) {
-                    ContainerOption selected = immutableOptions.get(optionIndex);
-                    selection.selectedOption = selected;
-                    selection.desiredRank = selected.rank;
-                } else {
-                    selection.selectedOption = null;
-                    selection.desiredRank = null;
-                }
+        for (ContainerOption option : options) {
+            MaterialRadioButton optionButton = new MaterialRadioButton(context);
+            optionButton.setId(View.generateViewId());
+            optionButton.setUseMaterialThemeColors(true);
+            optionButton.setText(option.label);
+            RadioGroup.LayoutParams params = new RadioGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.topMargin = topMargin;
+            containerGroup.addView(optionButton, params);
+            optionMap.put(optionButton.getId(), option);
+            if (desiredRank != null && option.rank == desiredRank) {
+                checkedId = optionButton.getId();
+                selection.selectedOption = option;
+                selection.desiredRank = desiredRank;
             }
+        }
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+        final int noContainerId = noContainerButton.getId();
+        if (checkedId == View.NO_ID) {
+            checkedId = noContainerId;
+            selection.selectedOption = null;
+            selection.desiredRank = null;
+        }
+
+        containerGroup.setOnCheckedChangeListener((group, checkedRadioButtonId) -> {
+            if (checkedRadioButtonId == noContainerId) {
                 selection.selectedOption = null;
                 selection.desiredRank = null;
+            } else {
+                ContainerOption selected = optionMap.get(checkedRadioButtonId);
+                if (selected != null) {
+                    selection.selectedOption = selected;
+                    selection.desiredRank = selected.rank;
+                }
             }
         });
-        containerSpinner.setSelection(selectedIndex, false);
+        containerGroup.check(checkedId);
     }
 
     private void updateMoveButtonState(@NonNull AlertDialog dialog, @NonNull Spinner roomSpinner) {

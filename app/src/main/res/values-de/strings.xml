@@ -87,8 +87,8 @@
     <string name="dialog_delete_room_container_message">Möchten Sie den Behälter %1$s löschen?</string>
     <string name="dialog_move_room_content_title">Element verschieben</string>
     <string name="dialog_move_room_content_establishment_label">Einrichtung</string>
-    <string name="dialog_move_room_content_room_label">Raum</string>
-    <string name="dialog_move_room_content_container_label">Behälter</string>
+    <string name="dialog_move_room_content_room_label">Zielraum auswählen</string>
+    <string name="dialog_move_room_content_container_label">Wählen Sie den übergeordneten Behälter oder das Möbelstück zum Ablegen des Elements.</string>
     <string name="dialog_move_room_content_no_container">Kein Behälter</string>
     <string name="dialog_move_room_content_move_button">Verschieben</string>
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[Keine Einrichtung verfügbar, um dieses Element zu verschieben.]]></string>
