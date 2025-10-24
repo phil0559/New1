@@ -37,6 +37,8 @@ public class RoomContentItem {
     private static final String KEY_FURNITURE_COLUMNS = "furnitureColumns";
     private static final String KEY_FURNITURE_HAS_TOP = "furnitureHasTop";
     private static final String KEY_FURNITURE_HAS_BOTTOM = "furnitureHasBottom";
+    private static final String KEY_ATTACHED_LEVEL = "attachedLevel";
+    private static final String KEY_ATTACHED_COLUMN = "attachedColumn";
 
     private final String name;
     private final String comment;
@@ -85,6 +87,10 @@ public class RoomContentItem {
     private int attachedItemCount;
     @Nullable
     private String displayRank;
+    @Nullable
+    private Integer containerLevel;
+    @Nullable
+    private Integer containerColumn;
 
     public RoomContentItem(@NonNull String name,
                            @Nullable String comment,
@@ -103,7 +109,7 @@ public class RoomContentItem {
                            boolean isContainer) {
         this(name, comment, type, category, barcode, series, number, author, publisher,
                 edition, publicationDate, summary, tracks, photos, isContainer, 0,
-                false, null, null, null, null, false, false);
+                false, null, null, null, null, false, false, null, null);
     }
 
     public RoomContentItem(@NonNull String name,
@@ -124,7 +130,8 @@ public class RoomContentItem {
                            int ignoredAttachedItemCount) {
         this(name, comment, type, category, barcode, series, number, author, publisher,
                 edition, publicationDate, summary, tracks, photos, isContainer,
-                ignoredAttachedItemCount, false, null, null, null, null, false, false);
+                ignoredAttachedItemCount, false, null, null, null, null, false, false,
+                null, null);
     }
 
     private RoomContentItem(@NonNull String name,
@@ -149,7 +156,9 @@ public class RoomContentItem {
                             @Nullable Integer furnitureLevels,
                             @Nullable Integer furnitureColumns,
                             boolean hasTop,
-                            boolean hasBottom) {
+                            boolean hasBottom,
+                            @Nullable Integer attachedLevel,
+                            @Nullable Integer attachedColumn) {
         // Le paramètre ignoredAttachedItemCount est conservé pour la compatibilité
         // binaire mais n'est plus utilisé : chaque élément est stocké sans lien.
         this.name = name;
@@ -199,6 +208,8 @@ public class RoomContentItem {
         this.parentRank = null;
         this.attachedItemCount = Math.max(0, ignoredAttachedItemCount);
         this.displayRank = null;
+        setContainerLevel(attachedLevel);
+        setContainerColumn(attachedColumn);
     }
 
     public static RoomContentItem createFurniture(@NonNull String name,
@@ -232,7 +243,9 @@ public class RoomContentItem {
                 levels,
                 columns,
                 hasTop,
-                hasBottom);
+                hasBottom,
+                null,
+                null);
     }
 
     @NonNull
@@ -377,6 +390,32 @@ public class RoomContentItem {
         this.displayRank = displayRank;
     }
 
+    @Nullable
+    public Integer getContainerLevel() {
+        return containerLevel;
+    }
+
+    public void setContainerLevel(@Nullable Integer level) {
+        if (level == null || level <= 0) {
+            containerLevel = null;
+        } else {
+            containerLevel = level;
+        }
+    }
+
+    @Nullable
+    public Integer getContainerColumn() {
+        return containerColumn;
+    }
+
+    public void setContainerColumn(@Nullable Integer column) {
+        if (column == null || column <= 0) {
+            containerColumn = null;
+        } else {
+            containerColumn = column;
+        }
+    }
+
     public JSONObject toJson() {
         JSONObject object = new JSONObject();
         try {
@@ -407,6 +446,12 @@ public class RoomContentItem {
                 if (furnitureHasBottom) {
                     object.put(KEY_FURNITURE_HAS_BOTTOM, true);
                 }
+            }
+            if (containerLevel != null) {
+                object.put(KEY_ATTACHED_LEVEL, containerLevel.intValue());
+            }
+            if (containerColumn != null) {
+                object.put(KEY_ATTACHED_COLUMN, containerColumn.intValue());
             }
             // Ne pas réécrire le nombre d'attachements : les éléments sont
             // sauvegardés individuellement désormais.
@@ -528,6 +573,8 @@ public class RoomContentItem {
         Integer parsedFurnitureColumns = null;
         boolean parsedHasTop = false;
         boolean parsedHasBottom = false;
+        Integer parsedAttachedLevel = null;
+        Integer parsedAttachedColumn = null;
         if (isFurniture) {
             if (object.has(KEY_FURNITURE_TYPE) && !object.isNull(KEY_FURNITURE_TYPE)) {
                 parsedFurnitureType = object.optString(KEY_FURNITURE_TYPE, null);
@@ -550,6 +597,18 @@ public class RoomContentItem {
             }
             parsedHasTop = object.optBoolean(KEY_FURNITURE_HAS_TOP, false);
             parsedHasBottom = object.optBoolean(KEY_FURNITURE_HAS_BOTTOM, false);
+        }
+        if (object.has(KEY_ATTACHED_LEVEL) && !object.isNull(KEY_ATTACHED_LEVEL)) {
+            int value = object.optInt(KEY_ATTACHED_LEVEL, 0);
+            if (value > 0) {
+                parsedAttachedLevel = value;
+            }
+        }
+        if (object.has(KEY_ATTACHED_COLUMN) && !object.isNull(KEY_ATTACHED_COLUMN)) {
+            int value = object.optInt(KEY_ATTACHED_COLUMN, 0);
+            if (value > 0) {
+                parsedAttachedColumn = value;
+            }
         }
         long rank = object.has(KEY_RANK) ? object.optLong(KEY_RANK, -1L) : -1L;
         Long parentRank = null;
@@ -578,7 +637,9 @@ public class RoomContentItem {
                 parsedFurnitureLevels,
                 parsedFurnitureColumns,
                 parsedHasTop,
-                parsedHasBottom);
+                parsedHasBottom,
+                parsedAttachedLevel,
+                parsedAttachedColumn);
         item.setRank(rank);
         item.setParentRank(parentRank);
         item.setDisplayRank(null);

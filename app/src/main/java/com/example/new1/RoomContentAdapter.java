@@ -1354,6 +1354,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (rankLabel != null && !rankLabel.trim().isEmpty()) {
                 displayName = rankLabel + " · " + baseName;
             }
+            String placementLabel = formatFurniturePlacement(item);
+            if (placementLabel != null && !placementLabel.isEmpty()) {
+                displayName = displayName + " · " + placementLabel;
+            }
             nameView.setText(displayName);
             resetCardStyle();
             int parentPosition = RoomContentAdapter.this
@@ -1954,6 +1958,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             chip.setBackgroundResource(selected
                     ? R.drawable.bg_furniture_column_chip_selected
                     : R.drawable.bg_furniture_column_chip);
+        }
+
+        @Nullable
+        private String formatFurniturePlacement(@NonNull RoomContentItem item) {
+            Integer level = item.getContainerLevel();
+            Integer column = item.getContainerColumn();
+            if (level == null && column == null) {
+                return null;
+            }
+            Context context = itemView.getContext();
+            List<String> parts = new ArrayList<>();
+            if (level != null) {
+                parts.add(context.getString(R.string.room_content_furniture_level_short, level));
+            }
+            if (column != null) {
+                parts.add(context.getString(R.string.room_content_furniture_column_short, column));
+            }
+            if (parts.isEmpty()) {
+                return null;
+            }
+            return TextUtils.join(" · ", parts);
         }
 
         private void populateFurnitureSections(@NonNull LinearLayout container,
