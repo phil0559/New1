@@ -2,40 +2,72 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:paddingStart="16dp"
-    android:paddingTop="@dimen/furniture_popup_section_padding"
-    android:paddingEnd="16dp"
-    android:paddingBottom="@dimen/furniture_popup_section_padding"
-    android:gravity="center_vertical">
+    android:animateLayoutChanges="true"
+    android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/text_section_title"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:id="@+id/container_section_header"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:textColor="@color/text_dark"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:text="@string/furniture_popup_top_title" />
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="@dimen/furniture_popup_section_padding"
+        android:paddingEnd="16dp"
+        android:paddingBottom="@dimen/furniture_popup_section_padding">
 
-    <ImageView
-        android:id="@+id/icon_section_chevron"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="12dp"
-        android:contentDescription="@null"
-        android:tint="@color/text_dark"
-        android:src="@drawable/ic_chevron_down" />
+        <TextView
+            android:id="@+id/text_section_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:text="@string/furniture_popup_top_title"
+            android:textColor="@color/text_dark"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-    <ImageView
-        android:id="@+id/icon_section_add"
-        android:layout_width="wrap_content"
+        <ImageView
+            android:id="@+id/icon_section_chevron"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="12dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_chevron_down"
+            android:tint="@color/text_dark" />
+
+        <ImageView
+            android:id="@+id/icon_section_add"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_add"
+            android:tint="@color/text_dark" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/container_section_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:contentDescription="@null"
-        android:tint="@color/text_dark"
-        android:src="@drawable/ic_add" />
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="@dimen/furniture_popup_section_padding"
+        android:orientation="vertical"
+        android:visibility="gone" />
+
+    <View
+        android:id="@+id/view_section_indicator"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/furniture_popup_section_indicator_height"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="@dimen/furniture_popup_section_padding"
+        android:background="@color/furniture_popup_section_indicator"
+        android:visibility="gone" />
 
 </LinearLayout>

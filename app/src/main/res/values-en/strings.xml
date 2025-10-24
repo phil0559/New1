@@ -237,6 +237,7 @@
     <string name="furniture_popup_top_title">Top</string>
     <string name="furniture_popup_bottom_title">Bottom</string>
     <string name="furniture_popup_level_title">Level %1$d</string>
+    <string name="furniture_popup_section_empty">No item on this level.</string>
     <string name="furniture_popup_photos_menu_manage">Photo menu</string>
     <string name="furniture_popup_photos_menu_view">Photo viewer</string>
     <string name="furniture_popup_photos_empty">No photos available.</string>
