@@ -1,16 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Bordure extérieure douce -->
     <item>
         <shape android:shape="rectangle">
-            <solid android:color="#FAFBFF" />
-            <corners android:radius="10dp" />
+            <solid android:color="@color/group_border" />
+            <corners android:radius="@dimen/room_content_card_corner_radius" />
         </shape>
     </item>
 
-    <item android:left="1dp" android:top="1dp" android:right="1dp" android:bottom="1dp">
+    <!-- Marge blanche interne -->
+    <item
+        android:bottom="2dp"
+        android:left="2dp"
+        android:right="2dp"
+        android:top="2dp">
         <shape android:shape="rectangle">
-            <stroke android:width="2dp" android:color="#FF3B30" />
-            <corners android:radius="12dp" />
+            <solid android:color="@android:color/white" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+
+    <!-- Fond principal du groupe -->
+    <item
+        android:bottom="3dp"
+        android:left="3dp"
+        android:right="3dp"
+        android:top="3dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/group_background_level3" />
+            <corners android:radius="7dp" />
         </shape>
     </item>
 </layer-list>
