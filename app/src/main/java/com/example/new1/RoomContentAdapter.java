@@ -92,6 +92,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private boolean hierarchyDirty = true;
     @Nullable
     private RecyclerView attachedRecyclerView;
+    @Nullable
+    private final GroupDecoration groupDecoration;
+    private boolean groupDecorationAttached;
     private final RecyclerView.AdapterDataObserver hierarchyInvalidatingObserver =
             new RecyclerView.AdapterDataObserver() {
                 @Override
@@ -175,6 +178,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 ContextCompat.getColor(context, R.color.room_content_banner_comic)
         };
         registerAdapterDataObserver(hierarchyInvalidatingObserver);
+        groupDecoration = new GroupDecoration(context);
     }
 
     @NonNull
@@ -281,6 +285,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
         super.onAttachedToRecyclerView(recyclerView);
         attachedRecyclerView = recyclerView;
+        if (groupDecoration != null && !groupDecorationAttached) {
+            recyclerView.addItemDecoration(groupDecoration);
+            groupDecorationAttached = true;
+        }
     }
 
     @Override
@@ -288,6 +296,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         super.onDetachedFromRecyclerView(recyclerView);
         if (attachedRecyclerView == recyclerView) {
             attachedRecyclerView = null;
+        }
+        if (groupDecoration != null && groupDecorationAttached) {
+            recyclerView.removeItemDecoration(groupDecoration);
+            groupDecorationAttached = false;
         }
     }
 
@@ -1858,6 +1870,209 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 optionsPopup.dismiss();
                 optionsPopup = null;
             }
+        }
+    }
+
+    private final class GroupDecoration extends RecyclerView.ItemDecoration {
+
+        private final Rect parentBounds = new Rect();
+        private final Rect drawingBounds = new Rect();
+        private final int strokeWidthPx;
+        private final int halfStrokeWidthPx;
+        private final float cornerRadiusPx;
+
+        GroupDecoration(@NonNull Context context) {
+            this.strokeWidthPx = context.getResources()
+                    .getDimensionPixelSize(R.dimen.room_content_group_stroke_width);
+            this.halfStrokeWidthPx = Math.max(1, (int) Math.ceil(strokeWidthPx / 2f));
+            this.cornerRadiusPx = cardCornerRadiusPx;
+        }
+
+        @Override
+        public void onDraw(@NonNull Canvas canvas, @NonNull RecyclerView parent,
+                @NonNull RecyclerView.State state) {
+            ensureHierarchyComputed();
+            int childCount = parent.getChildCount();
+            if (childCount <= 0) {
+                return;
+            }
+            parentBounds.set(parent.getPaddingLeft(), parent.getPaddingTop(),
+                    parent.getWidth() - parent.getPaddingRight(),
+                    parent.getHeight() - parent.getPaddingBottom());
+            SparseIntArray groups = new SparseIntArray();
+            for (int index = 0; index < childCount; index++) {
+                View child = parent.getChildAt(index);
+                if (child == null || child.getVisibility() != View.VISIBLE) {
+                    continue;
+                }
+                int position = parent.getChildAdapterPosition(child);
+                if (position == RecyclerView.NO_POSITION) {
+                    continue;
+                }
+                int groupStart = resolveDecoratedGroupStart(position);
+                if (groupStart < 0 || groups.indexOfKey(groupStart) >= 0) {
+                    continue;
+                }
+                int groupEnd = findLastDisplayedDirectChildPosition(groupStart);
+                if (groupEnd > groupStart) {
+                    groups.put(groupStart, groupEnd);
+                }
+            }
+            for (int i = 0; i < groups.size(); i++) {
+                int groupStart = groups.keyAt(i);
+                int groupEnd = groups.valueAt(i);
+                computeGroupBounds(parent, groupStart, groupEnd, drawingBounds);
+                if (drawingBounds.isEmpty()) {
+                    continue;
+                }
+                expandForStroke(drawingBounds);
+                clipToParent(drawingBounds);
+                if (drawingBounds.isEmpty()) {
+                    continue;
+                }
+                HierarchyStyle style = resolveHierarchyStyle(computeHierarchyDepth(groupStart));
+                GradientDrawable frame = buildGroupDrawable(style);
+                frame.setBounds(drawingBounds);
+                frame.draw(canvas);
+            }
+        }
+
+        private int resolveDecoratedGroupStart(int position) {
+            if (position < 0 || position >= items.size()) {
+                return -1;
+            }
+            RoomContentItem item = items.get(position);
+            if (item == null) {
+                return -1;
+            }
+            if (item.isContainer()) {
+                return shouldDecorateContainer(position) ? position : -1;
+            }
+            int containerPosition = findAttachedContainerPosition(position);
+            if (containerPosition >= 0 && shouldDecorateContainer(containerPosition)) {
+                return containerPosition;
+            }
+            return -1;
+        }
+
+        private boolean shouldDecorateContainer(int containerPosition) {
+            RoomContentItem container = getItemAt(containerPosition);
+            return container != null
+                    && container.isContainer()
+                    && container.hasAttachedItems()
+                    && isContainerExpanded(containerPosition)
+                    && hasVisibleDirectChildren(containerPosition);
+        }
+
+        private int findLastDisplayedDirectChildPosition(int containerPosition) {
+            if (containerPosition < 0 || containerPosition >= items.size()) {
+                return containerPosition;
+            }
+            int last = containerPosition;
+            for (int index = containerPosition + 1; index < items.size(); index++) {
+                if (!isDescendantOf(containerPosition, index)) {
+                    break;
+                }
+                if (findAttachedContainerPosition(index) != containerPosition) {
+                    continue;
+                }
+                RoomContentItem child = items.get(index);
+                if (child != null && child.isDisplayed()) {
+                    last = index;
+                }
+            }
+            return last;
+        }
+
+        private void computeGroupBounds(@NonNull RecyclerView parent, int groupStart,
+                int groupEnd, @NonNull Rect outRect) {
+            int left = Integer.MAX_VALUE;
+            int top = Integer.MAX_VALUE;
+            int right = Integer.MIN_VALUE;
+            int bottom = Integer.MIN_VALUE;
+            int childCount = parent.getChildCount();
+            for (int index = 0; index < childCount; index++) {
+                View child = parent.getChildAt(index);
+                if (child == null || child.getVisibility() != View.VISIBLE) {
+                    continue;
+                }
+                int position = parent.getChildAdapterPosition(child);
+                if (position == RecyclerView.NO_POSITION) {
+                    continue;
+                }
+                boolean include = position == groupStart;
+                if (!include && position > groupStart && position <= groupEnd) {
+                    include = findAttachedContainerPosition(position) == groupStart;
+                }
+                if (!include) {
+                    continue;
+                }
+                View wrapper = child.findViewById(R.id.groupFullWrapper);
+                if (wrapper == null || wrapper.getVisibility() != View.VISIBLE) {
+                    continue;
+                }
+                int childLeft = child.getLeft() + Math.round(child.getTranslationX());
+                int childTop = child.getTop() + Math.round(child.getTranslationY());
+                int wrapperLeft = childLeft + wrapper.getLeft();
+                int wrapperTop = childTop + wrapper.getTop();
+                int wrapperRight = wrapperLeft + wrapper.getWidth();
+                int wrapperBottom = wrapperTop + wrapper.getHeight();
+                if (wrapperLeft < left) {
+                    left = wrapperLeft;
+                }
+                if (wrapperTop < top) {
+                    top = wrapperTop;
+                }
+                if (wrapperRight > right) {
+                    right = wrapperRight;
+                }
+                if (wrapperBottom > bottom) {
+                    bottom = wrapperBottom;
+                }
+            }
+            if (left >= right || top >= bottom) {
+                outRect.setEmpty();
+            } else {
+                outRect.set(left, top, right, bottom);
+            }
+        }
+
+        private void expandForStroke(@NonNull Rect rect) {
+            rect.left -= halfStrokeWidthPx;
+            rect.top -= halfStrokeWidthPx;
+            rect.right += halfStrokeWidthPx;
+            rect.bottom += halfStrokeWidthPx;
+        }
+
+        private void clipToParent(@NonNull Rect rect) {
+            if (rect.isEmpty()) {
+                return;
+            }
+            if (rect.left < parentBounds.left) {
+                rect.left = parentBounds.left;
+            }
+            if (rect.top < parentBounds.top) {
+                rect.top = parentBounds.top;
+            }
+            if (rect.right > parentBounds.right) {
+                rect.right = parentBounds.right;
+            }
+            if (rect.bottom > parentBounds.bottom) {
+                rect.bottom = parentBounds.bottom;
+            }
+            if (rect.left >= rect.right || rect.top >= rect.bottom) {
+                rect.setEmpty();
+            }
+        }
+
+        @NonNull
+        private GradientDrawable buildGroupDrawable(@NonNull HierarchyStyle style) {
+            GradientDrawable drawable = new GradientDrawable();
+            drawable.setShape(GradientDrawable.RECTANGLE);
+            drawable.setColor(style.backgroundColor);
+            drawable.setCornerRadius(cornerRadiusPx);
+            drawable.setStroke(strokeWidthPx, style.accentColor);
+            return drawable;
         }
     }
 }
