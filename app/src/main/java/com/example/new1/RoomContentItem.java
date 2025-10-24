@@ -30,6 +30,13 @@ public class RoomContentItem {
     private static final String KEY_PHOTOS = "photos";
     private static final String KEY_RANK = "rank";
     private static final String KEY_PARENT_RANK = "parentRank";
+    private static final String KEY_FURNITURE = "furniture";
+    private static final String KEY_FURNITURE_TYPE = "furnitureType";
+    private static final String KEY_FURNITURE_CUSTOM_TYPE = "furnitureCustomType";
+    private static final String KEY_FURNITURE_LEVELS = "furnitureLevels";
+    private static final String KEY_FURNITURE_COLUMNS = "furnitureColumns";
+    private static final String KEY_FURNITURE_HAS_TOP = "furnitureHasTop";
+    private static final String KEY_FURNITURE_HAS_BOTTOM = "furnitureHasBottom";
 
     private final String name;
     private final String comment;
@@ -60,6 +67,17 @@ public class RoomContentItem {
     @NonNull
     private final List<RoomContentItem> children;
     private final boolean container;
+    private final boolean furniture;
+    @Nullable
+    private final String furnitureType;
+    @Nullable
+    private final String furnitureCustomType;
+    @Nullable
+    private final Integer furnitureLevels;
+    @Nullable
+    private final Integer furnitureColumns;
+    private final boolean furnitureHasTop;
+    private final boolean furnitureHasBottom;
     private boolean displayed;
     private long rank;
     @Nullable
@@ -84,7 +102,8 @@ public class RoomContentItem {
                            @Nullable List<String> photos,
                            boolean isContainer) {
         this(name, comment, type, category, barcode, series, number, author, publisher,
-                edition, publicationDate, summary, tracks, photos, isContainer, 0);
+                edition, publicationDate, summary, tracks, photos, isContainer, 0,
+                false, null, null, null, null, false, false);
     }
 
     public RoomContentItem(@NonNull String name,
@@ -103,6 +122,34 @@ public class RoomContentItem {
                            @Nullable List<String> photos,
                            boolean isContainer,
                            int ignoredAttachedItemCount) {
+        this(name, comment, type, category, barcode, series, number, author, publisher,
+                edition, publicationDate, summary, tracks, photos, isContainer,
+                ignoredAttachedItemCount, false, null, null, null, null, false, false);
+    }
+
+    private RoomContentItem(@NonNull String name,
+                            @Nullable String comment,
+                            @Nullable String type,
+                            @Nullable String category,
+                            @Nullable String barcode,
+                            @Nullable String series,
+                            @Nullable String number,
+                            @Nullable String author,
+                            @Nullable String publisher,
+                            @Nullable String edition,
+                            @Nullable String publicationDate,
+                            @Nullable String summary,
+                            @Nullable List<String> tracks,
+                            @Nullable List<String> photos,
+                            boolean isContainer,
+                            int ignoredAttachedItemCount,
+                            boolean isFurniture,
+                            @Nullable String furnitureType,
+                            @Nullable String furnitureCustomType,
+                            @Nullable Integer furnitureLevels,
+                            @Nullable Integer furnitureColumns,
+                            boolean hasTop,
+                            boolean hasBottom) {
         // Le paramètre ignoredAttachedItemCount est conservé pour la compatibilité
         // binaire mais n'est plus utilisé : chaque élément est stocké sans lien.
         this.name = name;
@@ -134,11 +181,58 @@ public class RoomContentItem {
         }
         this.children = new ArrayList<>();
         this.container = isContainer;
+        this.furniture = isFurniture;
+        this.furnitureType = isNullOrEmpty(furnitureType) ? null : furnitureType;
+        this.furnitureCustomType = isNullOrEmpty(furnitureCustomType)
+                ? null
+                : furnitureCustomType;
+        this.furnitureLevels = furnitureLevels != null && furnitureLevels > 0
+                ? furnitureLevels
+                : null;
+        this.furnitureColumns = furnitureColumns != null && furnitureColumns > 0
+                ? furnitureColumns
+                : null;
+        this.furnitureHasTop = hasTop;
+        this.furnitureHasBottom = hasBottom;
         this.displayed = true;
         this.rank = -1L;
         this.parentRank = null;
         this.attachedItemCount = Math.max(0, ignoredAttachedItemCount);
         this.displayRank = null;
+    }
+
+    public static RoomContentItem createFurniture(@NonNull String name,
+                                                   @Nullable String comment,
+                                                   @Nullable String type,
+                                                   @Nullable String customType,
+                                                   @Nullable List<String> photos,
+                                                   @Nullable Integer levels,
+                                                   @Nullable Integer columns,
+                                                   boolean hasTop,
+                                                   boolean hasBottom) {
+        return new RoomContentItem(name,
+                comment,
+                type,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                photos,
+                true,
+                0,
+                true,
+                type,
+                customType,
+                levels,
+                columns,
+                hasTop,
+                hasBottom);
     }
 
     @NonNull
@@ -215,6 +309,38 @@ public class RoomContentItem {
         return container;
     }
 
+    public boolean isFurniture() {
+        return furniture;
+    }
+
+    @Nullable
+    public String getFurnitureType() {
+        return furnitureType;
+    }
+
+    @Nullable
+    public String getFurnitureCustomType() {
+        return furnitureCustomType;
+    }
+
+    @Nullable
+    public Integer getFurnitureLevels() {
+        return furnitureLevels;
+    }
+
+    @Nullable
+    public Integer getFurnitureColumns() {
+        return furnitureColumns;
+    }
+
+    public boolean hasFurnitureTop() {
+        return furnitureHasTop;
+    }
+
+    public boolean hasFurnitureBottom() {
+        return furnitureHasBottom;
+    }
+
     public int getAttachedItemCount() {
         return Math.max(0, attachedItemCount);
     }
@@ -260,6 +386,27 @@ public class RoomContentItem {
             object.put(KEY_RANK, rank);
             if (parentRank != null) {
                 object.put(KEY_PARENT_RANK, parentRank.longValue());
+            }
+            if (furniture) {
+                object.put(KEY_FURNITURE, true);
+                if (furnitureType != null) {
+                    object.put(KEY_FURNITURE_TYPE, furnitureType);
+                }
+                if (furnitureCustomType != null) {
+                    object.put(KEY_FURNITURE_CUSTOM_TYPE, furnitureCustomType);
+                }
+                if (furnitureLevels != null) {
+                    object.put(KEY_FURNITURE_LEVELS, furnitureLevels.intValue());
+                }
+                if (furnitureColumns != null) {
+                    object.put(KEY_FURNITURE_COLUMNS, furnitureColumns.intValue());
+                }
+                if (furnitureHasTop) {
+                    object.put(KEY_FURNITURE_HAS_TOP, true);
+                }
+                if (furnitureHasBottom) {
+                    object.put(KEY_FURNITURE_HAS_BOTTOM, true);
+                }
             }
             // Ne pas réécrire le nombre d'attachements : les éléments sont
             // sauvegardés individuellement désormais.
@@ -374,6 +521,36 @@ public class RoomContentItem {
             }
         }
         boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
+        boolean isFurniture = object.optBoolean(KEY_FURNITURE, false);
+        String parsedFurnitureType = null;
+        String parsedFurnitureCustomType = null;
+        Integer parsedFurnitureLevels = null;
+        Integer parsedFurnitureColumns = null;
+        boolean parsedHasTop = false;
+        boolean parsedHasBottom = false;
+        if (isFurniture) {
+            if (object.has(KEY_FURNITURE_TYPE) && !object.isNull(KEY_FURNITURE_TYPE)) {
+                parsedFurnitureType = object.optString(KEY_FURNITURE_TYPE, null);
+            }
+            if (object.has(KEY_FURNITURE_CUSTOM_TYPE)
+                    && !object.isNull(KEY_FURNITURE_CUSTOM_TYPE)) {
+                parsedFurnitureCustomType = object.optString(KEY_FURNITURE_CUSTOM_TYPE, null);
+            }
+            if (object.has(KEY_FURNITURE_LEVELS) && !object.isNull(KEY_FURNITURE_LEVELS)) {
+                int value = object.optInt(KEY_FURNITURE_LEVELS, 0);
+                if (value > 0) {
+                    parsedFurnitureLevels = value;
+                }
+            }
+            if (object.has(KEY_FURNITURE_COLUMNS) && !object.isNull(KEY_FURNITURE_COLUMNS)) {
+                int value = object.optInt(KEY_FURNITURE_COLUMNS, 0);
+                if (value > 0) {
+                    parsedFurnitureColumns = value;
+                }
+            }
+            parsedHasTop = object.optBoolean(KEY_FURNITURE_HAS_TOP, false);
+            parsedHasBottom = object.optBoolean(KEY_FURNITURE_HAS_BOTTOM, false);
+        }
         long rank = object.has(KEY_RANK) ? object.optLong(KEY_RANK, -1L) : -1L;
         Long parentRank = null;
         if (object.has(KEY_PARENT_RANK) && !object.isNull(KEY_PARENT_RANK)) {
@@ -394,7 +571,14 @@ public class RoomContentItem {
                 tracks,
                 photos,
                 isContainer,
-                0);
+                0,
+                isFurniture,
+                parsedFurnitureType,
+                parsedFurnitureCustomType,
+                parsedFurnitureLevels,
+                parsedFurnitureColumns,
+                parsedHasTop,
+                parsedHasBottom);
         item.setRank(rank);
         item.setParentRank(parentRank);
         item.setDisplayRank(null);

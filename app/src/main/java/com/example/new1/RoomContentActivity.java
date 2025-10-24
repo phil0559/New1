@@ -1852,6 +1852,299 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private void showFurnitureDialog(@Nullable RoomContentItem itemToEdit, int positionToEdit) {
+        boolean isEditing = itemToEdit != null && positionToEdit >= 0;
+        View dialogView = inflateDialogView(R.layout.dialog_add_furniture);
+        if (dialogView == null) {
+            return;
+        }
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .create();
+        dialog.show();
+
+        TextView titleView = dialogView.findViewById(R.id.text_dialog_furniture_title);
+        Spinner typeSpinner = dialogView.findViewById(R.id.spinner_furniture_type);
+        EditText customTypeInput = dialogView.findViewById(R.id.input_furniture_custom_type);
+        EditText nameInput = dialogView.findViewById(R.id.input_furniture_name);
+        EditText commentInput = dialogView.findViewById(R.id.input_furniture_comment);
+        TextView photoLabel = dialogView.findViewById(R.id.text_furniture_photos_label);
+        Button addPhotoButton = dialogView.findViewById(R.id.button_add_furniture_photo);
+        LinearLayout photoContainer = dialogView.findViewById(R.id.container_furniture_photos);
+        EditText levelsInput = dialogView.findViewById(R.id.input_furniture_levels);
+        EditText columnsInput = dialogView.findViewById(R.id.input_furniture_columns);
+        CheckBox topCheckBox = dialogView.findViewById(R.id.checkbox_furniture_has_top);
+        CheckBox bottomCheckBox = dialogView.findViewById(R.id.checkbox_furniture_has_bottom);
+        Button cancelButton = dialogView.findViewById(R.id.button_cancel_furniture);
+        Button confirmButton = dialogView.findViewById(R.id.button_confirm_furniture);
+
+        if (titleView != null) {
+            titleView.setText(isEditing
+                    ? R.string.dialog_edit_furniture_title
+                    : R.string.dialog_add_furniture_title);
+        }
+
+        if (typeSpinner != null) {
+            ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                    R.array.furniture_type_defaults, android.R.layout.simple_spinner_item);
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            typeSpinner.setAdapter(adapter);
+            if (itemToEdit != null) {
+                String existingType = itemToEdit.getFurnitureType();
+                if (TextUtils.isEmpty(existingType)) {
+                    existingType = itemToEdit.getType();
+                }
+                if (!TextUtils.isEmpty(existingType)) {
+                    int count = adapter.getCount();
+                    for (int i = 0; i < count; i++) {
+                        CharSequence value = adapter.getItem(i);
+                        if (value != null && existingType.equalsIgnoreCase(value.toString())) {
+                            typeSpinner.setSelection(i);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        final FormState formState = new FormState();
+        formState.photoLabel = photoLabel;
+        formState.photoContainer = photoContainer;
+        formState.addPhotoButton = addPhotoButton;
+        formState.photoLabelTemplateRes = R.string.dialog_label_furniture_photos_template;
+        currentFormState = formState;
+
+        if (itemToEdit != null) {
+            if (nameInput != null) {
+                String existingName = itemToEdit.getName();
+                nameInput.setText(existingName);
+                if (!TextUtils.isEmpty(existingName)) {
+                    nameInput.setSelection(existingName.length());
+                }
+            }
+            if (commentInput != null) {
+                String existingComment = itemToEdit.getComment();
+                commentInput.setText(existingComment);
+                if (!TextUtils.isEmpty(existingComment)) {
+                    commentInput.setSelection(existingComment.length());
+                }
+            }
+            if (customTypeInput != null) {
+                String existingCustom = itemToEdit.getFurnitureCustomType();
+                if (!TextUtils.isEmpty(existingCustom)) {
+                    customTypeInput.setText(existingCustom);
+                    customTypeInput.setSelection(existingCustom.length());
+                }
+            }
+            if (levelsInput != null) {
+                Integer existingLevels = itemToEdit.getFurnitureLevels();
+                if (existingLevels != null) {
+                    String value = String.valueOf(existingLevels);
+                    levelsInput.setText(value);
+                    levelsInput.setSelection(value.length());
+                }
+            }
+            if (columnsInput != null) {
+                Integer existingColumns = itemToEdit.getFurnitureColumns();
+                if (existingColumns != null) {
+                    String value = String.valueOf(existingColumns);
+                    columnsInput.setText(value);
+                    columnsInput.setSelection(value.length());
+                }
+            }
+            if (topCheckBox != null) {
+                topCheckBox.setChecked(itemToEdit.hasFurnitureTop());
+            }
+            if (bottomCheckBox != null) {
+                bottomCheckBox.setChecked(itemToEdit.hasFurnitureBottom());
+            }
+            formState.photos.addAll(itemToEdit.getPhotos());
+        }
+
+        refreshPhotoSection(formState);
+
+        if (addPhotoButton != null) {
+            addPhotoButton.setOnClickListener(v -> {
+                if (currentFormState == null || currentFormState != formState) {
+                    return;
+                }
+                if (formState.photos.size() >= MAX_FORM_PHOTOS) {
+                    Toast.makeText(this, R.string.dialog_error_max_photos_reached, Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                if (cameraIntent.resolveActivity(getPackageManager()) != null) {
+                    startActivityForResult(cameraIntent, REQUEST_TAKE_PHOTO);
+                }
+            });
+        }
+
+        if (cancelButton != null) {
+            cancelButton.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (confirmButton != null) {
+            confirmButton.setOnClickListener(v -> {
+                String trimmedName = null;
+                if (nameInput != null && nameInput.getText() != null) {
+                    trimmedName = nameInput.getText().toString().trim();
+                }
+                if (trimmedName == null || trimmedName.isEmpty()) {
+                    if (nameInput != null) {
+                        nameInput.setError(getString(R.string.error_furniture_name_required));
+                        nameInput.requestFocus();
+                    }
+                    return;
+                }
+                if (nameInput != null) {
+                    nameInput.setError(null);
+                }
+
+                String commentValue = null;
+                if (commentInput != null && commentInput.getText() != null) {
+                    commentValue = commentInput.getText().toString().trim();
+                    if (commentValue.isEmpty()) {
+                        commentValue = null;
+                    }
+                }
+
+                String selectedType = null;
+                if (typeSpinner != null && typeSpinner.getSelectedItem() != null) {
+                    selectedType = typeSpinner.getSelectedItem().toString();
+                }
+                if (TextUtils.isEmpty(selectedType)) {
+                    selectedType = getString(R.string.dialog_furniture_type_shelf);
+                }
+
+                String customTypeValue = null;
+                if (customTypeInput != null && customTypeInput.getText() != null) {
+                    String rawValue = customTypeInput.getText().toString().trim();
+                    if (!rawValue.isEmpty()) {
+                        customTypeValue = rawValue;
+                    }
+                }
+
+                Integer levelsValue = null;
+                if (levelsInput != null && levelsInput.getText() != null) {
+                    String rawLevels = levelsInput.getText().toString().trim();
+                    if (!rawLevels.isEmpty()) {
+                        try {
+                            int parsed = Integer.parseInt(rawLevels);
+                            if (parsed > 0) {
+                                levelsValue = parsed;
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+
+                Integer columnsValue = null;
+                if (columnsInput != null && columnsInput.getText() != null) {
+                    String rawColumns = columnsInput.getText().toString().trim();
+                    if (!rawColumns.isEmpty()) {
+                        try {
+                            int parsed = Integer.parseInt(rawColumns);
+                            if (parsed > 0) {
+                                columnsValue = parsed;
+                            }
+                        } catch (NumberFormatException ignored) {
+                        }
+                    }
+                }
+
+                boolean hasTop = topCheckBox != null && topCheckBox.isChecked();
+                boolean hasBottom = bottomCheckBox != null && bottomCheckBox.isChecked();
+
+                if (currentFormState != null && currentFormState != formState) {
+                    dialog.dismiss();
+                    return;
+                }
+
+                List<String> photoValues = new ArrayList<>(formState.photos);
+
+                RoomContentItem newItem = RoomContentItem.createFurniture(trimmedName,
+                        commentValue,
+                        selectedType,
+                        customTypeValue,
+                        photoValues,
+                        levelsValue,
+                        columnsValue,
+                        hasTop,
+                        hasBottom);
+
+                if (isEditing) {
+                    if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
+                        dialog.dismiss();
+                        return;
+                    }
+                    RoomContentItem existingItem = roomContentItems.get(positionToEdit);
+                    preserveHierarchyMetadata(existingItem, newItem);
+                    roomContentItems.set(positionToEdit, newItem);
+                } else {
+                    roomContentItems.add(newItem);
+                }
+
+                RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+                sortRoomContentItems();
+                RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+                if (roomContentAdapter != null) {
+                    roomContentAdapter.notifyDataSetChanged();
+                }
+                if (contentList != null) {
+                    int targetPosition = roomContentItems.indexOf(newItem);
+                    if (targetPosition >= 0) {
+                        final int scrollPosition = targetPosition;
+                        contentList.post(() -> contentList.smoothScrollToPosition(scrollPosition));
+                    }
+                }
+                saveRoomContent();
+                updateEmptyState();
+                int messageRes = isEditing
+                        ? R.string.room_furniture_updated_confirmation
+                        : R.string.room_furniture_added_confirmation;
+                Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+            });
+        }
+
+        dialog.setOnDismissListener(d -> {
+            if (currentFormState == formState) {
+                currentFormState = null;
+            }
+        });
+
+        if (nameInput != null) {
+            nameInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    if (nameInput == null) {
+                        return;
+                    }
+                    CharSequence value = editable;
+                    if (value == null || value.toString().trim().isEmpty()) {
+                        nameInput.setError(getString(R.string.error_furniture_name_required));
+                    } else {
+                        nameInput.setError(null);
+                    }
+                }
+            });
+        }
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
     private void showBarcodeCreationDialog(@Nullable TextView barcodeValueView,
                                            @Nullable ImageView barcodePreviewView) {
         if (barcodeValueView == null && barcodePreviewView == null) {
@@ -1999,6 +2292,16 @@ public class RoomContentActivity extends Activity {
                     addMenuPopup.dismiss();
                 }
                 showAddContainerDialog();
+            });
+        }
+
+        View furnitureButton = popupContent.findViewById(R.id.button_popup_add_room_content_furniture);
+        if (furnitureButton != null) {
+            furnitureButton.setOnClickListener(view -> {
+                if (addMenuPopup != null) {
+                    addMenuPopup.dismiss();
+                }
+                showFurnitureDialog(null, -1);
             });
         }
 
@@ -2174,6 +2477,10 @@ public class RoomContentActivity extends Activity {
     }
 
     private void showCopyRoomContentDialog(@NonNull RoomContentItem item) {
+        if (item.isFurniture()) {
+            showFurnitureDialog(item, -1);
+            return;
+        }
         if (item.isContainer()) {
             showContainerDialog(item, -1);
         } else {
@@ -2182,6 +2489,10 @@ public class RoomContentActivity extends Activity {
     }
 
     private void showEditRoomContentDialog(@NonNull RoomContentItem item, int position) {
+        if (item.isFurniture()) {
+            showFurnitureDialog(item, position);
+            return;
+        }
         if (item.isContainer()) {
             showContainerDialog(item, position);
         } else {
