@@ -240,7 +240,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         boolean isContainerExpanded = isContainerExpanded(position);
         boolean shouldDisplayDetails;
         if (canToggleContainer) {
-            shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata || hasChildren);
+            boolean hasExpandableDetails = hasComment || hasMetadata;
+            shouldDisplayDetails = isContainerExpanded && hasExpandableDetails;
         } else {
             boolean isExpanded = (hasComment || hasMetadata)
                     && expandedStates.get(position, false);
@@ -255,7 +256,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 : ((hasComment || hasMetadata) && expandedStates.get(position, false));
         holder.updateToggle(hasToggle, isToggleExpanded, toggleLabel);
 
-        boolean shouldShowChildren = isContainerExpanded && hasChildren;
+        boolean shouldShowChildren = false;
 
         if (shouldDisplayDetails) {
             if (hasComment) {
