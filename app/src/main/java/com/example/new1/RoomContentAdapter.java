@@ -39,6 +39,7 @@ import com.google.android.material.chip.Chip;
 
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
@@ -1734,7 +1735,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     toggleIcon.setVisibility(View.GONE);
                     toggleIcon.setOnClickListener(null);
                 } else {
-                    updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0], toggleLabel);
+                    updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
+                            popupVisibilityMask[0], toggleLabel);
                     toggleIcon.setOnClickListener(view -> {
                         int updatedPosition = getBindingAdapterPosition();
                         if (currentItem == null || !currentItem.hasAttachedItems()
@@ -1747,12 +1749,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                     ? updatedPosition
                                     : position;
                             childrenContainer.setVisibility(View.VISIBLE);
-                            populateContainerPopupChildren(childrenContainer, targetPosition,
-                                    popupVisibilityMask[0]);
-                        } else {
-                            clearContainerPopupChildren(childrenContainer);
-                        }
-                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0], toggleLabel);
+                                populateContainerPopupChildren(childrenContainer, targetPosition,
+                                        popupVisibilityMask[0]);
+                            } else {
+                                clearContainerPopupChildren(childrenContainer);
+                            }
+                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
+                                popupVisibilityMask[0], toggleLabel);
                     });
                 }
             }
@@ -1800,6 +1803,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         populateContainerPopupChildren(childrenContainer, targetPosition,
                                 popupVisibilityMask[0]);
                     }
+                    if (toggleIcon != null) {
+                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
+                                popupVisibilityMask[0], toggleLabel);
+                    }
                 });
             }
             if (itemsChip != null) {
@@ -1819,6 +1826,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                 : position;
                         populateContainerPopupChildren(childrenContainer, targetPosition,
                                 popupVisibilityMask[0]);
+                    }
+                    if (toggleIcon != null) {
+                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
+                                popupVisibilityMask[0], toggleLabel);
                     }
                 });
             }
@@ -1938,16 +1949,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void updateContainerPopupToggleIcon(@NonNull ImageView toggleIcon,
-                boolean expanded, @Nullable CharSequence label) {
+                boolean expanded, int visibilityMask, @Nullable CharSequence label) {
             boolean hasDetails = currentItem != null && currentItem.hasAttachedItems();
             if (!hasDetails) {
                 toggleIcon.setVisibility(View.GONE);
                 toggleIcon.setContentDescription(null);
-                toggleIcon.setRotation(0f);
+                toggleIcon.setImageDrawable(null);
                 return;
             }
             toggleIcon.setVisibility(View.VISIBLE);
-            toggleIcon.setRotation(expanded ? 180f : 0f);
+            toggleIcon.setRotation(0f);
+            toggleIcon.setImageResource(
+                    resolveContainerPopupToggleIcon(expanded, visibilityMask));
             String labelText;
             if (label != null && label.length() > 0) {
                 labelText = label.toString();
@@ -1961,6 +1974,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     : R.string.content_description_room_content_expand;
             toggleIcon.setContentDescription(
                     toggleIcon.getContext().getString(descriptionRes, labelText));
+        }
+
+        @DrawableRes
+        private int resolveContainerPopupToggleIcon(boolean expanded, int visibilityMask) {
+            if (expanded) {
+                return R.drawable.ic_square_cross;
+            }
+            boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
+            boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
+            if (showContainers && showItems) {
+                return R.drawable.ic_square_empty;
+            }
+            if (showContainers || showItems) {
+                return R.drawable.ic_square_diagonal;
+            }
+            return R.drawable.ic_square_empty;
         }
 
         private void populateContainerPopupChildren(@NonNull ViewGroup container,

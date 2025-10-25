@@ -41,7 +41,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@null"
                 android:padding="4dp"
-                android:src="@drawable/ic_chevron_down"
+                android:src="@drawable/ic_square_empty"
                 android:tint="@color/icon_brown" />
 
             <ImageView
