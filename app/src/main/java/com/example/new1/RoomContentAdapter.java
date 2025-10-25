@@ -1709,8 +1709,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void handleBannerClick() {
-            if (currentItem != null && currentItem.isFurniture()) {
+            if (currentItem == null) {
+                return;
+            }
+            if (currentItem.isFurniture()) {
                 toggleFurniturePopup();
+            } else if (currentItem.isContainer()) {
+                toggleExpansion();
             } else {
                 notifyEdit();
             }
@@ -2396,6 +2401,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     popupWindow.dismiss();
                     notifyCopy();
                 });
+            }
+            View editButton = popupView.findViewById(R.id.button_popup_room_content_edit);
+            if (editButton != null) {
+                boolean showEdit = currentItem != null && currentItem.isContainer();
+                editButton.setVisibility(showEdit ? View.VISIBLE : View.GONE);
+                if (showEdit) {
+                    editButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        notifyEdit();
+                    });
+                } else {
+                    editButton.setOnClickListener(null);
+                }
             }
             View moveButton = popupView.findViewById(R.id.button_popup_room_content_move);
             if (moveButton != null) {
