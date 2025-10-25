@@ -1948,9 +1948,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private void populateContainerPopupChildren(@NonNull ViewGroup container,
                 int containerPosition) {
             container.removeAllViews();
-            List<RoomContentItem> children = collectContainerPopupChildren(containerPosition);
+            List<Integer> childPositions = collectContainerPopupChildPositions(containerPosition);
             LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
-            if (children.isEmpty()) {
+            if (childPositions.isEmpty()) {
                 View emptyView = layoutInflater.inflate(R.layout.item_furniture_section_empty,
                         container, false);
                 TextView emptyText = emptyView.findViewById(R.id.text_furniture_section_empty);
@@ -1958,34 +1958,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     emptyText.setText(R.string.container_popup_children_empty);
                 }
                 container.addView(emptyView);
+                container.setVisibility(View.VISIBLE);
                 return;
             }
-            for (RoomContentItem child : children) {
-                if (child == null) {
+            int baseDepth = RoomContentAdapter.this.computeHierarchyDepth(containerPosition);
+            for (Integer childPosition : childPositions) {
+                if (childPosition == null) {
                     continue;
                 }
-                View entryView = layoutInflater.inflate(R.layout.item_room_content_child,
+                View entryView = layoutInflater.inflate(R.layout.popup_container_child_entry,
                         container, false);
-                TextView childNameView = entryView.findViewById(R.id.text_room_content_child_name);
-                TextView childCommentView = entryView.findViewById(
-                        R.id.text_room_content_child_comment);
-                if (childNameView != null) {
-                    String name = RoomContentAdapter.this.resolveItemName(child);
-                    childNameView.setText(name);
-                }
-                if (childCommentView != null) {
-                    String comment = child.getComment();
-                    String trimmed = comment != null ? comment.trim() : "";
-                    if (!trimmed.isEmpty()) {
-                        childCommentView.setVisibility(View.VISIBLE);
-                        childCommentView.setText(trimmed);
-                    } else {
-                        childCommentView.setVisibility(View.GONE);
-                        childCommentView.setText(null);
-                    }
-                }
+                bindContainerPopupEntry(entryView, containerPosition, baseDepth, childPosition);
                 container.addView(entryView);
             }
+            container.setVisibility(View.VISIBLE);
         }
 
         private void clearContainerPopupChildren(@Nullable ViewGroup container) {
@@ -1997,8 +1983,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         @NonNull
-        private List<RoomContentItem> collectContainerPopupChildren(int containerPosition) {
-            List<RoomContentItem> result = new ArrayList<>();
+        private List<Integer> collectContainerPopupChildPositions(int containerPosition) {
+            List<Integer> result = new ArrayList<>();
             if (containerPosition < 0 || containerPosition >= items.size()) {
                 return result;
             }
@@ -2029,9 +2015,99 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 } else if (!showItems) {
                     continue;
                 }
-                result.add(child);
+                result.add(index);
             }
             return result;
+        }
+
+        private void bindContainerPopupEntry(@NonNull View entryView, int containerPosition,
+                int baseDepth, int childPosition) {
+            RoomContentItem child = RoomContentAdapter.this.getItemAt(childPosition);
+            if (child == null) {
+                return;
+            }
+            View cardBackground = entryView.findViewById(R.id.container_popup_child_card);
+            View bannerContainerView = entryView.findViewById(R.id.container_popup_child_banner);
+            TextView titleView = entryView.findViewById(R.id.text_container_popup_child_title);
+            TextView commentView = entryView.findViewById(R.id.text_container_popup_child_comment);
+
+            if (titleView != null) {
+                String baseName = RoomContentAdapter.this.resolveItemName(child);
+                if (child.isContainer()) {
+                    baseName = RoomContentAdapter.this.appendAttachmentCount(baseName, child);
+                }
+                String displayName = baseName;
+                String rankLabel = child.getDisplayRank();
+                if (rankLabel != null && !rankLabel.trim().isEmpty()) {
+                    displayName = rankLabel + " · " + baseName;
+                }
+                String placementLabel = formatFurniturePlacement(child);
+                if (placementLabel != null && !placementLabel.isEmpty()) {
+                    displayName = displayName + " · " + placementLabel;
+                }
+                titleView.setText(displayName);
+            }
+
+            if (commentView != null) {
+                CharSequence formattedComment = RoomContentAdapter.this
+                        .formatComment(child.getComment());
+                if (formattedComment != null) {
+                    commentView.setVisibility(View.VISIBLE);
+                    commentView.setText(formattedComment);
+                } else {
+                    commentView.setVisibility(View.GONE);
+                    commentView.setText(null);
+                }
+            }
+
+            ViewGroup.LayoutParams layoutParams = entryView.getLayoutParams();
+            if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) layoutParams;
+                int childDepth = RoomContentAdapter.this.computeHierarchyDepth(childPosition);
+                int relativeDepth = Math.max(0, childDepth - baseDepth - 1);
+                int indent = relativeDepth * RoomContentAdapter.this.hierarchyIndentPx;
+                marginParams.setMarginStart(indent);
+                entryView.setLayoutParams(marginParams);
+            }
+
+            int depth = RoomContentAdapter.this.computeHierarchyDepth(childPosition);
+            HierarchyStyle style = RoomContentAdapter.this.resolveHierarchyStyle(depth);
+            if (child.isContainer()) {
+                boolean hasAttachments = child.hasAttachedItems();
+                boolean isExpanded = hasAttachments
+                        && RoomContentAdapter.this.isContainerExpanded(childPosition);
+                boolean joinsParentFrame = false;
+                boolean isLastChildInParent = true;
+                int parentPosition = RoomContentAdapter.this
+                        .findAttachedContainerPosition(childPosition);
+                if (parentPosition >= 0 && parentPosition != childPosition) {
+                    boolean parentExpanded = RoomContentAdapter.this.isContainerExpanded(parentPosition)
+                            && RoomContentAdapter.this.items.get(parentPosition) != null
+                            && RoomContentAdapter.this.items.get(parentPosition).hasAttachedItems();
+                    if (parentExpanded) {
+                        joinsParentFrame = parentPosition == containerPosition;
+                        isLastChildInParent = RoomContentAdapter.this
+                                .isLastDirectChild(parentPosition, childPosition);
+                    }
+                }
+                if (cardBackground != null) {
+                    RoomContentAdapter.this.applyContainerBackground(cardBackground, style,
+                            hasAttachments, isExpanded, joinsParentFrame, isLastChildInParent);
+                }
+                if (bannerContainerView != null) {
+                    RoomContentAdapter.this.applyContainerBannerColor(bannerContainerView, style,
+                            child.getType());
+                }
+            } else {
+                if (cardBackground != null) {
+                    RoomContentAdapter.this.applyStandaloneContentBackground(cardBackground, style);
+                }
+                if (bannerContainerView != null) {
+                    RoomContentAdapter.this.applyBannerColor(bannerContainerView, child.getType());
+                }
+            }
+            entryView.setClickable(false);
+            entryView.setFocusable(false);
         }
 
         void dismissContainerPopup() {
