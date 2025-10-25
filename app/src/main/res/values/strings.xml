@@ -5,6 +5,7 @@
     <string name="content_description_menu">Ouvrir le menu principal</string>
     <string name="content_description_search">Rechercher</string>
     <string name="content_description_flag">Ouvrir le sélecteur de langue</string>
+    <string name="content_description_display_toggle">Basculer l’affichage des composants</string>
     <string name="content_description_back">Retour</string>
     <string name="language_french">Français</string>
     <string name="language_english">Anglais (Royaume-Uni)</string>
