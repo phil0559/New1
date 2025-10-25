@@ -1745,7 +1745,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                     ? updatedPosition
                                     : position;
                             childrenContainer.setVisibility(View.VISIBLE);
-                            populateContainerPopupChildren(childrenContainer, targetPosition);
+                            populateContainerPopupChildren(childrenContainer, targetPosition,
+                                    popupVisibilityMask[0]);
                         } else {
                             clearContainerPopupChildren(childrenContainer);
                         }
@@ -1763,6 +1764,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             ImageView groupPreviewView = popupView.findViewById(R.id.image_container_popup_group_preview);
             suppressFilterCallbacks = true;
             int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
+            final int[] popupVisibilityMask = new int[] {visibilityMask};
             if (containersChip != null) {
                 containersChip.setChecked((visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0);
             }
@@ -1782,25 +1784,41 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             if (containersChip != null) {
                 containersChip.setOnClickListener(view -> {
-                    onFilterChipToggled(containersChip, VISIBILITY_FLAG_CONTAINERS);
+                    if (suppressFilterCallbacks) {
+                        return;
+                    }
+                    if (containersChip.isChecked()) {
+                        popupVisibilityMask[0] |= VISIBILITY_FLAG_CONTAINERS;
+                    } else {
+                        popupVisibilityMask[0] &= ~VISIBILITY_FLAG_CONTAINERS;
+                    }
                     if (childrenContainer != null && isPopupExpanded[0]) {
                         int updatedPosition = getBindingAdapterPosition();
                         int targetPosition = updatedPosition != RecyclerView.NO_POSITION
                                 ? updatedPosition
                                 : position;
-                        populateContainerPopupChildren(childrenContainer, targetPosition);
+                        populateContainerPopupChildren(childrenContainer, targetPosition,
+                                popupVisibilityMask[0]);
                     }
                 });
             }
             if (itemsChip != null) {
                 itemsChip.setOnClickListener(view -> {
-                    onFilterChipToggled(itemsChip, VISIBILITY_FLAG_ITEMS);
+                    if (suppressFilterCallbacks) {
+                        return;
+                    }
+                    if (itemsChip.isChecked()) {
+                        popupVisibilityMask[0] |= VISIBILITY_FLAG_ITEMS;
+                    } else {
+                        popupVisibilityMask[0] &= ~VISIBILITY_FLAG_ITEMS;
+                    }
                     if (childrenContainer != null && isPopupExpanded[0]) {
                         int updatedPosition = getBindingAdapterPosition();
                         int targetPosition = updatedPosition != RecyclerView.NO_POSITION
                                 ? updatedPosition
                                 : position;
-                        populateContainerPopupChildren(childrenContainer, targetPosition);
+                        populateContainerPopupChildren(childrenContainer, targetPosition,
+                                popupVisibilityMask[0]);
                     }
                 });
             }
@@ -1946,9 +1964,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void populateContainerPopupChildren(@NonNull ViewGroup container,
-                int containerPosition) {
+                int containerPosition, int visibilityMask) {
             container.removeAllViews();
-            List<Integer> childPositions = collectContainerPopupChildPositions(containerPosition);
+            List<Integer> childPositions = collectContainerPopupChildPositions(containerPosition,
+                    visibilityMask);
             LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
             if (childPositions.isEmpty()) {
                 View emptyView = layoutInflater.inflate(R.layout.item_furniture_section_empty,
@@ -1983,7 +2002,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         @NonNull
-        private List<Integer> collectContainerPopupChildPositions(int containerPosition) {
+        private List<Integer> collectContainerPopupChildPositions(int containerPosition,
+                int visibilityMask) {
             List<Integer> result = new ArrayList<>();
             if (containerPosition < 0 || containerPosition >= items.size()) {
                 return result;
@@ -1992,7 +2012,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (containerItem == null || !containerItem.isContainer()) {
                 return result;
             }
-            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(containerPosition);
             boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
             boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
             RoomContentAdapter.this.ensureHierarchyComputed();
