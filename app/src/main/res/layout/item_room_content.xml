@@ -141,6 +141,38 @@
                     android:paddingBottom="12dp"
                     android:visibility="gone">
 
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chip_group_room_content_filters"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="6dp"
+                        android:visibility="gone"
+                        app:chipSpacingHorizontal="8dp"
+                        app:chipSpacingVertical="4dp"
+                        app:selectionRequired="false"
+                        app:singleLine="false"
+                        app:singleSelection="false">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_room_content_filter_containers"
+                            style="@style/Widget.MaterialComponents.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/room_content_filter_containers"
+                            app:checkedIconVisible="false" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_room_content_filter_items"
+                            style="@style/Widget.MaterialComponents.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checkable="true"
+                            android:text="@string/room_content_filter_items"
+                            app:checkedIconVisible="false" />
+
+                    </com.google.android.material.chip.ChipGroup>
+
                     <androidx.recyclerview.widget.RecyclerView
                         android:id="@+id/recycler_room_content_children"
                         android:layout_width="match_parent"
