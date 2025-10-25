@@ -59,6 +59,7 @@
     <string name="room_content_title_with_name">Contenido de %1$s</string>
     <string name="room_content_placeholder">Agregue contenido a esta habitación para comenzar.</string>
     <string name="room_content_placeholder_with_establishment">Agregue contenido para %1$s.</string>
+    <string name="room_content_subtitle_with_establishment">Establecimiento: %1$s</string>
     <string name="room_content_empty_state">Los elementos de la habitación aparecerán aquí.</string>
     <string name="content_description_add_room_content">Agregar contenido para la habitación</string>
     <string name="room_content_added_confirmation">Elemento añadido a la habitación.</string>
@@ -67,6 +68,8 @@
     <string name="room_container_added_confirmation">Contenedor añadido a la habitación.</string>
     <string name="room_container_updated_confirmation">Contenedor actualizado.</string>
     <string name="room_container_deleted_confirmation">Contenedor eliminado.</string>
+    <string name="room_furniture_added_confirmation">Mobiliario agregado a la habitación.</string>
+    <string name="room_furniture_updated_confirmation">Mobiliario actualizado.</string>
     <string name="room_content_metadata_type">Tipo: %1$s</string>
     <string name="room_content_metadata_category">Categoría: %1$s</string>
     <string name="room_content_metadata_series">Serie: %1$s</string>
@@ -78,6 +81,9 @@
     <string name="room_content_metadata_summary">Resumen: %1$s</string>
     <string name="room_content_metadata_tracks">Pistas: %1$s</string>
     <string name="room_content_metadata_barcode">Código de barras: %1$s</string>
+    <string name="room_content_filter_containers">Contenedores</string>
+    <string name="room_content_filter_items">Elementos</string>
+    <string name="container_popup_children_empty">Ningún elemento coincide con los filtros actuales.</string>
     <string name="content_description_photo_preview">Vista previa de la foto</string>
     <string name="dialog_delete_room_content_title">Eliminar elemento</string>
     <string name="dialog_delete_room_content_message">¿Desea eliminar el elemento %1$s?</string>
@@ -109,12 +115,25 @@
     <string name="dialog_label_room_content_photos_template">Fotos del elemento (%1$d)</string>
     <string name="dialog_add_container_title">Añadir un contenedor</string>
     <string name="dialog_edit_container_title">Editar contenedor</string>
+    <string name="dialog_add_furniture_title">Agregar mobiliario</string>
+    <string name="dialog_edit_furniture_title">Editar mobiliario</string>
     <string name="dialog_label_container_name">Nombre del contenedor</string>
     <string name="dialog_label_container_type">Tipo</string>
     <string name="dialog_button_choose_container_type">Elegir un tipo de contenedor</string>
     <string name="dialog_label_container_comment">Comentario</string>
     <string name="dialog_label_container_photos_default">Fotos del contenedor (0)</string>
     <string name="dialog_label_container_photos_template">Fotos del contenedor (%1$d)</string>
+    <string name="dialog_label_furniture_type">Tipo</string>
+    <string name="dialog_label_furniture_create_type">Crear un tipo de mobiliario</string>
+    <string name="dialog_hint_furniture_custom_type">Tipo personalizado (opcional)</string>
+    <string name="dialog_label_furniture_name">Nombre del mobiliario</string>
+    <string name="dialog_label_furniture_comment">Comentario</string>
+    <string name="dialog_label_furniture_photos_default">Fotos del mobiliario (0)</string>
+    <string name="dialog_label_furniture_photos_template">Fotos del mobiliario (%1$d)</string>
+    <string name="dialog_label_furniture_levels">Cantidad de niveles</string>
+    <string name="dialog_label_furniture_columns">Cantidad de columnas</string>
+    <string name="dialog_label_furniture_has_top">Tiene parte superior</string>
+    <string name="dialog_label_furniture_has_bottom">Tiene parte inferior</string>
     <string name="dialog_barcode_section_title">Código de barras</string>
     <string name="dialog_button_barcode">Escanear</string>
     <string name="dialog_button_generate_barcode">Crear</string>
@@ -153,6 +172,12 @@
     <string name="dialog_type_field_name">Nombre</string>
     <string name="dialog_type_field_comment">Comentario</string>
     <string name="dialog_type_field_photos">Cámara</string>
+    <string name="dialog_type_field_date">Fecha</string>
+    <string name="dialog_type_field_date_with_format">Fecha (%1$s)</string>
+    <string name="dialog_date_format_title">Formato de fecha</string>
+    <string name="dialog_date_format_european">DD/MM/AAAA (europeo)</string>
+    <string name="dialog_date_format_english">MM/DD/AAAA (inglés)</string>
+    <string name="dialog_date_format_iso">AAAA-MM-DD (ISO)</string>
     <string name="dialog_button_choose_type">Elegir un tipo</string>
     <string name="dialog_button_create_custom_type">Crear un tipo personalizado</string>
     <string name="dialog_custom_type_placeholder">Tipo personalizado</string>
@@ -167,6 +192,7 @@
     <string name="popup_add_room_content_title">Elegir un tipo de elemento</string>
     <string name="popup_add_room_content_option_element">- Elemento</string>
     <string name="popup_add_room_content_option_container">- Contenedor</string>
+    <string name="popup_add_room_content_option_furniture">- Mobiliario</string>
     <string name="content_description_add_type">Añadir un tipo</string>
     <string name="content_description_edit_type">Editar tipo</string>
     <string name="content_description_delete_type">Eliminar tipo</string>
@@ -191,6 +217,7 @@
     <string name="dialog_label_publisher">Editorial</string>
     <string name="dialog_label_edition">Edición</string>
     <string name="dialog_label_publication_date">Fecha de publicación</string>
+    <string name="dialog_label_publication_date_with_format">Fecha de publicación (%1$s)</string>
     <string name="dialog_label_summary">Resumen</string>
     <string name="dialog_tracks_cd_title">Pistas del CD</string>
     <string name="dialog_tracks_disc_title">Pistas del disco</string>
@@ -209,6 +236,7 @@
     <string name="dialog_custom_field_value_hint">Introduce un valor</string>
     <string name="dialog_content_description_edit_custom_field_label">Editar el nombre del campo personalizado</string>
     <string name="error_room_content_name_required">El nombre del elemento es obligatorio</string>
+    <string name="error_furniture_name_required">El nombre del mobiliario es obligatorio</string>
     <string name="content_description_previous_photo">Ver la foto anterior</string>
     <string name="content_description_next_photo">Ver la foto siguiente</string>
     <string name="content_description_delete_photo">Eliminar la foto mostrada</string>
@@ -237,7 +265,9 @@
     <string name="furniture_popup_top_title">Superior</string>
     <string name="furniture_popup_bottom_title">Inferior</string>
     <string name="furniture_popup_level_title">Nivel %1$d</string>
+    <string name="furniture_popup_section_empty">No hay elementos en este nivel.</string>
     <string name="furniture_popup_photos_menu_manage">Menú de fotos</string>
     <string name="furniture_popup_photos_menu_view">Visualización de fotos</string>
     <string name="furniture_popup_photos_empty">No hay fotos disponibles.</string>
+    <string name="dialog_furniture_type_shelf">- Estantería</string>
 </resources>
