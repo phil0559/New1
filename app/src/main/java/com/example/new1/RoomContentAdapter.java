@@ -670,6 +670,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return visibilityStates.get(position, VISIBILITY_DEFAULT_MASK);
     }
 
+    private int resolvePopupVisibilityMask(int position) {
+        int visibilityMask = getContainerVisibilityMask(position);
+        if (visibilityMask != 0) {
+            return visibilityMask;
+        }
+        if (position < 0 || position >= items.size()) {
+            return visibilityMask;
+        }
+        RoomContentItem item = items.get(position);
+        if (item != null && item.isContainer() && item.hasAttachedItems()) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        return visibilityMask;
+    }
+
     private void setContainerExpanded(int position, boolean expanded) {
         int visibilityMask = expanded ? VISIBILITY_DEFAULT_MASK : 0;
         setContainerVisibilityMask(position, visibilityMask);
@@ -1747,7 +1762,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             Chip itemsChip = popupView.findViewById(R.id.chip_container_popup_filter_items);
             ImageView groupPreviewView = popupView.findViewById(R.id.image_container_popup_group_preview);
             suppressFilterCallbacks = true;
-            int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(position);
+            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
             if (containersChip != null) {
                 containersChip.setChecked((visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0);
             }
@@ -1991,7 +2006,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (containerItem == null || !containerItem.isContainer()) {
                 return result;
             }
-            int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(containerPosition);
+            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(containerPosition);
             boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
             boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
             RoomContentAdapter.this.ensureHierarchyComputed();
@@ -2604,7 +2619,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             boolean checked = chip.isChecked();
-            int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(position);
+            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
             if (checked) {
                 visibilityMask |= visibilityFlag;
             } else {
