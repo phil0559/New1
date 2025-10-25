@@ -1726,6 +1726,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 resolvedLabel = currentItem.getName();
             }
             final CharSequence toggleLabel = resolvedLabel;
+            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
+            final int[] popupVisibilityMask = new int[] {visibilityMask};
             ImageView toggleIcon = popupView.findViewById(R.id.icon_container_popup_toggle);
             if (toggleIcon != null) {
                 if (childrenContainer == null) {
@@ -1763,8 +1765,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             Chip itemsChip = popupView.findViewById(R.id.chip_container_popup_filter_items);
             ImageView groupPreviewView = popupView.findViewById(R.id.image_container_popup_group_preview);
             suppressFilterCallbacks = true;
-            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
-            final int[] popupVisibilityMask = new int[] {visibilityMask};
             if (containersChip != null) {
                 containersChip.setChecked((visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0);
             }
