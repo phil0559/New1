@@ -117,35 +117,6 @@
                             android:padding="4dp"
                             android:src="@drawable/ic_chevron_down"
                             android:tint="@color/icon_brown" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/chip_group_room_content_filters"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:orientation="horizontal"
-                        android:weightSum="2">
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_room_content_filter_containers"
-                            style="@style/Widget.MaterialComponents.Chip.Filter"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
-                            android:checkable="true"
-                            android:text="@string/room_content_filter_containers" />
-
-                        <com.google.android.material.chip.Chip
-                            android:id="@+id/chip_room_content_filter_items"
-                            style="@style/Widget.MaterialComponents.Chip.Filter"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:layout_weight="1"
-                            android:checkable="true"
-                            android:text="@string/room_content_filter_items" />
 
                     </LinearLayout>
                 </LinearLayout>
