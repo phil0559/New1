@@ -1719,6 +1719,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             ViewGroup chipGroup = popupView.findViewById(R.id.chip_group_container_popup_filters);
             Chip containersChip = popupView.findViewById(R.id.chip_container_popup_filter_containers);
             Chip itemsChip = popupView.findViewById(R.id.chip_container_popup_filter_items);
+            ImageView groupPreviewView = popupView.findViewById(R.id.image_container_popup_group_preview);
             suppressFilterCallbacks = true;
             int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(position);
             if (containersChip != null) {
@@ -1746,6 +1747,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 itemsChip.setOnClickListener(
                         view -> onFilterChipToggled(itemsChip, VISIBILITY_FLAG_ITEMS));
             }
+            updateContainerPopupGroupPreview(groupPreviewView);
             PopupWindow popupWindow = new PopupWindow(popupView,
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -1754,7 +1756,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             float elevation = itemView.getResources().getDisplayMetrics().density * 6f;
             popupWindow.setElevation(elevation);
-            popupWindow.setOnDismissListener(() -> containerPopup = null);
+            popupWindow.setOnDismissListener(() -> {
+                containerPopup = null;
+                if (groupPreviewView != null) {
+                    groupPreviewView.setImageDrawable(null);
+                    groupPreviewView.setVisibility(View.GONE);
+                }
+            });
             containerPopup = popupWindow;
 
             popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
@@ -1776,6 +1784,48 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
 
             PopupWindowCompat.showAsDropDown(popupWindow, bannerContainer, 0, yOffset, Gravity.START);
+        }
+
+        private void updateContainerPopupGroupPreview(@Nullable ImageView previewView) {
+            if (previewView == null) {
+                return;
+            }
+            if (groupWrapperView == null) {
+                previewView.setImageDrawable(null);
+                previewView.setVisibility(View.GONE);
+                return;
+            }
+            Bitmap previewBitmap = captureViewBitmap(groupWrapperView);
+            if (previewBitmap == null) {
+                previewView.setImageDrawable(null);
+                previewView.setVisibility(View.GONE);
+                return;
+            }
+            previewView.setImageBitmap(previewBitmap);
+            previewView.setVisibility(View.VISIBLE);
+        }
+
+        @Nullable
+        private Bitmap captureViewBitmap(@NonNull View source) {
+            int width = source.getWidth();
+            int height = source.getHeight();
+            if (width <= 0 || height <= 0) {
+                source.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                        View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+                width = source.getMeasuredWidth();
+                height = source.getMeasuredHeight();
+            }
+            if (width <= 0 || height <= 0) {
+                return null;
+            }
+            try {
+                Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bitmap);
+                source.draw(canvas);
+                return bitmap;
+            } catch (IllegalArgumentException exception) {
+                return null;
+            }
         }
 
         private void updateContainerPopupToggleIcon(@NonNull ImageView toggleIcon, int position) {
