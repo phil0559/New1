@@ -100,6 +100,7 @@
     <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="room_content_filter_containers">Contenants</string>
     <string name="room_content_filter_items">Éléments</string>
+    <string name="container_popup_children_empty">Aucun élément ne correspond aux filtres actuels.</string>
     <string name="dialog_room_content_item_placeholder">- Élément</string>
     <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
     <string name="dialog_delete_room_content_message">Voulez-vous supprimer l’élément %1$s ?</string>

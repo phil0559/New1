@@ -93,6 +93,14 @@
             android:scaleType="fitCenter"
             android:visibility="gone" />
 
+        <LinearLayout
+            android:id="@+id/container_container_popup_children"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical"
+            android:visibility="gone" />
+
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

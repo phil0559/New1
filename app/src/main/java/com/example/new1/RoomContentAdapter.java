@@ -1701,16 +1701,42 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         ? displayedName
                         : currentItem.getName());
             }
+            ViewGroup childrenContainer = popupView.findViewById(R.id.container_container_popup_children);
+            if (childrenContainer != null) {
+                clearContainerPopupChildren(childrenContainer);
+            }
+            final boolean[] isPopupExpanded = new boolean[] {false};
+            CharSequence resolvedLabel = nameView.getText();
+            if (resolvedLabel == null || resolvedLabel.length() == 0) {
+                resolvedLabel = currentItem.getName();
+            }
+            final CharSequence toggleLabel = resolvedLabel;
             ImageView toggleIcon = popupView.findViewById(R.id.icon_container_popup_toggle);
             if (toggleIcon != null) {
-                updateContainerPopupToggleIcon(toggleIcon, position);
-                toggleIcon.setOnClickListener(view -> {
-                    toggleExpansion();
-                    int updatedPosition = getBindingAdapterPosition();
-                    if (updatedPosition != RecyclerView.NO_POSITION) {
-                        updateContainerPopupToggleIcon(toggleIcon, updatedPosition);
-                    }
-                });
+                if (childrenContainer == null) {
+                    toggleIcon.setVisibility(View.GONE);
+                    toggleIcon.setOnClickListener(null);
+                } else {
+                    updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0], toggleLabel);
+                    toggleIcon.setOnClickListener(view -> {
+                        int updatedPosition = getBindingAdapterPosition();
+                        if (currentItem == null || !currentItem.hasAttachedItems()
+                                || childrenContainer == null) {
+                            return;
+                        }
+                        isPopupExpanded[0] = !isPopupExpanded[0];
+                        if (isPopupExpanded[0]) {
+                            int targetPosition = updatedPosition != RecyclerView.NO_POSITION
+                                    ? updatedPosition
+                                    : position;
+                            childrenContainer.setVisibility(View.VISIBLE);
+                            populateContainerPopupChildren(childrenContainer, targetPosition);
+                        } else {
+                            clearContainerPopupChildren(childrenContainer);
+                        }
+                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0], toggleLabel);
+                    });
+                }
             }
             ImageView menuIcon = popupView.findViewById(R.id.icon_container_popup_menu);
             if (menuIcon != null) {
@@ -1740,12 +1766,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 itemsChip.setEnabled(hasAttachments);
             }
             if (containersChip != null) {
-                containersChip.setOnClickListener(
-                        view -> onFilterChipToggled(containersChip, VISIBILITY_FLAG_CONTAINERS));
+                containersChip.setOnClickListener(view -> {
+                    onFilterChipToggled(containersChip, VISIBILITY_FLAG_CONTAINERS);
+                    if (childrenContainer != null && isPopupExpanded[0]) {
+                        int updatedPosition = getBindingAdapterPosition();
+                        int targetPosition = updatedPosition != RecyclerView.NO_POSITION
+                                ? updatedPosition
+                                : position;
+                        populateContainerPopupChildren(childrenContainer, targetPosition);
+                    }
+                });
             }
             if (itemsChip != null) {
-                itemsChip.setOnClickListener(
-                        view -> onFilterChipToggled(itemsChip, VISIBILITY_FLAG_ITEMS));
+                itemsChip.setOnClickListener(view -> {
+                    onFilterChipToggled(itemsChip, VISIBILITY_FLAG_ITEMS);
+                    if (childrenContainer != null && isPopupExpanded[0]) {
+                        int updatedPosition = getBindingAdapterPosition();
+                        int targetPosition = updatedPosition != RecyclerView.NO_POSITION
+                                ? updatedPosition
+                                : position;
+                        populateContainerPopupChildren(childrenContainer, targetPosition);
+                    }
+                });
             }
             updateContainerPopupGroupPreview(groupPreviewView);
             PopupWindow popupWindow = new PopupWindow(popupView,
@@ -1762,6 +1804,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     groupPreviewView.setImageDrawable(null);
                     groupPreviewView.setVisibility(View.GONE);
                 }
+                if (childrenContainer != null) {
+                    clearContainerPopupChildren(childrenContainer);
+                }
+                isPopupExpanded[0] = false;
             });
             containerPopup = popupWindow;
 
@@ -1858,7 +1904,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
         }
 
-        private void updateContainerPopupToggleIcon(@NonNull ImageView toggleIcon, int position) {
+        private void updateContainerPopupToggleIcon(@NonNull ImageView toggleIcon,
+                boolean expanded, @Nullable CharSequence label) {
             boolean hasDetails = currentItem != null && currentItem.hasAttachedItems();
             if (!hasDetails) {
                 toggleIcon.setVisibility(View.GONE);
@@ -1867,15 +1914,109 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             toggleIcon.setVisibility(View.VISIBLE);
-            boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(position);
-            toggleIcon.setRotation(isExpanded ? 180f : 0f);
-            CharSequence displayedName = nameView.getText();
-            String label = displayedName != null ? displayedName.toString()
-                    : currentItem != null ? currentItem.getName() : "";
-            int descriptionRes = isExpanded
+            toggleIcon.setRotation(expanded ? 180f : 0f);
+            String labelText;
+            if (label != null && label.length() > 0) {
+                labelText = label.toString();
+            } else if (currentItem != null && currentItem.getName() != null) {
+                labelText = currentItem.getName();
+            } else {
+                labelText = "";
+            }
+            int descriptionRes = expanded
                     ? R.string.content_description_room_content_collapse
                     : R.string.content_description_room_content_expand;
-            toggleIcon.setContentDescription(toggleIcon.getContext().getString(descriptionRes, label));
+            toggleIcon.setContentDescription(
+                    toggleIcon.getContext().getString(descriptionRes, labelText));
+        }
+
+        private void populateContainerPopupChildren(@NonNull ViewGroup container,
+                int containerPosition) {
+            container.removeAllViews();
+            List<RoomContentItem> children = collectContainerPopupChildren(containerPosition);
+            LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
+            if (children.isEmpty()) {
+                View emptyView = layoutInflater.inflate(R.layout.item_furniture_section_empty,
+                        container, false);
+                TextView emptyText = emptyView.findViewById(R.id.text_furniture_section_empty);
+                if (emptyText != null) {
+                    emptyText.setText(R.string.container_popup_children_empty);
+                }
+                container.addView(emptyView);
+                return;
+            }
+            for (RoomContentItem child : children) {
+                if (child == null) {
+                    continue;
+                }
+                View entryView = layoutInflater.inflate(R.layout.item_room_content_child,
+                        container, false);
+                TextView childNameView = entryView.findViewById(R.id.text_room_content_child_name);
+                TextView childCommentView = entryView.findViewById(
+                        R.id.text_room_content_child_comment);
+                if (childNameView != null) {
+                    String name = RoomContentAdapter.this.resolveItemName(child);
+                    childNameView.setText(name);
+                }
+                if (childCommentView != null) {
+                    String comment = child.getComment();
+                    String trimmed = comment != null ? comment.trim() : "";
+                    if (!trimmed.isEmpty()) {
+                        childCommentView.setVisibility(View.VISIBLE);
+                        childCommentView.setText(trimmed);
+                    } else {
+                        childCommentView.setVisibility(View.GONE);
+                        childCommentView.setText(null);
+                    }
+                }
+                container.addView(entryView);
+            }
+        }
+
+        private void clearContainerPopupChildren(@Nullable ViewGroup container) {
+            if (container == null) {
+                return;
+            }
+            container.removeAllViews();
+            container.setVisibility(View.GONE);
+        }
+
+        @NonNull
+        private List<RoomContentItem> collectContainerPopupChildren(int containerPosition) {
+            List<RoomContentItem> result = new ArrayList<>();
+            if (containerPosition < 0 || containerPosition >= items.size()) {
+                return result;
+            }
+            RoomContentItem containerItem = items.get(containerPosition);
+            if (containerItem == null || !containerItem.isContainer()) {
+                return result;
+            }
+            int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(containerPosition);
+            boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
+            boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
+            RoomContentAdapter.this.ensureHierarchyComputed();
+            for (int index = containerPosition + 1; index < items.size(); index++) {
+                if (!RoomContentAdapter.this.isDescendantOf(containerPosition, index)) {
+                    break;
+                }
+                if (RoomContentAdapter.this.findAttachedContainerPosition(index)
+                        != containerPosition) {
+                    continue;
+                }
+                RoomContentItem child = items.get(index);
+                if (child == null) {
+                    continue;
+                }
+                if (child.isContainer()) {
+                    if (!showContainers) {
+                        continue;
+                    }
+                } else if (!showItems) {
+                    continue;
+                }
+                result.add(child);
+            }
+            return result;
         }
 
         void dismissContainerPopup() {
