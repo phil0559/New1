@@ -1984,10 +1984,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
             boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
             if (showContainers && showItems) {
-                return R.drawable.ic_square_empty;
+                return R.drawable.ic_chevron_down;
             }
-            if (showContainers || showItems) {
-                return R.drawable.ic_square_diagonal;
+            if (showItems) {
+                return R.drawable.ic_square_items;
+            }
+            if (showContainers) {
+                return R.drawable.ic_square_containers;
             }
             return R.drawable.ic_square_empty;
         }
