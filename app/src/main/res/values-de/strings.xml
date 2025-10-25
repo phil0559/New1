@@ -5,6 +5,7 @@
     <string name="content_description_menu">Hauptmenü öffnen</string>
     <string name="content_description_search">Suchen</string>
     <string name="content_description_flag">Sprachauswahl öffnen</string>
+    <string name="content_description_display_toggle">Sichtbarkeit der Komponenten umschalten</string>
     <string name="content_description_back">Zurück</string>
     <string name="language_french">Französisch</string>
     <string name="language_english">Englisch (Vereinigtes Königreich)</string>
