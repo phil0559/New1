@@ -47,7 +47,6 @@ import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.widget.PopupWindowCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayDeque;
@@ -203,16 +202,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         boolean isFurniture = item.isFurniture();
         CharSequence commentText = isFurniture ? null : formatComment(item.getComment());
         boolean hasComment = commentText != null;
-        List<RoomContentItem> children = isFurniture
-                ? Collections.emptyList()
-                : item.getChildren();
-        boolean hasChildren = !children.isEmpty();
-
+        
         List<CharSequence> metadataLines = new ArrayList<>();
         if (!isFurniture) {
-            if (item.isContainer()) {
-                addAttachmentSummaryLine(metadataLines, item.getAttachedItemCount());
-            }
             addMetadataLine(metadataLines, R.string.room_content_metadata_category, item.getCategory());
             addMetadataLine(metadataLines, R.string.room_content_metadata_series, item.getSeries());
             addMetadataLine(metadataLines, R.string.room_content_metadata_number, item.getNumber());
@@ -243,7 +235,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         boolean isContainerExpanded = isContainerExpanded(position);
         boolean shouldDisplayDetails;
         if (canToggleContainer) {
-            shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata || hasChildren);
+            shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata);
         } else {
             boolean isExpanded = (hasComment || hasMetadata)
                     && expandedStates.get(position, false);
@@ -257,8 +249,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 ? isContainerExpanded
                 : ((hasComment || hasMetadata) && expandedStates.get(position, false));
         holder.updateToggle(hasToggle, isToggleExpanded, toggleLabel);
-
-        boolean shouldShowChildren = isContainerExpanded && hasChildren;
 
         if (shouldDisplayDetails) {
             if (hasComment) {
@@ -285,7 +275,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             holder.metadataView.setText(null);
         }
 
-        holder.bindChildren(children, shouldDisplayDetails && shouldShowChildren);
+        holder.releaseChildrenAdapter();
     }
 
     @Override
@@ -460,13 +450,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         metadataLines.add(createMetadataLine(templateRes, trimmed));
     }
 
-    private void addAttachmentSummaryLine(@NonNull List<CharSequence> metadataLines, int count) {
-        if (count <= 0) {
-            return;
-        }
-        metadataLines.add(createAttachmentSummaryLine(count));
-    }
-
     @Nullable
     private CharSequence formatMetadataLines(@NonNull List<CharSequence> metadataLines) {
         if (metadataLines.isEmpty()) {
@@ -505,33 +488,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         applyLabelStyle(builder, labelStart, labelEnd);
         if (!valuePart.isEmpty()) {
             appendValueWithLineBreaks(builder, valuePart);
-        }
-        return builder;
-    }
-
-    @NonNull
-    private CharSequence createAttachmentSummaryLine(int count) {
-        String formatted = context.getString(R.string.room_container_attached_summary, count);
-        int colonIndex = formatted.indexOf(':');
-        String labelPart;
-        String valuePart;
-        if (colonIndex >= 0) {
-            labelPart = formatted.substring(0, colonIndex).trim();
-            valuePart = formatted.substring(colonIndex + 1).trim();
-        } else {
-            labelPart = formatted.trim();
-            valuePart = "";
-        }
-
-        SpannableStringBuilder builder = new SpannableStringBuilder();
-        builder.append('\u2022').append(' ');
-        int labelStart = builder.length();
-        builder.append(labelPart);
-        builder.append(" : ");
-        int labelEnd = builder.length();
-        applyLabelStyle(builder, labelStart, labelEnd);
-        if (!valuePart.isEmpty()) {
-            builder.append(valuePart);
         }
         return builder;
     }
@@ -581,12 +537,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @NonNull
     private String appendAttachmentCount(@NonNull String displayName,
             @NonNull RoomContentItem item) {
-        // Afficher le nombre d’éléments rattachés seulement lorsqu’il est positif.
-        int count = Math.max(0, item.getAttachedItemCount());
-        if (count <= 0) {
-            return displayName;
-        }
-        return displayName + " (" + count + ")";
+        // Le nombre d’éléments rattachés n’est plus affiché à cet endroit.
+        return displayName;
     }
 
     @Nullable
@@ -1201,8 +1153,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final OnRoomContentInteractionListener interactionListener;
         @Nullable
         private RoomContentItem currentItem;
-        @Nullable
-        private RoomContentChildrenAdapter childrenAdapter;
         private final int defaultPaddingStart;
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
@@ -1636,37 +1586,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
         }
 
-        void bindChildren(@NonNull List<RoomContentItem> children, boolean displayChildren) {
-            if (childrenRecyclerView == null) {
-                return;
-            }
-            if (displayChildren) {
-                if (childrenRecyclerView.getLayoutManager() == null) {
-                    childrenRecyclerView.setLayoutManager(
-                            new LinearLayoutManager(childrenRecyclerView.getContext()));
-                }
-                if (childrenAdapter == null) {
-                    childrenAdapter = new RoomContentChildrenAdapter(
-                            childrenRecyclerView.getContext());
-                    childrenRecyclerView.setAdapter(childrenAdapter);
-                }
-                childrenAdapter.submitChildren(children);
-                childrenRecyclerView.setVisibility(View.VISIBLE);
-            } else {
-                if (childrenRecyclerView.getAdapter() != null) {
-                    childrenRecyclerView.setAdapter(null);
-                }
-                childrenAdapter = null;
-                childrenRecyclerView.setVisibility(View.GONE);
-            }
-        }
-
         void releaseChildrenAdapter() {
             if (childrenRecyclerView != null) {
                 childrenRecyclerView.setAdapter(null);
                 childrenRecyclerView.setVisibility(View.GONE);
             }
-            childrenAdapter = null;
         }
 
         private void updatePhoto(@NonNull RoomContentItem item) {
