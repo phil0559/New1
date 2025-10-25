@@ -2940,8 +2940,7 @@ public class RoomContentActivity extends Activity {
             @Nullable String room) {
         List<RoomContentItem> result = new ArrayList<>();
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String key = RoomContentStorage.buildKey(establishment, room);
-        String storedValue = preferences.getString(key, null);
+        String storedValue = RoomContentStorage.readValue(preferences, establishment, room);
         if (storedValue == null || storedValue.trim().isEmpty()) {
             return result;
         }
@@ -2956,7 +2955,7 @@ public class RoomContentActivity extends Activity {
                 result.add(parsed);
             }
         } catch (JSONException exception) {
-            preferences.edit().remove(key).apply();
+            RoomContentStorage.clearValue(preferences, establishment, room);
         }
         RoomContentHierarchyHelper.normalizeHierarchy(result);
         return result;
@@ -2971,9 +2970,7 @@ public class RoomContentActivity extends Activity {
             array.put(item.toJson());
         }
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        preferences.edit()
-                .putString(RoomContentStorage.buildKey(establishment, room), array.toString())
-                .apply();
+        RoomContentStorage.writeValue(preferences, establishment, room, array.toString());
     }
 
     private String buildRoomsKeyForEstablishment(@Nullable String establishment) {
@@ -3365,7 +3362,7 @@ public class RoomContentActivity extends Activity {
 
     private void loadRoomContent() {
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String storedValue = preferences.getString(buildRoomContentKey(), null);
+        String storedValue = RoomContentStorage.readValue(preferences, establishmentName, roomName);
         roomContentItems.clear();
         if (storedValue == null || storedValue.trim().isEmpty()) {
             if (roomContentAdapter != null) {
@@ -3382,7 +3379,7 @@ public class RoomContentActivity extends Activity {
             }
         } catch (JSONException e) {
             roomContentItems.clear();
-            preferences.edit().remove(buildRoomContentKey()).apply();
+            RoomContentStorage.clearValue(preferences, establishmentName, roomName);
         }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
@@ -3411,9 +3408,7 @@ public class RoomContentActivity extends Activity {
             array.put(item.toJson());
         }
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        preferences.edit()
-                .putString(buildRoomContentKey(), array.toString())
-                .apply();
+        RoomContentStorage.writeValue(preferences, establishmentName, roomName, array.toString());
     }
 
     private void sortRoomContentItems() {

@@ -259,19 +259,34 @@ public class EstablishmentContentActivity extends Activity {
         if (trimmedPrevious.equals(trimmedNew)) {
             return;
         }
-        String oldKey = RoomContentStorage.buildKey(establishmentName, previousName);
-        String newKey = RoomContentStorage.buildKey(establishmentName, newName);
-        if (oldKey.equals(newKey)) {
-            return;
-        }
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String storedValue = preferences.getString(oldKey, null);
+        String primaryOldKey = RoomContentStorage.buildKey(establishmentName, previousName);
+        String legacyOldKey = RoomContentStorage.buildLegacyKey(establishmentName, previousName);
+        String resolvedOldKey = primaryOldKey;
+        String storedValue = preferences.getString(primaryOldKey, null);
+        if (storedValue == null && !legacyOldKey.equals(primaryOldKey)) {
+            storedValue = preferences.getString(legacyOldKey, null);
+            if (storedValue != null) {
+                resolvedOldKey = legacyOldKey;
+            }
+        }
         if (storedValue == null) {
             return;
         }
+
+        String primaryNewKey = RoomContentStorage.buildKey(establishmentName, newName);
+        String legacyNewKey = RoomContentStorage.buildLegacyKey(establishmentName, newName);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(newKey, storedValue);
-        editor.remove(oldKey);
+        editor.putString(primaryNewKey, storedValue);
+        if (!resolvedOldKey.equals(primaryNewKey)) {
+            editor.remove(resolvedOldKey);
+        }
+        if (!legacyOldKey.equals(resolvedOldKey) && !legacyOldKey.equals(primaryNewKey)) {
+            editor.remove(legacyOldKey);
+        }
+        if (!legacyNewKey.equals(primaryNewKey)) {
+            editor.remove(legacyNewKey);
+        }
         editor.apply();
     }
 

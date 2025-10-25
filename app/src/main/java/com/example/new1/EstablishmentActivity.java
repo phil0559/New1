@@ -364,19 +364,32 @@ public class EstablishmentActivity extends Activity {
                     continue;
                 }
 
-                String oldKey = RoomContentStorage.buildKey(previousEstablishmentName, roomName);
-                String newKey = RoomContentStorage.buildKey(newEstablishmentName, roomName);
-                if (oldKey.equals(newKey)) {
-                    continue;
+                String primaryOldKey = RoomContentStorage.buildKey(previousEstablishmentName, roomName);
+                String legacyOldKey = RoomContentStorage.buildLegacyKey(previousEstablishmentName, roomName);
+                String resolvedOldKey = primaryOldKey;
+                String storedContent = contentPreferences.getString(primaryOldKey, null);
+                if (storedContent == null && !legacyOldKey.equals(primaryOldKey)) {
+                    storedContent = contentPreferences.getString(legacyOldKey, null);
+                    if (storedContent != null) {
+                        resolvedOldKey = legacyOldKey;
+                    }
                 }
-
-                String storedContent = contentPreferences.getString(oldKey, null);
                 if (storedContent == null) {
                     continue;
                 }
 
-                contentEditor.putString(newKey, storedContent);
-                contentEditor.remove(oldKey);
+                String primaryNewKey = RoomContentStorage.buildKey(newEstablishmentName, roomName);
+                String legacyNewKey = RoomContentStorage.buildLegacyKey(newEstablishmentName, roomName);
+                contentEditor.putString(primaryNewKey, storedContent);
+                if (!resolvedOldKey.equals(primaryNewKey)) {
+                    contentEditor.remove(resolvedOldKey);
+                }
+                if (!legacyOldKey.equals(resolvedOldKey) && !legacyOldKey.equals(primaryNewKey)) {
+                    contentEditor.remove(legacyOldKey);
+                }
+                if (!legacyNewKey.equals(primaryNewKey)) {
+                    contentEditor.remove(legacyNewKey);
+                }
                 hasChanges = true;
             }
         } catch (JSONException ignored) {
