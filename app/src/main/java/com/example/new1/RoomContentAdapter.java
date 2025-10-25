@@ -1445,9 +1445,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView);
                 }
                 if (addView != null) {
-                    addView.setVisibility(View.VISIBLE);
-                    addView.setEnabled(true);
-                    addView.setAlpha(1f);
+                    addView.setVisibility(View.GONE);
+                    addView.setEnabled(false);
+                    addView.setAlpha(0f);
                 }
             } else {
                 RoomContentItem attachedContainer = RoomContentAdapter.this
