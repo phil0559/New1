@@ -1749,7 +1749,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             updateContainerPopupGroupPreview(groupPreviewView);
             PopupWindow popupWindow = new PopupWindow(popupView,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                     true);
             popupWindow.setOutsideTouchable(true);
@@ -1767,6 +1767,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
             popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int popupWidth = popupView.getMeasuredWidth();
             int popupHeight = popupView.getMeasuredHeight();
             int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
 
@@ -1778,9 +1779,38 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int spaceBelow = displayFrame.bottom - anchorBottom;
             int spaceAbove = location[1] - displayFrame.top;
 
+            int totalHorizontalMargin = (int) (popupView.getResources().getDisplayMetrics().density * 32);
+            int maxPopupWidth = displayFrame.width() - totalHorizontalMargin;
+            if (maxPopupWidth > 0 && popupWidth > maxPopupWidth) {
+                popupWindow.setWidth(maxPopupWidth);
+            }
+
+            int maxHeightBelow = Math.max(0, spaceBelow - verticalOffset);
+            int maxHeightAbove = Math.max(0, spaceAbove - verticalOffset);
+            boolean showAbove;
+            if (spaceBelow >= popupHeight + verticalOffset) {
+                showAbove = false;
+            } else if (spaceAbove >= popupHeight + verticalOffset) {
+                showAbove = true;
+            } else {
+                showAbove = spaceAbove > spaceBelow;
+            }
+            int desiredHeight = popupHeight;
+            if (showAbove) {
+                if (maxHeightAbove > 0 && popupHeight > maxHeightAbove) {
+                    popupWindow.setHeight(maxHeightAbove);
+                    desiredHeight = maxHeightAbove;
+                }
+            } else {
+                if (maxHeightBelow > 0 && popupHeight > maxHeightBelow) {
+                    popupWindow.setHeight(maxHeightBelow);
+                    desiredHeight = maxHeightBelow;
+                }
+            }
+
             int yOffset = verticalOffset;
-            if (spaceBelow < popupHeight + verticalOffset && spaceAbove >= popupHeight + verticalOffset) {
-                yOffset = -(bannerContainer.getHeight() + popupHeight + verticalOffset);
+            if (showAbove) {
+                yOffset = -(bannerContainer.getHeight() + desiredHeight + verticalOffset);
             }
 
             PopupWindowCompat.showAsDropDown(popupWindow, bannerContainer, 0, yOffset, Gravity.START);
