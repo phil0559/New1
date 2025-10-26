@@ -38,6 +38,7 @@ public class EstablishmentContentActivity extends Activity {
     static final String PREFS_NAME = "rooms_prefs";
     static final String KEY_ROOMS = "rooms";
     private static final int REQUEST_TAKE_PHOTO = 2001;
+    private static final String STATE_ACTIVE_POPUP_POSITION = "state_active_popup_position";
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
 
@@ -139,11 +140,39 @@ public class EstablishmentContentActivity extends Activity {
 
         loadRooms();
         updateEmptyState();
+
+        if (savedInstanceState != null) {
+            restoreActivePopup(savedInstanceState);
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        RoomAdapter.PopupState popupState = roomAdapter != null
+                ? roomAdapter.captureActivePopupState()
+                : null;
+        if (popupState != null) {
+            outState.putInt(STATE_ACTIVE_POPUP_POSITION, popupState.adapterPosition);
+        }
     }
 
     private void openRoomContent(@NonNull Room room) {
         Intent intent = RoomContentActivity.createIntent(this, establishmentName, room);
         startActivity(intent);
+    }
+
+    private void restoreActivePopup(@NonNull Bundle savedInstanceState) {
+        if (roomList == null || roomAdapter == null) {
+            return;
+        }
+        int position = savedInstanceState.getInt(STATE_ACTIVE_POPUP_POSITION,
+                RecyclerView.NO_POSITION);
+        if (position == RecyclerView.NO_POSITION) {
+            return;
+        }
+        roomList.post(() -> roomAdapter.restorePopup(roomList,
+                new RoomAdapter.PopupState(position)));
     }
 
     private void showRoomDialog(@Nullable Room roomToEdit, int position) {

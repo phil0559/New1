@@ -39,6 +39,7 @@ public class EstablishmentActivity extends Activity {
     private static final String PREFS_NAME = "establishments_prefs";
     private static final String KEY_ESTABLISHMENTS = "establishments";
     private static final int REQUEST_TAKE_PHOTO = 1001;
+    private static final String STATE_ACTIVE_POPUP_POSITION = "state_active_popup_position";
 
     private final List<Establishment> establishments = new ArrayList<>();
     private EstablishmentAdapter establishmentAdapter;
@@ -94,10 +95,25 @@ public class EstablishmentActivity extends Activity {
 
         loadEstablishments();
         updateEmptyState();
+
+        if (savedInstanceState != null) {
+            restoreActivePopup(savedInstanceState);
+        }
     }
 
     private void showAddEstablishmentDialog() {
         showEstablishmentFormDialog(null, -1);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        EstablishmentAdapter.PopupState popupState = establishmentAdapter != null
+                ? establishmentAdapter.captureActivePopupState()
+                : null;
+        if (popupState != null) {
+            outState.putInt(STATE_ACTIVE_POPUP_POSITION, popupState.adapterPosition);
+        }
     }
 
     private void openEstablishmentContent(@Nullable Establishment establishment) {
@@ -105,6 +121,19 @@ public class EstablishmentActivity extends Activity {
             return;
         }
         startActivity(EstablishmentContentActivity.createIntent(this, establishment));
+    }
+
+    private void restoreActivePopup(@NonNull Bundle savedInstanceState) {
+        if (establishmentList == null || establishmentAdapter == null) {
+            return;
+        }
+        int position = savedInstanceState.getInt(STATE_ACTIVE_POPUP_POSITION,
+                RecyclerView.NO_POSITION);
+        if (position == RecyclerView.NO_POSITION) {
+            return;
+        }
+        establishmentList.post(() -> establishmentAdapter.restorePopup(establishmentList,
+                new EstablishmentAdapter.PopupState(position)));
     }
 
     private void showEditEstablishmentDialog(Establishment establishment, int position) {
