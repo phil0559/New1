@@ -22,6 +22,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
 import android.util.DisplayMetrics;
+import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 import android.view.Gravity;
@@ -119,7 +120,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private ContainerPopupRestoreState pendingContainerPopupRestore;
     @Nullable
     private FurniturePopupRestoreState pendingFurniturePopupRestore;
+    @Nullable
+    private OptionsPopupRestoreState pendingOptionsPopupRestore;
     private int activeFurniturePopupAdapterPosition = RecyclerView.NO_POSITION;
+    @Nullable
+    private Integer activeFurniturePopupExpandedLevel;
+    private int activeOptionsPopupAdapterPosition = RecyclerView.NO_POSITION;
     private final RecyclerView.AdapterDataObserver hierarchyInvalidatingObserver =
             new RecyclerView.AdapterDataObserver() {
                 @Override
@@ -331,6 +337,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             recyclerView.addItemDecoration(groupDecoration);
             groupDecorationAttached = true;
         }
+        maybeRestoreOptionsPopup();
     }
 
     @Override
@@ -1342,6 +1349,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
     }
 
+    static class OptionsPopupRestoreState {
+        final int adapterPosition;
+
+        OptionsPopupRestoreState(int adapterPosition) {
+            this.adapterPosition = adapterPosition;
+        }
+    }
+
     private void setActiveContainerPopup(int position, int visibilityMask) {
         activeContainerPopupAdapterPosition = position;
         activeContainerPopupVisibilityMask = visibilityMask;
@@ -1355,19 +1370,49 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         maybeRestoreFurniturePopup();
     }
 
-    private void setActiveFurniturePopup(int position) {
+    private void setActiveFurniturePopup(int position, @Nullable Integer levelToExpand) {
         activeFurniturePopupAdapterPosition = position;
+        activeFurniturePopupExpandedLevel = levelToExpand;
     }
 
     private void onFurniturePopupDismissed(int position) {
         if (activeFurniturePopupAdapterPosition == position) {
             activeFurniturePopupAdapterPosition = RecyclerView.NO_POSITION;
+            activeFurniturePopupExpandedLevel = null;
+        }
+    }
+
+    private void setActiveOptionsPopup(int position) {
+        activeOptionsPopupAdapterPosition = position;
+    }
+
+    private void onOptionsPopupDismissed(int position) {
+        if (activeOptionsPopupAdapterPosition == position) {
+            activeOptionsPopupAdapterPosition = RecyclerView.NO_POSITION;
         }
     }
 
     public void preparePendingContainerPopupRestore(int targetPosition) {
         preparePendingContainerPopupRestore(targetPosition, activeContainerPopupVisibilityMask,
                 false, false);
+    }
+
+    @Nullable
+    public ContainerPopupRestoreState captureActiveContainerPopupState() {
+        if (activeContainerPopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return null;
+        }
+        return new ContainerPopupRestoreState(activeContainerPopupAdapterPosition,
+                activeContainerPopupVisibilityMask);
+    }
+
+    @Nullable
+    public FurniturePopupRestoreState captureActiveFurniturePopupState() {
+        if (activeFurniturePopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return null;
+        }
+        return new FurniturePopupRestoreState(activeFurniturePopupAdapterPosition,
+                activeFurniturePopupExpandedLevel, false);
     }
 
     private void preparePendingContainerPopupRestore(int targetPosition, int visibilityMask,
@@ -1432,6 +1477,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return state;
     }
 
+    @Nullable
+    public OptionsPopupRestoreState captureActiveOptionsPopupState() {
+        if (activeOptionsPopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return null;
+        }
+        return new OptionsPopupRestoreState(activeOptionsPopupAdapterPosition);
+    }
+
+    public void restoreOptionsPopup(@NonNull RecyclerView recyclerView,
+            @NonNull OptionsPopupRestoreState state) {
+        if (state.adapterPosition < 0 || state.adapterPosition >= items.size()) {
+            return;
+        }
+        pendingOptionsPopupRestore = new OptionsPopupRestoreState(state.adapterPosition);
+        if (attachedRecyclerView == null) {
+            attachedRecyclerView = recyclerView;
+        }
+        maybeRestoreOptionsPopup();
+    }
+
     public void restoreFurniturePopup(@NonNull RecyclerView recyclerView,
             @NonNull FurniturePopupRestoreState state) {
         if (state.furniturePosition < 0 || state.furniturePosition >= items.size()) {
@@ -1469,6 +1534,30 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         pendingFurniturePopupRestore = null;
         restoreFurniturePopup(recyclerView, state);
+    }
+
+    private void maybeRestoreOptionsPopup() {
+        if (pendingOptionsPopupRestore == null) {
+            return;
+        }
+        RecyclerView recyclerView = attachedRecyclerView;
+        if (recyclerView == null) {
+            return;
+        }
+        OptionsPopupRestoreState state = pendingOptionsPopupRestore;
+        if (state.adapterPosition < 0 || state.adapterPosition >= items.size()) {
+            pendingOptionsPopupRestore = null;
+            return;
+        }
+        RecyclerView.ViewHolder holder = recyclerView
+                .findViewHolderForAdapterPosition(state.adapterPosition);
+        if (holder instanceof ViewHolder) {
+            pendingOptionsPopupRestore = null;
+            ((ViewHolder) holder).reopenOptionsPopup();
+            return;
+        }
+        recyclerView.scrollToPosition(state.adapterPosition);
+        recyclerView.post(this::maybeRestoreOptionsPopup);
     }
 
     public void restoreContainerPopup(@NonNull RecyclerView recyclerView,
@@ -1595,6 +1684,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private PopupWindow furniturePhotoMenuPopup;
         @Nullable
         private PopupWindow containerPopup;
+        private int optionsPopupAdapterPosition = RecyclerView.NO_POSITION;
         private int containerPopupVisibilityMask = VISIBILITY_DEFAULT_MASK;
         private int containerPopupAdapterPosition = RecyclerView.NO_POSITION;
         private boolean suppressFilterCallbacks;
@@ -1604,6 +1694,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultAddVisibility;
         private final int defaultFilterVisibility;
         private final int defaultCheckboxVisibility;
+        private final SparseArray<View> furnitureAddAnchors = new SparseArray<>();
 
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
@@ -2416,6 +2507,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             PopupWindowCompat.showAsDropDown(popupWindow, bannerContainer, 0, yOffset, Gravity.START);
         }
 
+        void reopenOptionsPopup() {
+            if (menuView == null || currentItem == null) {
+                return;
+            }
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            toggleOptionsMenu(menuView, currentItem, position);
+        }
+
         void reopenContainerPopup(int visibilityMask) {
             if (currentItem == null || !currentItem.isContainer()) {
                 return;
@@ -2436,6 +2538,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             openFurniturePopup(position, levelToExpand);
+        }
+
+        @Nullable
+        View findFurnitureAddAnchor(@Nullable Integer levelIndex) {
+            if (levelIndex == null) {
+                return null;
+            }
+            return furnitureAddAnchors.get(levelIndex);
         }
 
         private void updateContainerPopupGroupPreview(@Nullable ImageView previewView) {
@@ -2875,13 +2985,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             float elevation = itemView.getResources().getDisplayMetrics().density * 6f;
             popupWindow.setElevation(elevation);
+            furnitureAddAnchors.clear();
             popupWindow.setOnDismissListener(() -> {
                 furniturePopup = null;
                 dismissFurniturePhotoMenu();
                 RoomContentAdapter.this.onFurniturePopupDismissed(position);
+                furnitureAddAnchors.clear();
             });
             furniturePopup = popupWindow;
-            RoomContentAdapter.this.setActiveFurniturePopup(position);
+            RoomContentAdapter.this.setActiveFurniturePopup(position, levelToExpand);
             dismissOptionsMenu();
             popupWindow.showAtLocation(itemView, Gravity.CENTER, 0, 0);
         }
@@ -3167,6 +3279,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (isLevel && levelIndex != null && levelIndex > 0 && interactionListener != null
                         && currentItem != null) {
                     addIcon.setVisibility(View.VISIBLE);
+                    furnitureAddAnchors.put(levelIndex, addIcon);
                     addIcon.setOnClickListener(view -> {
                         int adapterPosition = parentPosition >= 0
                                 ? parentPosition
@@ -3182,6 +3295,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 } else {
                     addIcon.setVisibility(View.GONE);
                     addIcon.setOnClickListener(null);
+                    if (levelIndex != null) {
+                        furnitureAddAnchors.remove(levelIndex);
+                    }
                 }
             }
             if (isLevel) {
@@ -3734,7 +3850,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     deleteButton.setEnabled(false);
                 }
             }
-            popupWindow.setOnDismissListener(() -> optionsPopup = null);
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition != RecyclerView.NO_POSITION) {
+                optionsPopupAdapterPosition = adapterPosition;
+                RoomContentAdapter.this.setActiveOptionsPopup(adapterPosition);
+            } else {
+                optionsPopupAdapterPosition = RecyclerView.NO_POSITION;
+                RoomContentAdapter.this.setActiveOptionsPopup(RecyclerView.NO_POSITION);
+            }
+            popupWindow.setOnDismissListener(() -> {
+                optionsPopup = null;
+                RoomContentAdapter.this.onOptionsPopupDismissed(optionsPopupAdapterPosition);
+                optionsPopupAdapterPosition = RecyclerView.NO_POSITION;
+            });
             optionsPopup = popupWindow;
 
             popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
@@ -3764,6 +3892,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 optionsPopup.dismiss();
                 optionsPopup = null;
             }
+            RoomContentAdapter.this.onOptionsPopupDismissed(optionsPopupAdapterPosition);
+            optionsPopupAdapterPosition = RecyclerView.NO_POSITION;
         }
     }
 

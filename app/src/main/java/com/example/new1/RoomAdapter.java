@@ -27,6 +27,17 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
     private final List<Room> data;
     @Nullable
     private final OnRoomInteractionListener interactionListener;
+    @Nullable
+    private RecyclerView attachedRecyclerView;
+    private int activePopupAdapterPosition = RecyclerView.NO_POSITION;
+
+    static class PopupState {
+        final int adapterPosition;
+
+        PopupState(int adapterPosition) {
+            this.adapterPosition = adapterPosition;
+        }
+    }
 
     public RoomAdapter(Context context, List<Room> data,
             @Nullable OnRoomInteractionListener interactionListener) {
@@ -52,6 +63,57 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
         return data.size();
     }
 
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        attachedRecyclerView = recyclerView;
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        if (attachedRecyclerView == recyclerView) {
+            attachedRecyclerView = null;
+        }
+    }
+
+    @Nullable
+    PopupState captureActivePopupState() {
+        if (activePopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return null;
+        }
+        return new PopupState(activePopupAdapterPosition);
+    }
+
+    void restorePopup(@NonNull RecyclerView recyclerView, @NonNull PopupState state) {
+        if (state.adapterPosition < 0 || state.adapterPosition >= data.size()) {
+            return;
+        }
+        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(state.adapterPosition);
+        if (holder instanceof ViewHolder) {
+            ((ViewHolder) holder).reopenPopup();
+            return;
+        }
+        recyclerView.scrollToPosition(state.adapterPosition);
+        recyclerView.post(() -> {
+            RecyclerView.ViewHolder postHolder = recyclerView
+                    .findViewHolderForAdapterPosition(state.adapterPosition);
+            if (postHolder instanceof ViewHolder) {
+                ((ViewHolder) postHolder).reopenPopup();
+            }
+        });
+    }
+
+    private void setActivePopup(int position) {
+        activePopupAdapterPosition = position;
+    }
+
+    private void onPopupDismissed(int position) {
+        if (activePopupAdapterPosition == position) {
+            activePopupAdapterPosition = RecyclerView.NO_POSITION;
+        }
+    }
+
     interface OnRoomInteractionListener {
         void onOpenRoom(@NonNull Room room, int position);
 
@@ -75,6 +137,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
         private PopupWindow popupWindow;
         @Nullable
         private Room currentRoom;
+        private int popupAdapterPosition = RecyclerView.NO_POSITION;
 
         ViewHolder(@NonNull View itemView, @Nullable OnRoomInteractionListener interactionListener) {
             super(itemView);
@@ -175,7 +238,19 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             );
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             popupWindow.setOutsideTouchable(true);
-            popupWindow.setOnDismissListener(() -> popupWindow = null);
+            int position = getBindingAdapterPosition();
+            if (position != RecyclerView.NO_POSITION) {
+                popupAdapterPosition = position;
+                RoomAdapter.this.setActivePopup(position);
+            } else {
+                popupAdapterPosition = RecyclerView.NO_POSITION;
+                RoomAdapter.this.setActivePopup(RecyclerView.NO_POSITION);
+            }
+            popupWindow.setOnDismissListener(() -> {
+                popupWindow = null;
+                RoomAdapter.this.onPopupDismissed(popupAdapterPosition);
+                popupAdapterPosition = RecyclerView.NO_POSITION;
+            });
 
             View editButton = popupContent.findViewById(R.id.button_popup_room_edit);
             if (editButton != null) {
@@ -216,6 +291,16 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             }
 
             PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, yOffset, android.view.Gravity.END);
+        }
+
+        void reopenPopup() {
+            if (menuView == null) {
+                return;
+            }
+            if (popupWindow != null && popupWindow.isShowing()) {
+                return;
+            }
+            menuView.post(this::togglePopup);
         }
 
         private void notifyEdit() {

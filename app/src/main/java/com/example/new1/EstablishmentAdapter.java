@@ -27,6 +27,17 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
     private final LayoutInflater inflater;
     private final List<Establishment> data;
     private final OnEstablishmentInteractionListener interactionListener;
+    @Nullable
+    private RecyclerView attachedRecyclerView;
+    private int activePopupAdapterPosition = RecyclerView.NO_POSITION;
+
+    static class PopupState {
+        final int adapterPosition;
+
+        PopupState(int adapterPosition) {
+            this.adapterPosition = adapterPosition;
+        }
+    }
 
     public EstablishmentAdapter(Context context, List<Establishment> data,
             OnEstablishmentInteractionListener interactionListener) {
@@ -52,6 +63,57 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         return data.size();
     }
 
+    @Override
+    public void onAttachedToRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onAttachedToRecyclerView(recyclerView);
+        attachedRecyclerView = recyclerView;
+    }
+
+    @Override
+    public void onDetachedFromRecyclerView(@NonNull RecyclerView recyclerView) {
+        super.onDetachedFromRecyclerView(recyclerView);
+        if (attachedRecyclerView == recyclerView) {
+            attachedRecyclerView = null;
+        }
+    }
+
+    @Nullable
+    PopupState captureActivePopupState() {
+        if (activePopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return null;
+        }
+        return new PopupState(activePopupAdapterPosition);
+    }
+
+    void restorePopup(@NonNull RecyclerView recyclerView, @NonNull PopupState state) {
+        if (state.adapterPosition < 0 || state.adapterPosition >= data.size()) {
+            return;
+        }
+        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(state.adapterPosition);
+        if (holder instanceof ViewHolder) {
+            ((ViewHolder) holder).reopenPopup();
+            return;
+        }
+        recyclerView.scrollToPosition(state.adapterPosition);
+        recyclerView.post(() -> {
+            RecyclerView.ViewHolder postHolder = recyclerView
+                    .findViewHolderForAdapterPosition(state.adapterPosition);
+            if (postHolder instanceof ViewHolder) {
+                ((ViewHolder) postHolder).reopenPopup();
+            }
+        });
+    }
+
+    private void setActivePopup(int position) {
+        activePopupAdapterPosition = position;
+    }
+
+    private void onPopupDismissed(int position) {
+        if (activePopupAdapterPosition == position) {
+            activePopupAdapterPosition = RecyclerView.NO_POSITION;
+        }
+    }
+
     interface OnEstablishmentInteractionListener {
         void onOpenEstablishment(@NonNull Establishment establishment, int position);
         void onEditEstablishment(@NonNull Establishment establishment, int position);
@@ -69,6 +131,7 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         private final OnEstablishmentInteractionListener interactionListener;
         private PopupWindow popupWindow;
         private Establishment currentItem;
+        private int popupAdapterPosition = RecyclerView.NO_POSITION;
 
         ViewHolder(@NonNull View itemView, OnEstablishmentInteractionListener interactionListener) {
             super(itemView);
@@ -162,7 +225,19 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             );
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             popupWindow.setOutsideTouchable(true);
-            popupWindow.setOnDismissListener(() -> popupWindow = null);
+            int position = getBindingAdapterPosition();
+            if (position != RecyclerView.NO_POSITION) {
+                popupAdapterPosition = position;
+                EstablishmentAdapter.this.setActivePopup(position);
+            } else {
+                popupAdapterPosition = RecyclerView.NO_POSITION;
+                EstablishmentAdapter.this.setActivePopup(RecyclerView.NO_POSITION);
+            }
+            popupWindow.setOnDismissListener(() -> {
+                popupWindow = null;
+                EstablishmentAdapter.this.onPopupDismissed(popupAdapterPosition);
+                popupAdapterPosition = RecyclerView.NO_POSITION;
+            });
 
             View editButton = popupContent.findViewById(R.id.button_popup_edit);
             if (editButton != null) {
@@ -217,6 +292,13 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             }
 
             PopupWindowCompat.showAsDropDown(popupWindow, menuView, 0, yOffset, Gravity.END);
+        }
+
+        void reopenPopup() {
+            if (popupWindow != null && popupWindow.isShowing()) {
+                return;
+            }
+            menuView.post(this::togglePopup);
         }
 
         private void openContent(View view) {
