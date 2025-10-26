@@ -164,6 +164,8 @@ public class RoomContentActivity extends Activity {
         final String[] selectedCategoryHolder;
         final FormState formState;
         final AlertDialog dialog;
+        @Nullable
+        final Long forcedParentRank;
 
         DialogController(boolean isEditing,
                          int positionToEdit,
@@ -181,7 +183,8 @@ public class RoomContentActivity extends Activity {
                          @NonNull String[] selectedTypeHolder,
                          @NonNull String[] selectedCategoryHolder,
                          @NonNull FormState formState,
-                         @NonNull AlertDialog dialog) {
+                         @NonNull AlertDialog dialog,
+                         @Nullable Long forcedParentRank) {
             this.isEditing = isEditing;
             this.positionToEdit = positionToEdit;
             this.nameInput = nameInput;
@@ -199,6 +202,7 @@ public class RoomContentActivity extends Activity {
             this.selectedCategoryHolder = selectedCategoryHolder;
             this.formState = formState;
             this.dialog = dialog;
+            this.forcedParentRank = forcedParentRank;
         }
     }
 
@@ -384,6 +388,8 @@ public class RoomContentActivity extends Activity {
         String summary;
         final ArrayList<String> tracks = new ArrayList<>();
         final ArrayList<String> photos = new ArrayList<>();
+        @Nullable
+        Long forcedParentRank;
         boolean resumeLookup;
         boolean reopenDialog;
 
@@ -536,6 +542,12 @@ public class RoomContentActivity extends Activity {
                         public void onDeleteRoomContent(@NonNull RoomContentItem item, int position) {
                             showDeleteRoomContentConfirmation(item, position);
                         }
+
+                        @Override
+                        public void onAddRoomContentToContainer(@NonNull RoomContentItem container,
+                                                                  int position) {
+                            showAddRoomContentDialog(container.getRank());
+                        }
                     });
             contentList.setAdapter(roomContentAdapter);
         }
@@ -581,6 +593,10 @@ public class RoomContentActivity extends Activity {
         }
         restored.resumeLookup = savedInstanceState.getBoolean("pending_barcode_resume_lookup", false);
         restored.reopenDialog = savedInstanceState.getBoolean("pending_barcode_reopen", false);
+        if (savedInstanceState.getBoolean("pending_barcode_has_forced_parent_rank", false)) {
+            restored.forcedParentRank = savedInstanceState.getLong(
+                    "pending_barcode_forced_parent_rank");
+        }
         pendingBarcodeResult = restored;
         barcodeScanAwaitingResult = savedInstanceState.getBoolean("pending_barcode_waiting", false);
     }
@@ -598,7 +614,8 @@ public class RoomContentActivity extends Activity {
                 positionToEdit = -1;
             }
         }
-        showRoomContentDialog(itemToEdit, positionToEdit, pendingBarcodeResult.editing);
+        showRoomContentDialog(itemToEdit, positionToEdit, pendingBarcodeResult.editing,
+                pendingBarcodeResult.forcedParentRank);
         if (pendingBarcodeResult != null) {
             pendingBarcodeResult.reopenDialog = false;
         }
@@ -624,7 +641,8 @@ public class RoomContentActivity extends Activity {
                     controller.editionInput,
                     controller.publicationDateInput,
                     controller.summaryInput,
-                    controller.formState);
+                    controller.formState,
+                    controller.forcedParentRank);
             if (existing != null && existing.resumeLookup) {
                 snapshot.resumeLookup = true;
             } else if (barcodeScanContext != null
@@ -634,6 +652,9 @@ public class RoomContentActivity extends Activity {
             if (existing != null && TextUtils.isEmpty(snapshot.barcode)
                     && !TextUtils.isEmpty(existing.barcode)) {
                 snapshot.barcode = existing.barcode;
+            }
+            if (existing != null && snapshot.forcedParentRank == null) {
+                snapshot.forcedParentRank = existing.forcedParentRank;
             }
             snapshot.reopenDialog = controller.dialog.isShowing();
             pendingBarcodeResult = snapshot;
@@ -659,6 +680,13 @@ public class RoomContentActivity extends Activity {
             outState.putBoolean("pending_barcode_resume_lookup", pendingBarcodeResult.resumeLookup);
             outState.putBoolean("pending_barcode_waiting", barcodeScanAwaitingResult);
             outState.putBoolean("pending_barcode_reopen", pendingBarcodeResult.reopenDialog);
+            if (pendingBarcodeResult.forcedParentRank != null) {
+                outState.putBoolean("pending_barcode_has_forced_parent_rank", true);
+                outState.putLong("pending_barcode_forced_parent_rank",
+                        pendingBarcodeResult.forcedParentRank);
+            } else {
+                outState.putBoolean("pending_barcode_has_forced_parent_rank", false);
+            }
         }
     }
 
@@ -692,7 +720,8 @@ public class RoomContentActivity extends Activity {
 
     private void showRoomContentDialog(@Nullable RoomContentItem initialItem,
             int positionToEdit,
-            boolean shouldEditExisting) {
+            boolean shouldEditExisting,
+            @Nullable Long forcedParentRank) {
         final boolean isEditing = shouldEditExisting
                 && initialItem != null
                 && positionToEdit >= 0
@@ -767,6 +796,15 @@ public class RoomContentActivity extends Activity {
                 && pendingBarcodeResult.matches(isEditing, positionToEdit)
                 ? pendingBarcodeResult
                 : null;
+
+        final Long appliedForcedParentRank;
+        if (isEditing) {
+            appliedForcedParentRank = null;
+        } else if (restoreData != null && restoreData.forcedParentRank != null) {
+            appliedForcedParentRank = restoreData.forcedParentRank;
+        } else {
+            appliedForcedParentRank = forcedParentRank;
+        }
 
         if (pendingBarcodeResult != null
                 && pendingBarcodeResult.matches(isEditing, positionToEdit)) {
@@ -1146,6 +1184,12 @@ public class RoomContentActivity extends Activity {
                         trackValues,
                         photoValues,
                         false);
+                if (!isEditing) {
+                    RoomContentItem targetContainer = appliedForcedParentRank != null
+                            ? findContainerByRank(roomContentItems, appliedForcedParentRank)
+                            : null;
+                    RoomContentHierarchyHelper.attachToContainer(item, targetContainer);
+                }
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
                         dialog.dismiss();
@@ -1266,7 +1310,8 @@ public class RoomContentActivity extends Activity {
                         editionInput,
                         publicationDateInput,
                         summaryInput,
-                        formState);
+                        formState,
+                        appliedForcedParentRank);
                 barcodeScanContext = createBarcodeScanContext(formState,
                         nameInput,
                         barcodeValueView,
@@ -1511,7 +1556,8 @@ public class RoomContentActivity extends Activity {
                 selectedTypeHolder,
                 selectedCategoryHolder,
                 formState,
-                dialog);
+                dialog,
+                appliedForcedParentRank);
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -2359,7 +2405,11 @@ public class RoomContentActivity extends Activity {
     }
 
     private void showAddRoomContentDialog() {
-        showRoomContentDialog(null, -1, false);
+        showAddRoomContentDialog(null);
+    }
+
+    private void showAddRoomContentDialog(@Nullable Long forcedParentRank) {
+        showRoomContentDialog(null, -1, false, forcedParentRank);
     }
 
     private void showAddContainerDialog() {
@@ -2608,7 +2658,7 @@ public class RoomContentActivity extends Activity {
         if (item.isContainer()) {
             showContainerDialog(item, -1);
         } else {
-            showRoomContentDialog(item, -1, false);
+            showRoomContentDialog(item, -1, false, null);
         }
     }
 
@@ -2620,7 +2670,7 @@ public class RoomContentActivity extends Activity {
         if (item.isContainer()) {
             showContainerDialog(item, position);
         } else {
-            showRoomContentDialog(item, position, true);
+            showRoomContentDialog(item, position, true, null);
         }
     }
 
@@ -3874,9 +3924,13 @@ public class RoomContentActivity extends Activity {
                         itemToEdit = roomContentItems.get(pendingBarcodeResult.positionToEdit);
                     }
                     showRoomContentDialog(itemToEdit, pendingBarcodeResult.positionToEdit,
-                            pendingBarcodeResult.editing);
+                            pendingBarcodeResult.editing,
+                            pendingBarcodeResult.forcedParentRank);
                 } else {
-                    showRoomContentDialog(null, -1, false);
+                    showRoomContentDialog(null, -1, false,
+                            pendingBarcodeResult != null
+                                    ? pendingBarcodeResult.forcedParentRank
+                                    : null);
                 }
             } else {
                 Toast.makeText(this, R.string.dialog_barcode_scan_lost_context, Toast.LENGTH_SHORT).show();
@@ -4701,7 +4755,8 @@ public class RoomContentActivity extends Activity {
                                                              @Nullable EditText editionInput,
                                                              @Nullable EditText publicationDateInput,
                                                              @Nullable EditText summaryInput,
-                                                             @NonNull FormState formState) {
+                                                             @NonNull FormState formState,
+                                                             @Nullable Long forcedParentRank) {
         PendingBarcodeResult result = new PendingBarcodeResult(isEditing, positionToEdit);
         result.name = extractText(nameInput);
         result.comment = extractText(commentInput);
@@ -4718,6 +4773,7 @@ public class RoomContentActivity extends Activity {
         result.tracks.clear();
         result.tracks.addAll(collectTracks(formState));
         result.photos.addAll(formState.photos);
+        result.forcedParentRank = forcedParentRank;
         result.resumeLookup = false;
         return result;
     }

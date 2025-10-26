@@ -1156,7 +1156,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
     }
 
-    private void preparePendingContainerPopupRestore(int targetPosition) {
+    public void preparePendingContainerPopupRestore(int targetPosition) {
         if (activeContainerPopupAdapterPosition == RecyclerView.NO_POSITION) {
             pendingContainerPopupRestore = null;
             return;
@@ -1204,6 +1204,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         void onEditRoomContent(@NonNull RoomContentItem item, int position);
 
         void onDeleteRoomContent(@NonNull RoomContentItem item, int position);
+
+        void onAddRoomContentToContainer(@NonNull RoomContentItem container, int position);
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
@@ -1841,8 +1843,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             ImageView addIcon = popupView.findViewById(R.id.icon_container_popup_add);
             if (addIcon != null) {
-                addIcon.setOnClickListener(view -> Toast.makeText(view.getContext(),
-                        R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+                if (interactionListener == null) {
+                    addIcon.setOnClickListener(view -> Toast.makeText(view.getContext(),
+                            R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+                } else {
+                    addIcon.setOnClickListener(view -> {
+                        if (currentItem == null) {
+                            Toast.makeText(view.getContext(),
+                                    R.string.feature_coming_soon, Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        int adapterPosition = getBindingAdapterPosition();
+                        if (adapterPosition == RecyclerView.NO_POSITION) {
+                            return;
+                        }
+                        RoomContentAdapter.this.preparePendingContainerPopupRestore(adapterPosition);
+                        if (containerPopup != null) {
+                            containerPopup.dismiss();
+                        }
+                        interactionListener.onAddRoomContentToContainer(currentItem, adapterPosition);
+                    });
+                }
             }
             ImageView menuIcon = popupView.findViewById(R.id.icon_container_popup_menu);
             if (menuIcon != null) {
