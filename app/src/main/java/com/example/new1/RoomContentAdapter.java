@@ -1137,10 +1137,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     static class ContainerPopupRestoreState {
         final int containerPosition;
         final int visibilityMask;
+        final boolean autoOpenWhenBound;
 
         ContainerPopupRestoreState(int containerPosition, int visibilityMask) {
+            this(containerPosition, visibilityMask, false);
+        }
+
+        ContainerPopupRestoreState(int containerPosition, int visibilityMask,
+                boolean autoOpenWhenBound) {
             this.containerPosition = containerPosition;
             this.visibilityMask = visibilityMask;
+            this.autoOpenWhenBound = autoOpenWhenBound;
         }
     }
 
@@ -1157,6 +1164,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     public void preparePendingContainerPopupRestore(int targetPosition) {
+        preparePendingContainerPopupRestore(targetPosition, activeContainerPopupVisibilityMask,
+                false, false);
+    }
+
+    private void preparePendingContainerPopupRestore(int targetPosition, int visibilityMask,
+            boolean force, boolean autoOpenWhenBound) {
+        if (targetPosition < 0 || targetPosition >= items.size()) {
+            pendingContainerPopupRestore = null;
+            return;
+        }
+        if (force) {
+            RoomContentItem targetItem = getItemAt(targetPosition);
+            if (targetItem == null || !targetItem.isContainer()) {
+                pendingContainerPopupRestore = null;
+                return;
+            }
+            pendingContainerPopupRestore = new ContainerPopupRestoreState(targetPosition,
+                    visibilityMask, autoOpenWhenBound);
+            return;
+        }
         if (activeContainerPopupAdapterPosition == RecyclerView.NO_POSITION) {
             pendingContainerPopupRestore = null;
             return;
@@ -1168,7 +1195,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         pendingContainerPopupRestore = new ContainerPopupRestoreState(containerPosition,
-                activeContainerPopupVisibilityMask);
+                visibilityMask, autoOpenWhenBound);
     }
 
     @Nullable
@@ -1194,6 +1221,24 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             });
         }
+    }
+
+    private void openContainerPopupAtPosition(int position) {
+        if (position < 0 || position >= items.size()) {
+            return;
+        }
+        RecyclerView recyclerView = attachedRecyclerView;
+        if (recyclerView == null) {
+            preparePendingContainerPopupRestore(position, VISIBILITY_DEFAULT_MASK, true, true);
+            return;
+        }
+        RecyclerView.ViewHolder holder = recyclerView.findViewHolderForAdapterPosition(position);
+        if (holder instanceof ViewHolder) {
+            ((ViewHolder) holder).reopenContainerPopup(VISIBILITY_DEFAULT_MASK);
+            return;
+        }
+        preparePendingContainerPopupRestore(position, VISIBILITY_DEFAULT_MASK, true, true);
+        recyclerView.smoothScrollToPosition(position);
     }
 
     interface OnRoomContentInteractionListener {
@@ -1605,6 +1650,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (menuView != null) {
                     menuView.setContentDescription(null);
                 }
+            }
+
+            ContainerPopupRestoreState autoOpenState = RoomContentAdapter.this
+                    .pendingContainerPopupRestore;
+            if (autoOpenState != null && autoOpenState.autoOpenWhenBound
+                    && autoOpenState.containerPosition == position && item.isContainer()) {
+                RoomContentAdapter.this.pendingContainerPopupRestore = null;
+                itemView.post(() -> reopenContainerPopup(autoOpenState.visibilityMask));
             }
         }
 
@@ -2293,7 +2346,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             }
             if (bannerContainerView != null) {
-                bannerContainerView.setOnClickListener(view -> notifyEdit(child, childPosition));
+                if (isContainerChild) {
+                    bannerContainerView.setOnClickListener(view -> {
+                        dismissContainerPopup();
+                        RoomContentAdapter.this.openContainerPopupAtPosition(childPosition);
+                    });
+                    bannerContainerView.setOnLongClickListener(view -> {
+                        toggleOptionsMenu(view, child, childPosition);
+                        return true;
+                    });
+                } else {
+                    bannerContainerView.setOnClickListener(view -> notifyEdit(child, childPosition));
+                    bannerContainerView.setOnLongClickListener(null);
+                }
             }
 
             boolean isFurnitureChild = child.isFurniture();
@@ -2320,7 +2385,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     } else {
                         photoIcon.setContentDescription(null);
                     }
-                    photoIcon.setOnClickListener(view -> notifyEdit(child, childPosition));
+                    if (isContainerChild) {
+                        photoIcon.setOnClickListener(view -> {
+                            dismissContainerPopup();
+                            RoomContentAdapter.this.openContainerPopupAtPosition(childPosition);
+                        });
+                        photoIcon.setOnLongClickListener(view -> {
+                            toggleOptionsMenu(view, child, childPosition);
+                            return true;
+                        });
+                    } else {
+                        photoIcon.setOnClickListener(view -> notifyEdit(child, childPosition));
+                        photoIcon.setOnLongClickListener(null);
+                    }
                 }
             }
 
