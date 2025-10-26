@@ -2854,10 +2854,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (child == null) {
                     continue;
                 }
-                View entryView = layoutInflater.inflate(R.layout.item_room_content_child,
+                View entryView = layoutInflater.inflate(R.layout.item_furniture_section_entry,
                         container, false);
-                TextView nameView = entryView.findViewById(R.id.text_room_content_child_name);
-                TextView commentView = entryView.findViewById(R.id.text_room_content_child_comment);
+                View bannerView = entryView.findViewById(R.id.container_furniture_child_banner);
+                TextView nameView = entryView.findViewById(R.id.text_furniture_child_name);
+                TextView commentView = entryView.findViewById(R.id.text_furniture_child_comment);
                 if (nameView != null) {
                     String name = RoomContentAdapter.this.resolveItemName(child);
                     Integer column = child.getContainerColumn();
@@ -2865,20 +2866,38 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         Context context = entryView.getContext();
                         String columnLabel = context.getString(
                                 R.string.room_content_furniture_column_short, column);
-                        nameView.setText(columnLabel + " · " + name);
-                    } else {
-                        nameView.setText(name);
+                        name = columnLabel + " · " + name;
                     }
+                    nameView.setText(name);
                 }
                 if (commentView != null) {
-                    String comment = child.getComment();
-                    String trimmed = comment != null ? comment.trim() : "";
-                    if (!trimmed.isEmpty()) {
+                    CharSequence formattedComment = RoomContentAdapter.this
+                            .formatComment(child.getComment());
+                    if (formattedComment != null) {
                         commentView.setVisibility(View.VISIBLE);
-                        commentView.setText(trimmed);
+                        commentView.setText(formattedComment);
                     } else {
                         commentView.setVisibility(View.GONE);
                         commentView.setText(null);
+                    }
+                }
+                if (bannerView != null) {
+                    if (child.isContainer()) {
+                        int fallbackColor = RoomContentAdapter.this.containerBannerDefaultColor;
+                        int bannerColor = RoomContentAdapter.this.resolveContainerBannerColor(
+                                child.getType(), fallbackColor);
+                        Drawable background = bannerView.getBackground();
+                        if (background instanceof GradientDrawable) {
+                            GradientDrawable drawable = (GradientDrawable) background.mutate();
+                            drawable.setColor(bannerColor);
+                        } else if (background instanceof ColorDrawable) {
+                            ColorDrawable drawable = (ColorDrawable) background.mutate();
+                            drawable.setColor(bannerColor);
+                        } else {
+                            bannerView.setBackgroundColor(bannerColor);
+                        }
+                    } else {
+                        RoomContentAdapter.this.applyBannerColor(bannerView, child.getType());
                     }
                 }
                 container.addView(entryView);
