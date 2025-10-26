@@ -37,6 +37,9 @@
     <string name="content_description_room_content_menu">Optionen für %1$s anzeigen</string>
     <string name="content_description_room_content_expand">Zusammenfassung für %1$s anzeigen</string>
     <string name="content_description_room_content_collapse">Zusammenfassung für %1$s ausblenden</string>
+    <string name="content_description_room_content_popup_filter_all">Alle Elemente zu %1$s anzeigen</string>
+    <string name="content_description_room_content_popup_filter_containers">Nur Behälter zu %1$s anzeigen</string>
+    <string name="content_description_room_content_popup_filter_items">Nur eigenständige Elemente zu %1$s anzeigen</string>
     <string name="popup_establishment_title">Einrichtung</string>
     <string name="popup_establishment_edit">Bearbeiten</string>
     <string name="popup_establishment_delete">Löschen</string>
