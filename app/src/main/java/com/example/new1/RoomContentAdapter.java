@@ -1807,6 +1807,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
             int totalVerticalMargin = resources.getDimensionPixelSize(
                     R.dimen.container_popup_screen_margin_vertical);
+            int availableHeight = Math.max(0,
+                    displayFrame.height() - (2 * totalVerticalMargin));
+            int finalHeight = Math.min(popupHeight, availableHeight);
             int maxHeightBelow = Math.max(0, spaceBelow - totalVerticalMargin);
             int maxHeightAbove = Math.max(0, spaceAbove - totalVerticalMargin);
             boolean showAbove;
@@ -1815,19 +1818,51 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             } else {
                 showAbove = true;
             }
-            int desiredHeight = showAbove ? maxHeightAbove : maxHeightBelow;
-            if (desiredHeight <= 0) {
-                desiredHeight = Math.max(maxHeightAbove, maxHeightBelow);
-            }
-            if (desiredHeight > 0) {
-                popupWindow.setHeight(desiredHeight);
+            if (finalHeight < popupHeight) {
+                popupWindow.setHeight(finalHeight);
             } else {
-                desiredHeight = popupHeight;
+                finalHeight = popupHeight;
             }
 
-            int yOffset = verticalOffset;
+            int frameTop = displayFrame.top + totalVerticalMargin;
+            int frameBottom = displayFrame.bottom - totalVerticalMargin;
+
+            int yOffset;
             if (showAbove) {
-                yOffset = -(bannerContainer.getHeight() + desiredHeight + verticalOffset);
+                yOffset = -(bannerContainer.getHeight() + finalHeight + verticalOffset);
+                int popupTop = anchorBottom + yOffset;
+                int overflowAbove = frameTop - popupTop;
+                if (overflowAbove > 0) {
+                    yOffset += overflowAbove;
+                }
+                int popupBottom = anchorBottom + yOffset + finalHeight;
+                int overflowBelow = popupBottom - frameBottom;
+                if (overflowBelow > 0) {
+                    yOffset -= overflowBelow;
+                    int adjustedTop = anchorBottom + yOffset;
+                    int readjustAbove = frameTop - adjustedTop;
+                    if (readjustAbove > 0) {
+                        yOffset += readjustAbove;
+                    }
+                }
+            } else {
+                yOffset = verticalOffset;
+                int popupTop = anchorBottom + yOffset;
+                int popupBottom = popupTop + finalHeight;
+                int overflowBelow = popupBottom - frameBottom;
+                if (overflowBelow > 0) {
+                    yOffset -= overflowBelow;
+                }
+                int adjustedTop = anchorBottom + yOffset;
+                int overflowAbove = frameTop - adjustedTop;
+                if (overflowAbove > 0) {
+                    yOffset += overflowAbove;
+                    int adjustedBottom = anchorBottom + yOffset + finalHeight;
+                    int readjustBelow = adjustedBottom - frameBottom;
+                    if (readjustBelow > 0) {
+                        yOffset -= readjustBelow;
+                    }
+                }
             }
 
             PopupWindowCompat.showAsDropDown(popupWindow, bannerContainer, 0, yOffset, Gravity.START);
