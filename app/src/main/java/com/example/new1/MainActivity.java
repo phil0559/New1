@@ -22,26 +22,7 @@ public class MainActivity extends Activity {
     private static final int REQUEST_CAMERA_PERMISSION = 1001;
     private PopupWindow languagePopup;
     private ImageView flagIcon;
-    private ImageView displayToggleIcon;
-    private View menuBanner;
-    private View menuIcon;
-    private View menuTitle;
-    private View menuSearchIcon;
-    private View menuSpacer;
     private View flagContainer;
-    private View actionScrollView;
-    private int menuPaddingLeft;
-    private int menuPaddingTop;
-    private int menuPaddingRight;
-    private int menuPaddingBottom;
-    private float menuBannerElevation;
-    private DisplayState displayState = DisplayState.ALL_VISIBLE;
-
-    private enum DisplayState {
-        ALL_VISIBLE,
-        ELEMENTS_HIDDEN,
-        CONTAINERS_HIDDEN
-    }
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -53,28 +34,12 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        menuBanner = findViewById(R.id.menu_banner);
-        menuIcon = findViewById(R.id.menu_icon);
-        menuTitle = findViewById(R.id.menu_title);
-        menuSearchIcon = findViewById(R.id.menu_search_icon);
-        menuSpacer = findViewById(R.id.menu_spacer);
         flagContainer = findViewById(R.id.flag_container);
-        actionScrollView = findViewById(R.id.action_scroll_view);
-
-        menuPaddingLeft = menuBanner.getPaddingLeft();
-        menuPaddingTop = menuBanner.getPaddingTop();
-        menuPaddingRight = menuBanner.getPaddingRight();
-        menuPaddingBottom = menuBanner.getPaddingBottom();
-        menuBannerElevation = menuBanner.getElevation();
 
         flagContainer.setOnClickListener(this::toggleLanguagePopup);
 
         flagIcon = findViewById(R.id.selected_flag_icon);
         updateFlagIconForCurrentLocale();
-
-        displayToggleIcon = findViewById(R.id.display_toggle_icon);
-        displayToggleIcon.setOnClickListener(view -> cycleDisplayState());
-        applyDisplayState();
 
         View establishmentButton = findViewById(R.id.button_establishment);
         establishmentButton.setOnClickListener(view ->
@@ -103,7 +68,6 @@ public class MainActivity extends Activity {
     }
 
     private void toggleLanguagePopup(View anchor) {
-        setDisplayState(DisplayState.ALL_VISIBLE);
         if (languagePopup != null && languagePopup.isShowing()) {
             languagePopup.dismiss();
             return;
@@ -186,58 +150,4 @@ public class MainActivity extends Activity {
         }
     }
 
-    private void cycleDisplayState() {
-        if (displayState == DisplayState.ALL_VISIBLE) {
-            setDisplayState(DisplayState.ELEMENTS_HIDDEN);
-        } else if (displayState == DisplayState.ELEMENTS_HIDDEN) {
-            setDisplayState(DisplayState.CONTAINERS_HIDDEN);
-        } else {
-            setDisplayState(DisplayState.ALL_VISIBLE);
-        }
-    }
-
-    private void setDisplayState(DisplayState newState) {
-        displayState = newState;
-        applyDisplayState();
-    }
-
-    private void applyDisplayState() {
-        switch (displayState) {
-            case ALL_VISIBLE:
-                // Afficher tous les composants avec l’icône neutre.
-                displayToggleIcon.setImageResource(R.drawable.ic_square_empty);
-                menuBanner.setBackgroundResource(R.drawable.bg_menu_banner);
-                menuBanner.setElevation(menuBannerElevation);
-                menuBanner.setPadding(menuPaddingLeft, menuPaddingTop, menuPaddingRight, menuPaddingBottom);
-                setMenuChildrenVisibility(View.VISIBLE);
-                actionScrollView.setVisibility(View.VISIBLE);
-                break;
-            case ELEMENTS_HIDDEN:
-                // Masquer les éléments principaux tout en conservant le bandeau.
-                displayToggleIcon.setImageResource(R.drawable.ic_square_diagonal);
-                menuBanner.setBackgroundResource(R.drawable.bg_menu_banner);
-                menuBanner.setElevation(menuBannerElevation);
-                menuBanner.setPadding(menuPaddingLeft, menuPaddingTop, menuPaddingRight, menuPaddingBottom);
-                setMenuChildrenVisibility(View.VISIBLE);
-                actionScrollView.setVisibility(View.GONE);
-                break;
-            case CONTAINERS_HIDDEN:
-                // Camoufler les bandeaux en ne laissant que le bouton de contrôle.
-                displayToggleIcon.setImageResource(R.drawable.ic_square_cross);
-                menuBanner.setBackground(null);
-                menuBanner.setElevation(0f);
-                menuBanner.setPadding(0, 0, 0, 0);
-                setMenuChildrenVisibility(View.GONE);
-                actionScrollView.setVisibility(View.GONE);
-                break;
-        }
-    }
-
-    private void setMenuChildrenVisibility(int visibility) {
-        menuIcon.setVisibility(visibility);
-        menuTitle.setVisibility(visibility);
-        menuSearchIcon.setVisibility(visibility);
-        menuSpacer.setVisibility(visibility);
-        flagContainer.setVisibility(visibility);
-    }
 }
