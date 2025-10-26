@@ -2052,12 +2052,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @DrawableRes
         private int resolveContainerPopupToggleIcon(int visibilityMask) {
             if (visibilityMask == VISIBILITY_FLAG_CONTAINERS) {
-                return R.drawable.ic_square_containers;
+                return R.drawable.ic_filter_containers;
             }
             if (visibilityMask == VISIBILITY_FLAG_ITEMS) {
-                return R.drawable.ic_square_items;
+                return R.drawable.ic_filter_items;
             }
-            return R.drawable.ic_square_empty;
+            return R.drawable.ic_filter_all;
         }
 
         private int normalizePopupVisibilityMask(int visibilityMask) {
