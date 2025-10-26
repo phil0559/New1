@@ -114,13 +114,9 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             if (commentView == null) {
                 return;
             }
-            if (comment == null || comment.trim().isEmpty()) {
-                commentView.setVisibility(View.GONE);
-                commentView.setText("");
-            } else {
-                commentView.setText(comment);
-                commentView.setVisibility(View.VISIBLE);
-            }
+            // Les commentaires sont masqués sur la liste des pièces.
+            commentView.setVisibility(View.GONE);
+            commentView.setText("");
         }
 
         private void updatePhoto(Room room) {
