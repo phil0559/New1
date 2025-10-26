@@ -2282,26 +2282,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void toggleSelection() {
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            RoomContentAdapter.this.toggleItemSelection(position);
+            RoomContentAdapter.this.toggleItemSelection(adapterPosition);
         }
 
         private void toggleContainerPopup() {
             if (currentItem == null || !currentItem.isContainer()) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
             if (containerPopup != null && containerPopup.isShowing()) {
                 containerPopup.dismiss();
                 return;
             }
-            openContainerPopup(position, VISIBILITY_DEFAULT_MASK);
+            openContainerPopup(adapterPosition, VISIBILITY_DEFAULT_MASK);
         }
 
         private void openContainerPopup(int position, int initialVisibilityMask) {
@@ -2511,33 +2511,33 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (menuView == null || currentItem == null) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            toggleOptionsMenu(menuView, currentItem, position);
+            toggleOptionsMenu(menuView, currentItem, adapterPosition);
         }
 
         void reopenContainerPopup(int visibilityMask) {
             if (currentItem == null || !currentItem.isContainer()) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            openContainerPopup(position, visibilityMask);
+            openContainerPopup(adapterPosition, visibilityMask);
         }
 
         void reopenFurniturePopup(@Nullable Integer levelToExpand) {
             if (currentItem == null || !currentItem.isFurniture()) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            openFurniturePopup(position, levelToExpand);
+            openFurniturePopup(adapterPosition, levelToExpand);
         }
 
         @Nullable
@@ -2949,11 +2949,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 furniturePopup.dismiss();
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            openFurniturePopup(position, null);
+            openFurniturePopup(adapterPosition, null);
         }
 
         private void openFurniturePopup(int position, @Nullable Integer levelToExpand) {
@@ -3655,25 +3655,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void toggleExpansion() {
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
             dismissFurniturePopup();
             if (currentItem != null && currentItem.isContainer()
                     && currentItem.hasAttachedItems()) {
-                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(position);
-                RoomContentAdapter.this.setContainerExpanded(position, !isExpanded);
-                notifyItemChanged(position);
-                RoomContentAdapter.this.notifyAttachedItemsChanged(position);
+                boolean isExpanded = RoomContentAdapter.this
+                        .isContainerExpanded(adapterPosition);
+                RoomContentAdapter.this.setContainerExpanded(adapterPosition, !isExpanded);
+                notifyItemChanged(adapterPosition);
+                RoomContentAdapter.this.notifyAttachedItemsChanged(adapterPosition);
             } else {
-                boolean isExpanded = expandedStates.get(position, false);
+                boolean isExpanded = expandedStates.get(adapterPosition, false);
                 if (isExpanded) {
-                    expandedStates.delete(position);
+                    expandedStates.delete(adapterPosition);
                 } else {
-                    expandedStates.put(position, true);
+                    expandedStates.put(adapterPosition, true);
                 }
-                notifyItemChanged(position);
+                notifyItemChanged(adapterPosition);
             }
         }
 
@@ -3681,20 +3682,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (suppressFilterCallbacks) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
             boolean checked = chip.isChecked();
-            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
+            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(adapterPosition);
             if (checked) {
                 visibilityMask |= visibilityFlag;
             } else {
                 visibilityMask &= ~visibilityFlag;
             }
-            RoomContentAdapter.this.setContainerVisibilityMask(position, visibilityMask);
-            notifyItemChanged(position);
-            RoomContentAdapter.this.notifyAttachedItemsChanged(position);
+            RoomContentAdapter.this.setContainerVisibilityMask(adapterPosition, visibilityMask);
+            notifyItemChanged(adapterPosition);
+            RoomContentAdapter.this.notifyAttachedItemsChanged(adapterPosition);
         }
 
         private int resolveBottomMargin(@NonNull RoomContentItem item, int position,
@@ -3776,8 +3777,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (RoomContentAdapter.this.selectionModeEnabled) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            toggleOptionsMenu(anchor, currentItem, position);
+            int adapterPosition = getBindingAdapterPosition();
+            toggleOptionsMenu(anchor, currentItem, adapterPosition);
         }
 
         private void toggleOptionsMenu(@NonNull View anchor,
