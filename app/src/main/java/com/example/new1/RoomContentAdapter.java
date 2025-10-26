@@ -2705,20 +2705,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         private String formatFurniturePlacement(@NonNull RoomContentItem item) {
             Integer level = item.getContainerLevel();
-            Integer column = item.getContainerColumn();
-            if (level == null && column == null) {
+            if (level == null) {
                 return null;
             }
             Context context = itemView.getContext();
             List<String> parts = new ArrayList<>();
             if (level != null) {
                 parts.add(context.getString(R.string.room_content_furniture_level_short, level));
-            }
-            if (column != null) {
-                parts.add(context.getString(R.string.room_content_furniture_column_short, column));
-            }
-            if (parts.isEmpty()) {
-                return null;
             }
             return TextUtils.join(" · ", parts);
         }
