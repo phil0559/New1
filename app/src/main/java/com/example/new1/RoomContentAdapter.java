@@ -2908,13 +2908,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             View bannerContainer = entryView.findViewById(R.id.container_popup_child_banner);
             if (titleView != null) {
                 String name = RoomContentAdapter.this.resolveItemName(child);
-                Integer column = child.getContainerColumn();
-                if (column != null) {
-                    Context context = entryView.getContext();
-                    String columnLabel = context.getString(
-                            R.string.room_content_furniture_column_short, column);
-                    name = columnLabel + " · " + name;
-                }
                 titleView.setText(name);
             }
             if (commentView != null) {
