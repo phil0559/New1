@@ -120,7 +120,7 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         void onDeleteEstablishment(@NonNull Establishment establishment, int position);
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
         private final ImageView menuView;
         private final ImageView photoView;
