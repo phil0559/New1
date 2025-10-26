@@ -320,6 +320,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return items.get(position);
     }
 
+    private int findPositionForItem(@NonNull RoomContentItem target) {
+        for (int index = 0; index < items.size(); index++) {
+            RoomContentItem candidate = items.get(index);
+            if (candidate == null) {
+                continue;
+            }
+            if (candidate == target) {
+                return index;
+            }
+            if (candidate.getRank() == target.getRank()) {
+                return index;
+            }
+        }
+        return -1;
+    }
+
     private void invalidateDecorations() {
         if (attachedRecyclerView != null) {
             attachedRecyclerView.invalidateItemDecorations();
@@ -2717,6 +2733,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int levelCount = furnitureLevels != null && furnitureLevels > 0 ? furnitureLevels : 0;
             boolean hasBottom = item.hasFurnitureBottom();
             List<RoomContentItem> children = item.getChildren();
+            int parentPosition = RoomContentAdapter.this.findPositionForItem(item);
+            int baseDepth = parentPosition >= 0
+                    ? RoomContentAdapter.this.computeHierarchyDepth(parentPosition)
+                    : -1;
             if (!hasTop && levelCount <= 0 && !hasBottom) {
                 container.setVisibility(View.GONE);
                 return;
@@ -2725,20 +2745,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (hasTop) {
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_top_title), false,
-                        Collections.emptyList());
+                        Collections.emptyList(), parentPosition, baseDepth);
                 container.addView(section);
             }
             for (int index = 1; index <= levelCount; index++) {
                 String title = context.getString(R.string.furniture_popup_level_title, index);
                 List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children, index);
                 View section = createFurnitureSection(layoutInflater, container, title, true,
-                        levelItems);
+                        levelItems, parentPosition, baseDepth);
                 container.addView(section);
             }
             if (hasBottom) {
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_bottom_title), false,
-                        Collections.emptyList());
+                        Collections.emptyList(), parentPosition, baseDepth);
                 container.addView(section);
             }
         }
@@ -2748,7 +2768,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @NonNull LinearLayout parent,
                 @NonNull String title,
                 boolean isLevel,
-                @NonNull List<RoomContentItem> levelItems) {
+                @NonNull List<RoomContentItem> levelItems,
+                int parentPosition,
+                int baseDepth) {
             View section = layoutInflater.inflate(R.layout.item_furniture_section, parent, false);
             TextView titleView = section.findViewById(R.id.text_section_title);
             if (titleView != null) {
@@ -2771,7 +2793,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             LinearLayout contentContainer = section.findViewById(R.id.container_section_content);
             View indicatorView = section.findViewById(R.id.view_section_indicator);
             if (isLevel) {
-                populateFurnitureSectionContent(contentContainer, levelItems);
+                populateFurnitureSectionContent(contentContainer, levelItems, parentPosition,
+                        baseDepth);
                 boolean hasContent = !levelItems.isEmpty();
                 if (indicatorView != null) {
                     indicatorView.setVisibility(hasContent ? View.VISIBLE : View.GONE);
@@ -2838,7 +2861,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void populateFurnitureSectionContent(@Nullable LinearLayout container,
-                @NonNull List<RoomContentItem> items) {
+                @NonNull List<RoomContentItem> items,
+                int parentPosition,
+                int baseDepth) {
             if (container == null) {
                 return;
             }
@@ -2854,53 +2879,74 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (child == null) {
                     continue;
                 }
-                View entryView = layoutInflater.inflate(R.layout.item_furniture_section_entry,
+                View entryView = layoutInflater.inflate(R.layout.popup_container_child_entry,
                         container, false);
-                View bannerView = entryView.findViewById(R.id.container_furniture_child_banner);
-                TextView nameView = entryView.findViewById(R.id.text_furniture_child_name);
-                TextView commentView = entryView.findViewById(R.id.text_furniture_child_comment);
-                if (nameView != null) {
-                    String name = RoomContentAdapter.this.resolveItemName(child);
-                    Integer column = child.getContainerColumn();
-                    if (column != null) {
-                        Context context = entryView.getContext();
-                        String columnLabel = context.getString(
-                                R.string.room_content_furniture_column_short, column);
-                        name = columnLabel + " · " + name;
-                    }
-                    nameView.setText(name);
-                }
-                if (commentView != null) {
-                    CharSequence formattedComment = RoomContentAdapter.this
-                            .formatComment(child.getComment());
-                    if (formattedComment != null) {
-                        commentView.setVisibility(View.VISIBLE);
-                        commentView.setText(formattedComment);
-                    } else {
-                        commentView.setVisibility(View.GONE);
-                        commentView.setText(null);
-                    }
-                }
-                if (bannerView != null) {
-                    if (child.isContainer()) {
-                        int fallbackColor = RoomContentAdapter.this.containerBannerDefaultColor;
-                        int bannerColor = RoomContentAdapter.this.resolveContainerBannerColor(
-                                child.getType(), fallbackColor);
-                        Drawable background = bannerView.getBackground();
-                        if (background instanceof GradientDrawable) {
-                            GradientDrawable drawable = (GradientDrawable) background.mutate();
-                            drawable.setColor(bannerColor);
-                        } else if (background instanceof ColorDrawable) {
-                            ColorDrawable drawable = (ColorDrawable) background.mutate();
-                            drawable.setColor(bannerColor);
-                        } else {
-                            bannerView.setBackgroundColor(bannerColor);
-                        }
-                    } else {
-                        RoomContentAdapter.this.applyBannerColor(bannerView, child.getType());
-                    }
-                }
+                bindFurnitureSectionEntry(entryView, parentPosition, baseDepth, child);
                 container.addView(entryView);
+            }
+        }
+
+        private void bindFurnitureSectionEntry(@NonNull View entryView,
+                int parentPosition,
+                int baseDepth,
+                @NonNull RoomContentItem child) {
+            int childPosition = RoomContentAdapter.this.findPositionForItem(child);
+            if (childPosition >= 0) {
+                int effectiveContainerPosition = parentPosition >= 0
+                        ? parentPosition
+                        : childPosition;
+                int effectiveBaseDepth = baseDepth >= 0
+                        ? baseDepth
+                        : RoomContentAdapter.this.computeHierarchyDepth(effectiveContainerPosition);
+                bindContainerPopupEntry(entryView, effectiveContainerPosition, effectiveBaseDepth,
+                        childPosition);
+                return;
+            }
+            TextView titleView = entryView.findViewById(R.id.text_container_popup_child_title);
+            TextView commentView = entryView.findViewById(R.id.text_container_popup_child_comment);
+            ImageView photoIcon = entryView.findViewById(R.id.image_container_popup_child_photo);
+            View bannerContainer = entryView.findViewById(R.id.container_popup_child_banner);
+            if (titleView != null) {
+                String name = RoomContentAdapter.this.resolveItemName(child);
+                Integer column = child.getContainerColumn();
+                if (column != null) {
+                    Context context = entryView.getContext();
+                    String columnLabel = context.getString(
+                            R.string.room_content_furniture_column_short, column);
+                    name = columnLabel + " · " + name;
+                }
+                titleView.setText(name);
+            }
+            if (commentView != null) {
+                CharSequence formattedComment = RoomContentAdapter.this
+                        .formatComment(child.getComment());
+                if (formattedComment != null) {
+                    commentView.setVisibility(View.VISIBLE);
+                    commentView.setText(formattedComment);
+                } else {
+                    commentView.setVisibility(View.GONE);
+                    commentView.setText(null);
+                }
+            }
+            if (photoIcon != null) {
+                bindPopupChildPhoto(photoIcon, child);
+                photoIcon.setOnClickListener(null);
+                photoIcon.setOnLongClickListener(null);
+            }
+            if (bannerContainer != null) {
+                if (child.isContainer()) {
+                    RoomContentAdapter.this.applyContainerBannerColor(bannerContainer,
+                            RoomContentAdapter.this.resolveHierarchyStyle(0), child.getType());
+                } else {
+                    RoomContentAdapter.this.applyBannerColor(bannerContainer, child.getType());
+                }
+                bannerContainer.setOnClickListener(null);
+                bannerContainer.setOnLongClickListener(null);
+            }
+            View menuIcon = entryView.findViewById(R.id.image_container_popup_child_menu);
+            if (menuIcon != null) {
+                menuIcon.setVisibility(View.GONE);
+                menuIcon.setOnClickListener(null);
             }
         }
 
