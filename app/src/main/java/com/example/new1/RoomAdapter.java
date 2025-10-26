@@ -238,10 +238,10 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             );
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             popupWindow.setOutsideTouchable(true);
-            int position = getBindingAdapterPosition();
-            if (position != RecyclerView.NO_POSITION) {
-                popupAdapterPosition = position;
-                RoomAdapter.this.setActivePopup(position);
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition != RecyclerView.NO_POSITION) {
+                popupAdapterPosition = adapterPosition;
+                RoomAdapter.this.setActivePopup(adapterPosition);
             } else {
                 popupAdapterPosition = RecyclerView.NO_POSITION;
                 RoomAdapter.this.setActivePopup(RecyclerView.NO_POSITION);
@@ -307,33 +307,33 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
             if (interactionListener == null || currentRoom == null) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            interactionListener.onEditRoom(currentRoom, position);
+            interactionListener.onEditRoom(currentRoom, adapterPosition);
         }
 
         private void notifyOpen() {
             if (interactionListener == null || currentRoom == null) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            interactionListener.onOpenRoom(currentRoom, position);
+            interactionListener.onOpenRoom(currentRoom, adapterPosition);
         }
 
         private void notifyDelete() {
             if (interactionListener == null || currentRoom == null) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            interactionListener.onDeleteRoom(currentRoom, position);
+            interactionListener.onDeleteRoom(currentRoom, adapterPosition);
         }
     }
 }

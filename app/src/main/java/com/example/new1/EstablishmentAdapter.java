@@ -225,10 +225,10 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             );
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             popupWindow.setOutsideTouchable(true);
-            int position = getBindingAdapterPosition();
-            if (position != RecyclerView.NO_POSITION) {
-                popupAdapterPosition = position;
-                EstablishmentAdapter.this.setActivePopup(position);
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition != RecyclerView.NO_POSITION) {
+                popupAdapterPosition = adapterPosition;
+                EstablishmentAdapter.this.setActivePopup(adapterPosition);
             } else {
                 popupAdapterPosition = RecyclerView.NO_POSITION;
                 EstablishmentAdapter.this.setActivePopup(RecyclerView.NO_POSITION);
@@ -248,11 +248,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     if (interactionListener == null || currentItem == null) {
                         return;
                     }
-                    int position = getBindingAdapterPosition();
-                    if (position == RecyclerView.NO_POSITION) {
+                    int adapterPosition = getBindingAdapterPosition();
+                    if (adapterPosition == RecyclerView.NO_POSITION) {
                         return;
                     }
-                    interactionListener.onEditEstablishment(currentItem, position);
+                    interactionListener.onEditEstablishment(currentItem, adapterPosition);
                 });
             }
 
@@ -265,11 +265,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     if (interactionListener == null || currentItem == null) {
                         return;
                     }
-                    int position = getBindingAdapterPosition();
-                    if (position == RecyclerView.NO_POSITION) {
+                    int adapterPosition = getBindingAdapterPosition();
+                    if (adapterPosition == RecyclerView.NO_POSITION) {
                         return;
                     }
-                    interactionListener.onDeleteEstablishment(currentItem, position);
+                    interactionListener.onDeleteEstablishment(currentItem, adapterPosition);
                 });
             }
 
@@ -305,11 +305,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
             if (currentItem == null || interactionListener == null) {
                 return;
             }
-            int position = getBindingAdapterPosition();
-            if (position == RecyclerView.NO_POSITION) {
+            int adapterPosition = getBindingAdapterPosition();
+            if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            interactionListener.onOpenEstablishment(currentItem, position);
+            interactionListener.onOpenEstablishment(currentItem, adapterPosition);
         }
     }
 }
