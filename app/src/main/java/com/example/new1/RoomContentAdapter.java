@@ -2156,6 +2156,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (child == null) {
                     continue;
                 }
+                if (child == containerItem || index == containerPosition
+                        || child.getRank() == containerItem.getRank()) {
+                    continue;
+                }
                 if (child.isContainer()) {
                     if (!showContainers) {
                         continue;
