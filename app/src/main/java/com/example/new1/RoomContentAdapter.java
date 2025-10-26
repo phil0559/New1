@@ -28,6 +28,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -1984,7 +1985,47 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 previewView.setVisibility(View.GONE);
                 return;
             }
-            previewView.setImageBitmap(previewBitmap);
+            int headerBottomOffset = 0;
+            if (bannerContainer != null) {
+                View current = bannerContainer;
+                int accumulatedTop = 0;
+                boolean reachedWrapper = false;
+                while (current != null && current != groupWrapperView) {
+                    accumulatedTop += current.getTop();
+                    ViewParent parent = current.getParent();
+                    if (parent == groupWrapperView) {
+                        reachedWrapper = true;
+                        break;
+                    }
+                    if (parent instanceof View) {
+                        current = (View) parent;
+                    } else {
+                        current = null;
+                    }
+                }
+                if (reachedWrapper) {
+                    headerBottomOffset = accumulatedTop + bannerContainer.getHeight();
+                }
+            }
+
+            Bitmap bitmapToDisplay = previewBitmap;
+            if (headerBottomOffset > 0 && headerBottomOffset < previewBitmap.getHeight()) {
+                int croppedHeight = previewBitmap.getHeight() - headerBottomOffset;
+                if (croppedHeight > 0) {
+                    try {
+                        Bitmap croppedBitmap = Bitmap.createBitmap(previewBitmap, 0,
+                                headerBottomOffset, previewBitmap.getWidth(), croppedHeight);
+                        bitmapToDisplay = croppedBitmap;
+                        if (bitmapToDisplay != previewBitmap && !previewBitmap.isRecycled()) {
+                            previewBitmap.recycle();
+                        }
+                    } catch (IllegalArgumentException exception) {
+                        bitmapToDisplay = previewBitmap;
+                    }
+                }
+            }
+
+            previewView.setImageBitmap(bitmapToDisplay);
             previewView.setVisibility(View.VISIBLE);
         }
 
