@@ -166,6 +166,8 @@ public class RoomContentActivity extends Activity {
         final AlertDialog dialog;
         @Nullable
         final Long forcedParentRank;
+        @Nullable
+        final Integer forcedFurnitureLevel;
 
         DialogController(boolean isEditing,
                          int positionToEdit,
@@ -184,7 +186,8 @@ public class RoomContentActivity extends Activity {
                          @NonNull String[] selectedCategoryHolder,
                          @NonNull FormState formState,
                          @NonNull AlertDialog dialog,
-                         @Nullable Long forcedParentRank) {
+                         @Nullable Long forcedParentRank,
+                         @Nullable Integer forcedFurnitureLevel) {
             this.isEditing = isEditing;
             this.positionToEdit = positionToEdit;
             this.nameInput = nameInput;
@@ -203,6 +206,7 @@ public class RoomContentActivity extends Activity {
             this.formState = formState;
             this.dialog = dialog;
             this.forcedParentRank = forcedParentRank;
+            this.forcedFurnitureLevel = forcedFurnitureLevel;
         }
     }
 
@@ -390,6 +394,8 @@ public class RoomContentActivity extends Activity {
         final ArrayList<String> photos = new ArrayList<>();
         @Nullable
         Long forcedParentRank;
+        @Nullable
+        Integer forcedFurnitureLevel;
         boolean resumeLookup;
         boolean reopenDialog;
 
@@ -548,6 +554,14 @@ public class RoomContentActivity extends Activity {
                                                                   int position) {
                             showAddRoomContentDialog(container.getRank());
                         }
+
+                        @Override
+                        public void onAddRoomContentToFurnitureLevel(@NonNull RoomContentItem furniture,
+                                                                         int position,
+                                                                         int level,
+                                                                         @NonNull View anchor) {
+                            showFurnitureLevelAddMenu(anchor, furniture, level);
+                        }
                     });
             contentList.setAdapter(roomContentAdapter);
         }
@@ -597,6 +611,10 @@ public class RoomContentActivity extends Activity {
             restored.forcedParentRank = savedInstanceState.getLong(
                     "pending_barcode_forced_parent_rank");
         }
+        if (savedInstanceState.getBoolean("pending_barcode_has_forced_furniture_level", false)) {
+            restored.forcedFurnitureLevel = savedInstanceState.getInt(
+                    "pending_barcode_forced_furniture_level");
+        }
         pendingBarcodeResult = restored;
         barcodeScanAwaitingResult = savedInstanceState.getBoolean("pending_barcode_waiting", false);
     }
@@ -615,7 +633,8 @@ public class RoomContentActivity extends Activity {
             }
         }
         showRoomContentDialog(itemToEdit, positionToEdit, pendingBarcodeResult.editing,
-                pendingBarcodeResult.forcedParentRank);
+                pendingBarcodeResult.forcedParentRank,
+                pendingBarcodeResult.forcedFurnitureLevel);
         if (pendingBarcodeResult != null) {
             pendingBarcodeResult.reopenDialog = false;
         }
@@ -642,7 +661,8 @@ public class RoomContentActivity extends Activity {
                     controller.publicationDateInput,
                     controller.summaryInput,
                     controller.formState,
-                    controller.forcedParentRank);
+                    controller.forcedParentRank,
+                    controller.forcedFurnitureLevel);
             if (existing != null && existing.resumeLookup) {
                 snapshot.resumeLookup = true;
             } else if (barcodeScanContext != null
@@ -655,6 +675,9 @@ public class RoomContentActivity extends Activity {
             }
             if (existing != null && snapshot.forcedParentRank == null) {
                 snapshot.forcedParentRank = existing.forcedParentRank;
+            }
+            if (existing != null && snapshot.forcedFurnitureLevel == null) {
+                snapshot.forcedFurnitureLevel = existing.forcedFurnitureLevel;
             }
             snapshot.reopenDialog = controller.dialog.isShowing();
             pendingBarcodeResult = snapshot;
@@ -686,6 +709,13 @@ public class RoomContentActivity extends Activity {
                         pendingBarcodeResult.forcedParentRank);
             } else {
                 outState.putBoolean("pending_barcode_has_forced_parent_rank", false);
+            }
+            if (pendingBarcodeResult.forcedFurnitureLevel != null) {
+                outState.putBoolean("pending_barcode_has_forced_furniture_level", true);
+                outState.putInt("pending_barcode_forced_furniture_level",
+                        pendingBarcodeResult.forcedFurnitureLevel);
+            } else {
+                outState.putBoolean("pending_barcode_has_forced_furniture_level", false);
             }
         }
     }
@@ -721,7 +751,8 @@ public class RoomContentActivity extends Activity {
     private void showRoomContentDialog(@Nullable RoomContentItem initialItem,
             int positionToEdit,
             boolean shouldEditExisting,
-            @Nullable Long forcedParentRank) {
+            @Nullable Long forcedParentRank,
+            @Nullable Integer forcedFurnitureLevel) {
         final boolean isEditing = shouldEditExisting
                 && initialItem != null
                 && positionToEdit >= 0
@@ -798,12 +829,16 @@ public class RoomContentActivity extends Activity {
                 : null;
 
         final Long appliedForcedParentRank;
+        final Integer appliedForcedFurnitureLevel;
         if (isEditing) {
             appliedForcedParentRank = null;
+            appliedForcedFurnitureLevel = null;
         } else if (restoreData != null && restoreData.forcedParentRank != null) {
             appliedForcedParentRank = restoreData.forcedParentRank;
+            appliedForcedFurnitureLevel = restoreData.forcedFurnitureLevel;
         } else {
             appliedForcedParentRank = forcedParentRank;
+            appliedForcedFurnitureLevel = forcedFurnitureLevel;
         }
 
         if (pendingBarcodeResult != null
@@ -1184,11 +1219,14 @@ public class RoomContentActivity extends Activity {
                         trackValues,
                         photoValues,
                         false);
+                RoomContentItem targetContainer = null;
                 if (!isEditing) {
-                    RoomContentItem targetContainer = appliedForcedParentRank != null
+                    targetContainer = appliedForcedParentRank != null
                             ? findContainerByRank(roomContentItems, appliedForcedParentRank)
                             : null;
                     RoomContentHierarchyHelper.attachToContainer(item, targetContainer);
+                    updateFurniturePlacement(item, targetContainer, appliedForcedFurnitureLevel,
+                            null);
                 }
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
@@ -1311,7 +1349,8 @@ public class RoomContentActivity extends Activity {
                         publicationDateInput,
                         summaryInput,
                         formState,
-                        appliedForcedParentRank);
+                        appliedForcedParentRank,
+                        appliedForcedFurnitureLevel);
                 barcodeScanContext = createBarcodeScanContext(formState,
                         nameInput,
                         barcodeValueView,
@@ -1557,7 +1596,8 @@ public class RoomContentActivity extends Activity {
                 selectedCategoryHolder,
                 formState,
                 dialog,
-                appliedForcedParentRank);
+                appliedForcedParentRank,
+                appliedForcedFurnitureLevel);
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -1590,7 +1630,10 @@ public class RoomContentActivity extends Activity {
         }
     }
 
-    private void showContainerDialog(@Nullable RoomContentItem itemToEdit, int positionToEdit) {
+    private void showContainerDialog(@Nullable RoomContentItem itemToEdit,
+            int positionToEdit,
+            @Nullable Long forcedParentRank,
+            @Nullable Integer forcedFurnitureLevel) {
         RoomContentItem containerToEdit = itemToEdit != null && itemToEdit.isContainer()
                 ? itemToEdit
                 : null;
@@ -1854,6 +1897,11 @@ public class RoomContentActivity extends Activity {
                     preserveHierarchyMetadata(existingItem, newItem);
                     roomContentItems.set(positionToEdit, newItem);
                 } else {
+                    RoomContentItem targetContainer = forcedParentRank != null
+                            ? findContainerByRank(roomContentItems, forcedParentRank)
+                            : null;
+                    RoomContentHierarchyHelper.attachToContainer(newItem, targetContainer);
+                    updateFurniturePlacement(newItem, targetContainer, forcedFurnitureLevel, null);
                     roomContentItems.add(newItem);
                 }
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -2334,6 +2382,16 @@ public class RoomContentActivity extends Activity {
             addMenuPopup.dismiss();
             return;
         }
+        showAddRoomContentMenu(anchor, null, null, true);
+    }
+
+    private void showAddRoomContentMenu(@NonNull View anchor,
+                                        @Nullable Long forcedParentRank,
+                                        @Nullable Integer forcedFurnitureLevel,
+                                        boolean includeFurnitureOption) {
+        if (addMenuPopup != null && addMenuPopup.isShowing()) {
+            addMenuPopup.dismiss();
+        }
 
         View popupContent = inflateDialogView(R.layout.popup_add_room_content_menu);
         TextView titleView = popupContent.findViewById(R.id.text_popup_add_room_content_title);
@@ -2347,7 +2405,7 @@ public class RoomContentActivity extends Activity {
                 if (addMenuPopup != null) {
                     addMenuPopup.dismiss();
                 }
-                showAddRoomContentDialog();
+                showAddRoomContentDialog(forcedParentRank, forcedFurnitureLevel);
             });
         }
 
@@ -2357,18 +2415,24 @@ public class RoomContentActivity extends Activity {
                 if (addMenuPopup != null) {
                     addMenuPopup.dismiss();
                 }
-                showAddContainerDialog();
+                showAddContainerDialog(forcedParentRank, forcedFurnitureLevel);
             });
         }
 
         View furnitureButton = popupContent.findViewById(R.id.button_popup_add_room_content_furniture);
         if (furnitureButton != null) {
-            furnitureButton.setOnClickListener(view -> {
-                if (addMenuPopup != null) {
-                    addMenuPopup.dismiss();
-                }
-                showFurnitureDialog(null, -1);
-            });
+            if (includeFurnitureOption) {
+                furnitureButton.setVisibility(View.VISIBLE);
+                furnitureButton.setOnClickListener(view -> {
+                    if (addMenuPopup != null) {
+                        addMenuPopup.dismiss();
+                    }
+                    showFurnitureDialog(null, -1);
+                });
+            } else {
+                furnitureButton.setVisibility(View.GONE);
+                furnitureButton.setOnClickListener(null);
+            }
         }
 
         addMenuPopup = new PopupWindow(
@@ -2404,16 +2468,32 @@ public class RoomContentActivity extends Activity {
         PopupWindowCompat.showAsDropDown(addMenuPopup, anchor, 0, yOffset, Gravity.END);
     }
 
+    private void showFurnitureLevelAddMenu(@NonNull View anchor,
+                                           @NonNull RoomContentItem furniture,
+                                           int level) {
+        showAddRoomContentMenu(anchor, furniture.getRank(), level, false);
+    }
+
     private void showAddRoomContentDialog() {
-        showAddRoomContentDialog(null);
+        showAddRoomContentDialog(null, null);
     }
 
     private void showAddRoomContentDialog(@Nullable Long forcedParentRank) {
-        showRoomContentDialog(null, -1, false, forcedParentRank);
+        showAddRoomContentDialog(forcedParentRank, null);
+    }
+
+    private void showAddRoomContentDialog(@Nullable Long forcedParentRank,
+                                          @Nullable Integer forcedFurnitureLevel) {
+        showRoomContentDialog(null, -1, false, forcedParentRank, forcedFurnitureLevel);
     }
 
     private void showAddContainerDialog() {
-        showContainerDialog(null, -1);
+        showAddContainerDialog(null, null);
+    }
+
+    private void showAddContainerDialog(@Nullable Long forcedParentRank,
+                                        @Nullable Integer forcedFurnitureLevel) {
+        showContainerDialog(null, -1, forcedParentRank, forcedFurnitureLevel);
     }
 
     private void showMoveRoomContentDialog(@NonNull RoomContentItem item, int position) {
@@ -2656,9 +2736,9 @@ public class RoomContentActivity extends Activity {
             return;
         }
         if (item.isContainer()) {
-            showContainerDialog(item, -1);
+            showContainerDialog(item, -1, null, null);
         } else {
-            showRoomContentDialog(item, -1, false, null);
+            showRoomContentDialog(item, -1, false, null, null);
         }
     }
 
@@ -2668,9 +2748,9 @@ public class RoomContentActivity extends Activity {
             return;
         }
         if (item.isContainer()) {
-            showContainerDialog(item, position);
+            showContainerDialog(item, position, null, null);
         } else {
-            showRoomContentDialog(item, position, true, null);
+            showRoomContentDialog(item, position, true, null, null);
         }
     }
 
@@ -3925,11 +4005,15 @@ public class RoomContentActivity extends Activity {
                     }
                     showRoomContentDialog(itemToEdit, pendingBarcodeResult.positionToEdit,
                             pendingBarcodeResult.editing,
-                            pendingBarcodeResult.forcedParentRank);
+                            pendingBarcodeResult.forcedParentRank,
+                            pendingBarcodeResult.forcedFurnitureLevel);
                 } else {
                     showRoomContentDialog(null, -1, false,
                             pendingBarcodeResult != null
                                     ? pendingBarcodeResult.forcedParentRank
+                                    : null,
+                            pendingBarcodeResult != null
+                                    ? pendingBarcodeResult.forcedFurnitureLevel
                                     : null);
                 }
             } else {
@@ -4756,7 +4840,8 @@ public class RoomContentActivity extends Activity {
                                                              @Nullable EditText publicationDateInput,
                                                              @Nullable EditText summaryInput,
                                                              @NonNull FormState formState,
-                                                             @Nullable Long forcedParentRank) {
+                                                             @Nullable Long forcedParentRank,
+                                                             @Nullable Integer forcedFurnitureLevel) {
         PendingBarcodeResult result = new PendingBarcodeResult(isEditing, positionToEdit);
         result.name = extractText(nameInput);
         result.comment = extractText(commentInput);
@@ -4774,6 +4859,7 @@ public class RoomContentActivity extends Activity {
         result.tracks.addAll(collectTracks(formState));
         result.photos.addAll(formState.photos);
         result.forcedParentRank = forcedParentRank;
+        result.forcedFurnitureLevel = forcedFurnitureLevel;
         result.resumeLookup = false;
         return result;
     }

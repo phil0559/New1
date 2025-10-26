@@ -1267,6 +1267,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         void onDeleteRoomContent(@NonNull RoomContentItem item, int position);
 
         void onAddRoomContentToContainer(@NonNull RoomContentItem container, int position);
+
+        void onAddRoomContentToFurnitureLevel(@NonNull RoomContentItem furniture,
+                int position,
+                int level,
+                @NonNull View anchor);
     }
 
     class ViewHolder extends RecyclerView.ViewHolder {
@@ -2729,20 +2734,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (hasTop) {
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_top_title), false,
-                        Collections.emptyList(), parentPosition, baseDepth);
+                        Collections.emptyList(), parentPosition, baseDepth, null);
                 container.addView(section);
             }
             for (int index = 1; index <= levelCount; index++) {
                 String title = context.getString(R.string.furniture_popup_level_title, index);
                 List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children, index);
                 View section = createFurnitureSection(layoutInflater, container, title, true,
-                        levelItems, parentPosition, baseDepth);
+                        levelItems, parentPosition, baseDepth, index);
                 container.addView(section);
             }
             if (hasBottom) {
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_bottom_title), false,
-                        Collections.emptyList(), parentPosition, baseDepth);
+                        Collections.emptyList(), parentPosition, baseDepth, null);
                 container.addView(section);
             }
         }
@@ -2754,7 +2759,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 boolean isLevel,
                 @NonNull List<RoomContentItem> levelItems,
                 int parentPosition,
-                int baseDepth) {
+                int baseDepth,
+                @Nullable Integer levelIndex) {
             View section = layoutInflater.inflate(R.layout.item_furniture_section, parent, false);
             TextView titleView = section.findViewById(R.id.text_section_title);
             if (titleView != null) {
@@ -2776,6 +2782,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             ImageView chevronView = section.findViewById(R.id.icon_section_chevron);
             LinearLayout contentContainer = section.findViewById(R.id.container_section_content);
             View indicatorView = section.findViewById(R.id.view_section_indicator);
+            ImageView addIcon = section.findViewById(R.id.icon_section_add);
+            if (addIcon != null) {
+                if (isLevel && levelIndex != null && levelIndex > 0 && interactionListener != null
+                        && currentItem != null) {
+                    addIcon.setVisibility(View.VISIBLE);
+                    addIcon.setOnClickListener(view -> {
+                        int adapterPosition = parentPosition >= 0
+                                ? parentPosition
+                                : getBindingAdapterPosition();
+                        if (adapterPosition == RecyclerView.NO_POSITION) {
+                            return;
+                        }
+                        interactionListener.onAddRoomContentToFurnitureLevel(currentItem,
+                                adapterPosition,
+                                levelIndex,
+                                view);
+                    });
+                } else {
+                    addIcon.setVisibility(View.GONE);
+                    addIcon.setOnClickListener(null);
+                }
+            }
             if (isLevel) {
                 populateFurnitureSectionContent(contentContainer, levelItems, parentPosition,
                         baseDepth);
