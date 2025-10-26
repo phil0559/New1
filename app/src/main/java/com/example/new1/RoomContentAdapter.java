@@ -1839,6 +1839,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     });
                 }
             }
+            ImageView addIcon = popupView.findViewById(R.id.icon_container_popup_add);
+            if (addIcon != null) {
+                addIcon.setOnClickListener(view -> Toast.makeText(view.getContext(),
+                        R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+            }
             ImageView menuIcon = popupView.findViewById(R.id.icon_container_popup_menu);
             if (menuIcon != null) {
                 menuIcon.setOnClickListener(view -> toggleOptionsMenu(menuIcon));

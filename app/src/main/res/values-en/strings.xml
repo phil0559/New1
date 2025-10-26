@@ -38,6 +38,7 @@
     <string name="content_description_room_content_expand">Show the summary for %1$s</string>
     <string name="content_description_room_content_collapse">Hide the summary for %1$s</string>
     <string name="container_popup_close_content_description">Close the container window</string>
+    <string name="container_popup_add_content_description">Add content inside the container</string>
     <string name="content_description_room_content_popup_filter_all">Show all items linked to %1$s</string>
     <string name="content_description_room_content_popup_filter_containers">Show only containers linked to %1$s</string>
     <string name="content_description_room_content_popup_filter_items">Show only standalone items linked to %1$s</string>
