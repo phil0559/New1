@@ -29,6 +29,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -61,10 +62,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.ViewHolder> {
 
     private static final float LABEL_RELATIVE_SIZE = 0.85f;
+    private static final Object PAYLOAD_SELECTION = new Object();
 
     private static final int VISIBILITY_FLAG_CONTAINERS = 1;
     private static final int VISIBILITY_FLAG_ITEMS = 1 << 1;
@@ -94,6 +97,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final int containerBannerBagColor;
     private final int[] containerBannerPalette;
     private final int[] itemBannerColors;
+    private final SparseBooleanArray selectedPositions = new SparseBooleanArray();
+    private boolean selectionModeEnabled;
+    @Nullable
+    private OnSelectionChangedListener selectionChangedListener;
+    private final int selectionStrokeWidthPx;
+    private final int selectionStrokeColor;
     @Nullable
     private int[] hierarchyParentPositions;
     @Nullable
@@ -193,8 +202,29 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 ContextCompat.getColor(context, R.color.room_content_banner_disc),
                 ContextCompat.getColor(context, R.color.room_content_banner_comic)
         };
+        this.selectionStrokeWidthPx = context.getResources()
+                .getDimensionPixelSize(R.dimen.room_content_card_selection_stroke_width);
+        this.selectionStrokeColor = ContextCompat.getColor(context, R.color.icon_brown);
         registerAdapterDataObserver(hierarchyInvalidatingObserver);
         groupDecoration = new GroupDecoration(context);
+    }
+
+    @NonNull
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position,
+            @NonNull List<Object> payloads) {
+        if (!payloads.isEmpty()) {
+            for (Object payload : payloads) {
+                if (payload == PAYLOAD_SELECTION) {
+                    RoomContentItem item = getItemAt(position);
+                    boolean selectable = item != null && !item.isFurniture();
+                    boolean selected = selectable && isItemSelected(position);
+                    holder.updateSelectionAppearance(selectionModeEnabled, selectable, selected);
+                    return;
+                }
+            }
+        }
+        super.onBindViewHolder(holder, position, payloads);
     }
 
     @NonNull
@@ -321,6 +351,134 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return null;
         }
         return items.get(position);
+    }
+
+    void setSelectionChangedListener(@Nullable OnSelectionChangedListener listener) {
+        this.selectionChangedListener = listener;
+        if (listener != null) {
+            listener.onSelectionChanged(getSelectedItemCount());
+        }
+    }
+
+    public void setSelectionModeEnabled(boolean enabled) {
+        if (selectionModeEnabled == enabled) {
+            return;
+        }
+        selectionModeEnabled = enabled;
+        selectedPositions.clear();
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public void clearSelection() {
+        if (selectedPositions.size() == 0) {
+            return;
+        }
+        selectedPositions.clear();
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    public int getSelectedItemCount() {
+        sanitizeSelectionPositions();
+        return selectedPositions.size();
+    }
+
+    @NonNull
+    List<RoomContentItem> getSelectedItems() {
+        sanitizeSelectionPositions();
+        List<RoomContentItem> result = new ArrayList<>();
+        for (int index = 0; index < selectedPositions.size(); index++) {
+            int position = selectedPositions.keyAt(index);
+            RoomContentItem item = getItemAt(position);
+            if (item != null) {
+                result.add(item);
+            }
+        }
+        return result;
+    }
+
+    @NonNull
+    List<Long> getSelectedItemRanks() {
+        sanitizeSelectionPositions();
+        List<Long> result = new ArrayList<>();
+        for (int index = 0; index < selectedPositions.size(); index++) {
+            int position = selectedPositions.keyAt(index);
+            RoomContentItem item = getItemAt(position);
+            if (item != null) {
+                result.add(item.getRank());
+            }
+        }
+        return result;
+    }
+
+    void restoreSelectionByRanks(@NonNull Set<Long> ranks) {
+        selectedPositions.clear();
+        if (ranks.isEmpty()) {
+            notifyDataSetChanged();
+            notifySelectionChanged();
+            return;
+        }
+        for (int index = 0; index < items.size(); index++) {
+            RoomContentItem item = items.get(index);
+            if (item == null || item.isFurniture()) {
+                continue;
+            }
+            if (ranks.contains(item.getRank())) {
+                selectedPositions.put(index, true);
+            }
+        }
+        notifyDataSetChanged();
+        notifySelectionChanged();
+    }
+
+    private void toggleItemSelection(int position) {
+        boolean currentlySelected = isItemSelected(position);
+        setItemSelection(position, !currentlySelected);
+    }
+
+    private boolean setItemSelection(int position, boolean selected) {
+        if (!selectionModeEnabled) {
+            return false;
+        }
+        if (position < 0 || position >= items.size()) {
+            return false;
+        }
+        RoomContentItem item = items.get(position);
+        if (item == null || item.isFurniture()) {
+            return false;
+        }
+        boolean currentlySelected = isItemSelected(position);
+        if (currentlySelected == selected) {
+            return true;
+        }
+        if (selected) {
+            selectedPositions.put(position, true);
+        } else {
+            selectedPositions.delete(position);
+        }
+        notifyItemChanged(position, PAYLOAD_SELECTION);
+        notifySelectionChanged();
+        return true;
+    }
+
+    private boolean isItemSelected(int position) {
+        return selectedPositions.get(position, false);
+    }
+
+    private void sanitizeSelectionPositions() {
+        for (int index = selectedPositions.size() - 1; index >= 0; index--) {
+            int position = selectedPositions.keyAt(index);
+            if (position < 0 || position >= items.size()) {
+                selectedPositions.delete(position);
+            }
+        }
+    }
+
+    private void notifySelectionChanged() {
+        if (selectionChangedListener != null) {
+            selectionChangedListener.onSelectionChanged(getSelectedItemCount());
+        }
     }
 
     private int findPositionForItem(@NonNull RoomContentItem target) {
@@ -1366,6 +1524,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @NonNull View anchor);
     }
 
+    interface OnSelectionChangedListener {
+        void onSelectionChanged(int count);
+    }
+
     class ViewHolder extends RecyclerView.ViewHolder {
         @Nullable
         final ViewGroup groupWrapperView;
@@ -1374,6 +1536,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         final View cardBackground;
         final View detailsContainer;
+        @Nullable
+        final CheckBox selectionCheckBox;
         @Nullable
         final ImageView photoView;
         final TextView nameView;
@@ -1439,6 +1603,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultToggleVisibility;
         private final int defaultAddVisibility;
         private final int defaultFilterVisibility;
+        private final int defaultCheckboxVisibility;
 
         ViewHolder(@NonNull View itemView,
                 @Nullable OnRoomContentInteractionListener interactionListener) {
@@ -1452,6 +1617,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             cardBackground = itemView.findViewById(R.id.container_room_content_root);
             detailsContainer = itemView.findViewById(R.id.container_room_content_details);
             childrenRecyclerView = itemView.findViewById(R.id.recycler_room_content_children);
+            selectionCheckBox = itemView.findViewById(R.id.checkbox_room_content_select);
             photoView = itemView.findViewById(R.id.image_room_content_photo);
             nameView = itemView.findViewById(R.id.text_room_content_name);
             commentView = itemView.findViewById(R.id.text_room_content_comment);
@@ -1473,6 +1639,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             if (menuView != null) {
                 menuView.setOnClickListener(view -> toggleOptionsMenu(menuView));
+            }
+            if (selectionCheckBox != null) {
+                selectionCheckBox.setOnClickListener(view -> {
+                    int adapterPosition = getBindingAdapterPosition();
+                    if (adapterPosition == RecyclerView.NO_POSITION) {
+                        return;
+                    }
+                    boolean applied = RoomContentAdapter.this.setItemSelection(adapterPosition,
+                            selectionCheckBox.isChecked());
+                    if (!applied) {
+                        selectionCheckBox.setChecked(RoomContentAdapter.this
+                                .isItemSelected(adapterPosition));
+                    }
+                });
             }
             if (containersFilterChip != null) {
                 containersFilterChip.setOnClickListener(
@@ -1496,6 +1676,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             defaultAddVisibility = addView != null ? addView.getVisibility() : View.GONE;
             defaultFilterVisibility = filterChipGroup != null
                     ? filterChipGroup.getVisibility()
+                    : View.GONE;
+            defaultCheckboxVisibility = selectionCheckBox != null
+                    ? selectionCheckBox.getVisibility()
                     : View.GONE;
             ViewGroup.LayoutParams params = itemView.getLayoutParams();
             if (params instanceof RecyclerView.LayoutParams) {
@@ -1553,6 +1736,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             if (filterChipGroup != null) {
                 filterChipGroup.setVisibility(defaultFilterVisibility);
+            }
+            if (selectionCheckBox != null) {
+                selectionCheckBox.setVisibility(defaultCheckboxVisibility);
+                selectionCheckBox.setChecked(false);
+                selectionCheckBox.setContentDescription(null);
             }
             String baseName = resolveItemName(item);
             if (item.isContainer()) {
@@ -1765,12 +1953,75 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             }
 
+            boolean selectableForSelection = !item.isFurniture();
+            boolean selectedForSelection = selectionModeEnabled
+                    && selectableForSelection
+                    && RoomContentAdapter.this.isItemSelected(position);
+            updateSelectionAppearance(selectionModeEnabled, selectableForSelection,
+                    selectedForSelection);
+
             ContainerPopupRestoreState autoOpenState = RoomContentAdapter.this
                     .pendingContainerPopupRestore;
             if (autoOpenState != null && autoOpenState.autoOpenWhenBound
                     && autoOpenState.containerPosition == position && item.isContainer()) {
                 RoomContentAdapter.this.pendingContainerPopupRestore = null;
                 itemView.post(() -> reopenContainerPopup(autoOpenState.visibilityMask));
+            }
+        }
+
+        void updateSelectionAppearance(boolean selectionMode, boolean isSelectable,
+                boolean isSelected) {
+            if (selectionCheckBox != null) {
+                if (selectionMode && isSelectable) {
+                    selectionCheckBox.setVisibility(View.VISIBLE);
+                    if (selectionCheckBox.isChecked() != isSelected) {
+                        selectionCheckBox.setChecked(isSelected);
+                    }
+                    CharSequence displayName = nameView.getText();
+                    if (displayName != null && displayName.length() > 0) {
+                        selectionCheckBox.setContentDescription(selectionCheckBox.getContext()
+                                .getString(R.string.content_description_room_content_select,
+                                        displayName));
+                    } else {
+                        selectionCheckBox.setContentDescription(null);
+                    }
+                } else {
+                    selectionCheckBox.setContentDescription(null);
+                    selectionCheckBox.setChecked(false);
+                    if (selectionMode) {
+                        selectionCheckBox.setVisibility(View.INVISIBLE);
+                    } else {
+                        selectionCheckBox.setVisibility(defaultCheckboxVisibility);
+                    }
+                }
+            }
+            if (menuView != null) {
+                if (selectionMode) {
+                    menuView.setVisibility(View.GONE);
+                    menuView.setEnabled(false);
+                } else {
+                    menuView.setEnabled(true);
+                }
+            }
+            if (addView != null && selectionMode) {
+                addView.setVisibility(View.GONE);
+            }
+            if (toggleView != null) {
+                toggleView.setEnabled(!selectionMode);
+                toggleView.setAlpha(selectionMode ? 0.4f : 1f);
+            }
+            if (cardView != null) {
+                if (selectionMode && isSelectable && isSelected) {
+                    cardView.setStrokeWidth(selectionStrokeWidthPx);
+                    cardView.setStrokeColor(selectionStrokeColor);
+                } else {
+                    cardView.setStrokeWidth(defaultStrokeWidth);
+                    if (defaultStrokeColor != null) {
+                        cardView.setStrokeColor(defaultStrokeColor);
+                    } else {
+                        cardView.setStrokeColor(Color.TRANSPARENT);
+                    }
+                }
             }
         }
 
@@ -1924,6 +2175,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (currentItem == null) {
                 return;
             }
+            if (RoomContentAdapter.this.selectionModeEnabled) {
+                if (!currentItem.isFurniture()) {
+                    toggleSelection();
+                }
+                return;
+            }
             if (currentItem.isFurniture()) {
                 toggleFurniturePopup();
             } else if (currentItem.isContainer()) {
@@ -1931,6 +2188,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             } else {
                 notifyEdit();
             }
+        }
+
+        private void toggleSelection() {
+            int position = getBindingAdapterPosition();
+            if (position == RecyclerView.NO_POSITION) {
+                return;
+            }
+            RoomContentAdapter.this.toggleItemSelection(position);
         }
 
         private void toggleContainerPopup() {
@@ -3392,12 +3657,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void toggleOptionsMenu(@NonNull View anchor) {
+            if (RoomContentAdapter.this.selectionModeEnabled) {
+                return;
+            }
             int position = getBindingAdapterPosition();
             toggleOptionsMenu(anchor, currentItem, position);
         }
 
         private void toggleOptionsMenu(@NonNull View anchor,
                 @Nullable RoomContentItem targetItem, int targetPosition) {
+            if (RoomContentAdapter.this.selectionModeEnabled) {
+                return;
+            }
             if (optionsPopup != null && optionsPopup.isShowing()) {
                 optionsPopup.dismiss();
                 return;

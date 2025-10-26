@@ -60,6 +60,15 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
+                        <CheckBox
+                            android:id="@+id/checkbox_room_content_select"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="12dp"
+                            android:buttonTint="@color/icon_brown"
+                            android:focusable="false"
+                            android:visibility="gone" />
+
                         <ImageView
                             android:id="@+id/image_room_content_photo"
                             android:layout_width="40dp"

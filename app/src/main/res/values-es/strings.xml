@@ -37,6 +37,11 @@
     <string name="content_description_room_content_menu">Mostrar opciones para %1$s</string>
     <string name="content_description_room_content_expand">Mostrar el resumen de %1$s</string>
     <string name="content_description_room_content_collapse">Ocultar el resumen de %1$s</string>
+    <string name="content_description_multi_select">Selección múltiple</string>
+    <string name="content_description_close_selection">Cerrar la selección</string>
+    <string name="content_description_move_selected">Mover la selección</string>
+    <string name="content_description_delete_selected">Eliminar la selección</string>
+    <string name="content_description_room_content_select">Seleccionar %1$s</string>
     <string name="container_popup_close_content_description">Cerrar la ventana del contenedor</string>
     <string name="container_popup_add_content_description">Agregar contenido en el contenedor</string>
     <string name="content_description_room_content_popup_filter_all">Mostrar todos los elementos vinculados a %1$s</string>
@@ -66,6 +71,12 @@
     <string name="room_content_placeholder_with_establishment">Agregue contenido para %1$s.</string>
     <string name="room_content_subtitle_with_establishment">Establecimiento: %1$s</string>
     <string name="room_content_empty_state">Los elementos de la habitación aparecerán aquí.</string>
+    <string name="room_content_selection_title">Selección</string>
+    <plurals name="room_content_selection_count">
+        <item quantity="one">%1$d elemento seleccionado</item>
+        <item quantity="other">%1$d elementos seleccionados</item>
+    </plurals>
+    <string name="room_content_selection_subtitle">Elige los elementos que quieres mover o eliminar.</string>
     <string name="content_description_add_room_content">Agregar contenido para la habitación</string>
     <string name="room_content_added_confirmation">Elemento añadido a la habitación.</string>
     <string name="room_content_updated_confirmation">Elemento actualizado.</string>
@@ -73,6 +84,9 @@
     <string name="room_container_added_confirmation">Contenedor añadido a la habitación.</string>
     <string name="room_container_updated_confirmation">Contenedor actualizado.</string>
     <string name="room_container_deleted_confirmation">Contenedor eliminado.</string>
+    <string name="room_content_deleted_selection_confirmation_containers">Contenedores eliminados.</string>
+    <string name="room_content_deleted_selection_confirmation_items">Elementos eliminados.</string>
+    <string name="room_content_deleted_selection_confirmation">Selección eliminada.</string>
     <string name="room_furniture_added_confirmation">Mobiliario agregado a la habitación.</string>
     <string name="room_furniture_updated_confirmation">Mobiliario actualizado.</string>
     <string name="room_content_metadata_type">Tipo: %1$s</string>
@@ -96,15 +110,23 @@
     <string name="dialog_add_room_content_title">Añadir un elemento</string>
     <string name="dialog_edit_room_content_title">Editar elemento</string>
     <string name="dialog_delete_room_container_message">¿Desea eliminar el contenedor %1$s?</string>
+    <string name="dialog_delete_room_content_selection_title">Eliminar selección</string>
+    <plurals name="dialog_delete_room_content_selection_message">
+        <item quantity="one">¿Desea eliminar el elemento seleccionado?</item>
+        <item quantity="other">¿Desea eliminar los %1$d elementos seleccionados?</item>
+    </plurals>
     <string name="dialog_move_room_content_title">Mover el elemento</string>
+    <string name="dialog_move_room_content_selection_title">Mover la selección</string>
     <string name="dialog_move_room_content_establishment_label">Establecimiento</string>
     <string name="dialog_move_room_content_room_label">Elige la habitación de destino</string>
     <string name="dialog_move_room_content_container_label">Elige el contenedor padre o el mueble donde colocar el elemento.</string>
     <string name="dialog_move_room_content_no_container">Sin contenedor</string>
     <string name="dialog_move_room_content_move_button">Mover</string>
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[No hay ningún establecimiento disponible para mover este elemento.]]></string>
+    <string name="dialog_move_room_content_missing_items">No es posible preparar el traslado: elemento no encontrado.</string>
     <string name="dialog_move_room_content_empty_rooms">No hay ninguna habitación disponible en este establecimiento.</string>
     <string name="dialog_move_room_content_success">Elemento movido correctamente.</string>
+    <string name="dialog_move_room_content_success_multiple">Selección movida correctamente.</string>
     <string name="dialog_move_room_content_furniture_section_label">Posición en el mueble</string>
     <string name="dialog_move_room_content_level_label">Nivel</string>
     <string name="dialog_move_room_content_column_label">Columna</string>
