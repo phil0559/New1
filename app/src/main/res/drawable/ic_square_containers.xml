@@ -13,7 +13,7 @@
         android:fillColor="@android:color/transparent"
         android:pathData="M8,8h8v8h-8z"
         android:strokeColor="@android:color/black"
-        android:strokeJoin="round"
+        android:strokeLineJoin="round"
         android:strokeWidth="2.4" />
     <path
         android:fillColor="@android:color/transparent"
