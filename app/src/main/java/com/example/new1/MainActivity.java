@@ -20,9 +20,11 @@ import java.util.Locale;
 
 public class MainActivity extends Activity {
     private static final int REQUEST_CAMERA_PERMISSION = 1001;
+    private static final String KEY_LANGUAGE_POPUP_STATE = "language_popup_state";
     private PopupWindow languagePopup;
     private ImageView flagIcon;
     private View flagContainer;
+    private boolean shouldRestoreLanguagePopup;
 
     @Override
     protected void attachBaseContext(Context newBase) {
@@ -33,6 +35,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        shouldRestoreLanguagePopup = savedInstanceState != null &&
+            savedInstanceState.getBoolean(KEY_LANGUAGE_POPUP_STATE, false);
 
         flagContainer = findViewById(R.id.flag_container);
 
@@ -50,6 +55,24 @@ public class MainActivity extends Activity {
         quitButton.setOnClickListener(view -> finishAffinity());
 
         requestCameraPermissionIfFirstLaunch();
+    }
+
+    @Override
+    protected void onPostCreate(Bundle savedInstanceState) {
+        super.onPostCreate(savedInstanceState);
+        if (shouldRestoreLanguagePopup && flagContainer != null) {
+            flagContainer.post(() -> {
+                if (shouldRestoreLanguagePopup) {
+                    toggleLanguagePopup(flagContainer);
+                }
+            });
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        outState.putBoolean(KEY_LANGUAGE_POPUP_STATE, languagePopup != null && languagePopup.isShowing());
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -86,7 +109,11 @@ public class MainActivity extends Activity {
         popupWindow.setBackgroundDrawable(
             ContextCompat.getDrawable(this, R.drawable.bg_language_popup)
         );
-        popupWindow.setOnDismissListener(() -> languagePopup = null);
+        popupWindow.setOnDismissListener(() -> {
+            // Réinitialise l'état lorsque la fenêtre est fermée manuellement.
+            shouldRestoreLanguagePopup = false;
+            languagePopup = null;
+        });
 
         contentView.findViewById(R.id.flag_fr).setOnClickListener(view -> applyLanguageSelection("fr"));
         contentView.findViewById(R.id.flag_en).setOnClickListener(view -> applyLanguageSelection("en-GB"));
@@ -106,6 +133,8 @@ public class MainActivity extends Activity {
     private void applyLanguageSelection(String languageTag) {
         LocaleHelper.persistLanguage(this, languageTag);
         flagIcon.setImageResource(flagIconForTag(languageTag));
+        // Empêche la restauration après un changement de langue appliqué.
+        shouldRestoreLanguagePopup = false;
         if (languagePopup != null) {
             languagePopup.dismiss();
         }
