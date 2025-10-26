@@ -2997,10 +2997,20 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             showFurnitureDialog(item, -1);
             return;
         }
+
+        Long parentRank = item.getParentRank();
+        RoomContentItem parentContainer = parentRank != null
+                ? findContainerByRank(roomContentItems, parentRank)
+                : null;
+        Integer forcedFurnitureLevel = null;
+        if (parentContainer != null && parentContainer.isFurniture()) {
+            forcedFurnitureLevel = item.getContainerLevel();
+        }
+
         if (item.isContainer()) {
-            showContainerDialog(item, -1, null, null);
+            showContainerDialog(item, -1, parentRank, forcedFurnitureLevel);
         } else {
-            showRoomContentDialog(item, -1, false, null, null);
+            showRoomContentDialog(item, -1, false, parentRank, forcedFurnitureLevel);
         }
     }
 
