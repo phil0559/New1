@@ -213,14 +213,7 @@ final class RoomContentGroupingManager {
                         sortingComparator.compare(first.root, second.root));
             }
             for (HierarchyGroup child : children) {
-                if (!child.root.isContainer()) {
-                    child.collect(destination);
-                }
-            }
-            for (HierarchyGroup child : children) {
-                if (child.root.isContainer()) {
-                    child.collect(destination);
-                }
+                child.collect(destination);
             }
         }
 
