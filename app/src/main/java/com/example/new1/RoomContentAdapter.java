@@ -1974,58 +1974,21 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (previewView == null) {
                 return;
             }
-            if (groupWrapperView == null) {
+            if (childrenRecyclerView == null
+                    || childrenRecyclerView.getVisibility() != View.VISIBLE
+                    || childrenRecyclerView.getAdapter() == null
+                    || childrenRecyclerView.getAdapter().getItemCount() <= 0) {
                 previewView.setImageDrawable(null);
                 previewView.setVisibility(View.GONE);
                 return;
             }
-            Bitmap previewBitmap = captureViewBitmap(groupWrapperView);
+            Bitmap previewBitmap = captureViewBitmap(childrenRecyclerView);
             if (previewBitmap == null) {
                 previewView.setImageDrawable(null);
                 previewView.setVisibility(View.GONE);
                 return;
             }
-            int headerBottomOffset = 0;
-            if (bannerContainer != null) {
-                View current = bannerContainer;
-                int accumulatedTop = 0;
-                boolean reachedWrapper = false;
-                while (current != null && current != groupWrapperView) {
-                    accumulatedTop += current.getTop();
-                    ViewParent parent = current.getParent();
-                    if (parent == groupWrapperView) {
-                        reachedWrapper = true;
-                        break;
-                    }
-                    if (parent instanceof View) {
-                        current = (View) parent;
-                    } else {
-                        current = null;
-                    }
-                }
-                if (reachedWrapper) {
-                    headerBottomOffset = accumulatedTop + bannerContainer.getHeight();
-                }
-            }
-
-            Bitmap bitmapToDisplay = previewBitmap;
-            if (headerBottomOffset > 0 && headerBottomOffset < previewBitmap.getHeight()) {
-                int croppedHeight = previewBitmap.getHeight() - headerBottomOffset;
-                if (croppedHeight > 0) {
-                    try {
-                        Bitmap croppedBitmap = Bitmap.createBitmap(previewBitmap, 0,
-                                headerBottomOffset, previewBitmap.getWidth(), croppedHeight);
-                        bitmapToDisplay = croppedBitmap;
-                        if (bitmapToDisplay != previewBitmap && !previewBitmap.isRecycled()) {
-                            previewBitmap.recycle();
-                        }
-                    } catch (IllegalArgumentException exception) {
-                        bitmapToDisplay = previewBitmap;
-                    }
-                }
-            }
-
-            previewView.setImageBitmap(bitmapToDisplay);
+            previewView.setImageBitmap(previewBitmap);
             previewView.setVisibility(View.VISIBLE);
         }
 
