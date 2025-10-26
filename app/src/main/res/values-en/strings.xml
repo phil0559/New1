@@ -37,6 +37,11 @@
     <string name="content_description_room_content_menu">Show options for %1$s</string>
     <string name="content_description_room_content_expand">Show the summary for %1$s</string>
     <string name="content_description_room_content_collapse">Hide the summary for %1$s</string>
+    <string name="content_description_multi_select">Select multiple</string>
+    <string name="content_description_close_selection">Close selection</string>
+    <string name="content_description_move_selected">Move selection</string>
+    <string name="content_description_delete_selected">Delete selection</string>
+    <string name="content_description_room_content_select">Select %1$s</string>
     <string name="container_popup_close_content_description">Close the container window</string>
     <string name="container_popup_add_content_description">Add content inside the container</string>
     <string name="content_description_room_content_popup_filter_all">Show all items linked to %1$s</string>
@@ -66,6 +71,12 @@
     <string name="room_content_placeholder_with_establishment">Add content for %1$s.</string>
     <string name="room_content_subtitle_with_establishment">Establishment: %1$s</string>
     <string name="room_content_empty_state">Items in the room will appear here.</string>
+    <string name="room_content_selection_title">Selection</string>
+    <plurals name="room_content_selection_count">
+        <item quantity="one">%1$d item selected</item>
+        <item quantity="other">%1$d items selected</item>
+    </plurals>
+    <string name="room_content_selection_subtitle">Choose items to move or delete.</string>
     <string name="content_description_add_room_content">Add content for the room</string>
     <string name="room_content_added_confirmation">Item added to the room.</string>
     <string name="room_content_updated_confirmation">Item updated.</string>
@@ -73,6 +84,9 @@
     <string name="room_container_added_confirmation">Container added to the room.</string>
     <string name="room_container_updated_confirmation">Container updated.</string>
     <string name="room_container_deleted_confirmation">Container deleted.</string>
+    <string name="room_content_deleted_selection_confirmation_containers">Containers deleted.</string>
+    <string name="room_content_deleted_selection_confirmation_items">Items deleted.</string>
+    <string name="room_content_deleted_selection_confirmation">Selection deleted.</string>
     <string name="room_furniture_added_confirmation">Furniture added to the room.</string>
     <string name="room_furniture_updated_confirmation">Furniture updated.</string>
     <string name="room_content_metadata_type">Type: %1$s</string>
@@ -96,15 +110,23 @@
     <string name="dialog_add_room_content_title">Add an item</string>
     <string name="dialog_edit_room_content_title">Edit item</string>
     <string name="dialog_delete_room_container_message">Do you want to delete the container %1$s?</string>
+    <string name="dialog_delete_room_content_selection_title">Delete selection</string>
+    <plurals name="dialog_delete_room_content_selection_message">
+        <item quantity="one">Do you want to delete the selected item?</item>
+        <item quantity="other">Do you want to delete the %1$d selected items?</item>
+    </plurals>
     <string name="dialog_move_room_content_title">Move item</string>
+    <string name="dialog_move_room_content_selection_title">Move selection</string>
     <string name="dialog_move_room_content_establishment_label">Establishment</string>
     <string name="dialog_move_room_content_room_label">Choose the destination room</string>
     <string name="dialog_move_room_content_container_label">Choose the parent container or furniture where to place the item.</string>
     <string name="dialog_move_room_content_no_container">No container</string>
     <string name="dialog_move_room_content_move_button">Move</string>
     <string name="dialog_move_room_content_empty_establishments">No establishment is available to move this item.</string>
+    <string name="dialog_move_room_content_missing_items">Unable to prepare the move: item not found.</string>
     <string name="dialog_move_room_content_empty_rooms">No room is available in this establishment.</string>
     <string name="dialog_move_room_content_success">Item moved successfully.</string>
+    <string name="dialog_move_room_content_success_multiple">Selection moved successfully.</string>
     <string name="dialog_move_room_content_furniture_section_label">Furniture position</string>
     <string name="dialog_move_room_content_level_label">Level</string>
     <string name="dialog_move_room_content_column_label">Column</string>

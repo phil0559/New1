@@ -80,6 +80,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -119,6 +120,10 @@ public class RoomContentActivity extends Activity {
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
     public static final String EXTRA_ROOM_NAME = "extra_room_name";
+
+    private static final String STATE_SELECTION_MODE = "state_selection_mode";
+    private static final String STATE_SELECTED_RANKS = "state_selected_ranks";
+    private static final float ACTION_DISABLED_ALPHA = 0.4f;
 
     private static class FormState {
         @Nullable
@@ -458,6 +463,14 @@ public class RoomContentActivity extends Activity {
     @Nullable
     private RoomContentAdapter roomContentAdapter;
     @Nullable
+    private ImageView searchButton;
+    @Nullable
+    private ImageView multiSelectButton;
+    @Nullable
+    private ImageView moveSelectedButton;
+    @Nullable
+    private ImageView deleteSelectedButton;
+    @Nullable
     private FormState currentFormState;
     @Nullable
     private DialogController currentDialogController;
@@ -469,6 +482,7 @@ public class RoomContentActivity extends Activity {
     private boolean barcodeScanAwaitingResult;
     @Nullable
     private PopupWindow addMenuPopup;
+    private boolean selectionModeEnabled;
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -503,13 +517,34 @@ public class RoomContentActivity extends Activity {
 
         ImageView backButton = findViewById(R.id.button_back);
         if (backButton != null) {
-            backButton.setOnClickListener(view -> finish());
+            backButton.setOnClickListener(view -> {
+                if (selectionModeEnabled) {
+                    exitSelectionMode();
+                } else {
+                    finish();
+                }
+            });
         }
 
-        ImageView searchButton = findViewById(R.id.button_search);
+        searchButton = findViewById(R.id.button_search);
         if (searchButton != null) {
             searchButton.setOnClickListener(view ->
                     Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+        }
+
+        moveSelectedButton = findViewById(R.id.button_move_selected);
+        if (moveSelectedButton != null) {
+            moveSelectedButton.setOnClickListener(view -> handleMoveSelection());
+        }
+
+        deleteSelectedButton = findViewById(R.id.button_delete_selected);
+        if (deleteSelectedButton != null) {
+            deleteSelectedButton.setOnClickListener(view -> handleDeleteSelection());
+        }
+
+        multiSelectButton = findViewById(R.id.button_multi_select);
+        if (multiSelectButton != null) {
+            multiSelectButton.setOnClickListener(view -> toggleSelectionMode());
         }
 
         Intent intent = getIntent();
@@ -563,6 +598,7 @@ public class RoomContentActivity extends Activity {
                             showFurnitureLevelAddMenu(anchor, furniture, level);
                         }
                     });
+            roomContentAdapter.setSelectionChangedListener(this::updateSelectionActions);
             contentList.setAdapter(roomContentAdapter);
         }
 
@@ -576,6 +612,17 @@ public class RoomContentActivity extends Activity {
 
         restorePendingBarcodeResult(savedInstanceState);
         maybeRestorePendingDialog();
+
+        if (savedInstanceState != null
+                && savedInstanceState.getBoolean(STATE_SELECTION_MODE, false)
+                && roomContentAdapter != null) {
+            restoreSelectionState(savedInstanceState);
+        } else {
+            refreshSelectionUi();
+            updateSelectionActions(roomContentAdapter != null
+                    ? roomContentAdapter.getSelectedItemCount()
+                    : 0);
+        }
     }
 
     private void restorePendingBarcodeResult(@Nullable Bundle savedInstanceState) {
@@ -637,6 +684,131 @@ public class RoomContentActivity extends Activity {
                 pendingBarcodeResult.forcedFurnitureLevel);
         if (pendingBarcodeResult != null) {
             pendingBarcodeResult.reopenDialog = false;
+        }
+    }
+
+    private void toggleSelectionMode() {
+        if (selectionModeEnabled) {
+            exitSelectionMode();
+        } else {
+            enterSelectionMode();
+        }
+    }
+
+    private void enterSelectionMode() {
+        if (selectionModeEnabled) {
+            return;
+        }
+        selectionModeEnabled = true;
+        if (roomContentAdapter != null) {
+            roomContentAdapter.setSelectionModeEnabled(true);
+        }
+        refreshSelectionUi();
+        updateSelectionActions(roomContentAdapter != null
+                ? roomContentAdapter.getSelectedItemCount()
+                : 0);
+    }
+
+    private void exitSelectionMode() {
+        if (!selectionModeEnabled) {
+            return;
+        }
+        selectionModeEnabled = false;
+        if (roomContentAdapter != null) {
+            roomContentAdapter.setSelectionModeEnabled(false);
+        }
+        refreshSelectionUi();
+        applyTitle();
+        applySubtitle();
+    }
+
+    private void refreshSelectionUi() {
+        if (multiSelectButton != null) {
+            multiSelectButton.setImageResource(selectionModeEnabled
+                    ? R.drawable.ic_close
+                    : R.drawable.ic_multi_select);
+            multiSelectButton.setContentDescription(getString(selectionModeEnabled
+                    ? R.string.content_description_close_selection
+                    : R.string.content_description_multi_select));
+        }
+        if (moveSelectedButton != null) {
+            moveSelectedButton.setVisibility(selectionModeEnabled ? View.VISIBLE : View.GONE);
+        }
+        if (deleteSelectedButton != null) {
+            deleteSelectedButton.setVisibility(selectionModeEnabled ? View.VISIBLE : View.GONE);
+        }
+        if (searchButton != null) {
+            searchButton.setVisibility(selectionModeEnabled ? View.GONE : View.VISIBLE);
+        }
+    }
+
+    private void updateSelectionActions(int selectedCount) {
+        boolean hasSelection = selectionModeEnabled && selectedCount > 0;
+        if (moveSelectedButton != null) {
+            moveSelectedButton.setEnabled(hasSelection);
+            moveSelectedButton.setAlpha(hasSelection ? 1f : ACTION_DISABLED_ALPHA);
+        }
+        if (deleteSelectedButton != null) {
+            deleteSelectedButton.setEnabled(hasSelection);
+            deleteSelectedButton.setAlpha(hasSelection ? 1f : ACTION_DISABLED_ALPHA);
+        }
+        if (selectionModeEnabled) {
+            TextView titleView = findViewById(R.id.text_room_title);
+            if (titleView != null) {
+                if (hasSelection) {
+                    titleView.setText(getResources().getQuantityString(
+                            R.plurals.room_content_selection_count,
+                            selectedCount,
+                            selectedCount));
+                } else {
+                    titleView.setText(R.string.room_content_selection_title);
+                }
+            }
+            TextView subtitleView = findViewById(R.id.text_room_subtitle);
+            if (subtitleView != null) {
+                subtitleView.setText(R.string.room_content_selection_subtitle);
+            }
+        }
+    }
+
+    private void handleMoveSelection() {
+        if (!selectionModeEnabled || roomContentAdapter == null) {
+            return;
+        }
+        List<RoomContentItem> selectedItems = roomContentAdapter.getSelectedItems();
+        if (selectedItems.isEmpty()) {
+            return;
+        }
+        showMoveRoomContentDialogForSelection(selectedItems);
+    }
+
+    private void handleDeleteSelection() {
+        if (!selectionModeEnabled || roomContentAdapter == null) {
+            return;
+        }
+        List<RoomContentItem> selectedItems = roomContentAdapter.getSelectedItems();
+        if (selectedItems.isEmpty()) {
+            return;
+        }
+        showDeleteRoomContentSelectionConfirmation(selectedItems);
+    }
+
+    private void restoreSelectionState(@NonNull Bundle savedInstanceState) {
+        if (roomContentAdapter == null) {
+            selectionModeEnabled = false;
+            refreshSelectionUi();
+            return;
+        }
+        long[] storedRanks = savedInstanceState.getLongArray(STATE_SELECTED_RANKS);
+        Set<Long> ranks = new HashSet<>();
+        if (storedRanks != null) {
+            for (long rank : storedRanks) {
+                ranks.add(rank);
+            }
+        }
+        enterSelectionMode();
+        if (!ranks.isEmpty()) {
+            roomContentAdapter.restoreSelectionByRanks(ranks);
         }
     }
 
@@ -718,6 +890,20 @@ public class RoomContentActivity extends Activity {
                 outState.putBoolean("pending_barcode_has_forced_furniture_level", false);
             }
         }
+        outState.putBoolean(STATE_SELECTION_MODE, selectionModeEnabled);
+        if (selectionModeEnabled && roomContentAdapter != null) {
+            List<Long> selectedRanks = roomContentAdapter.getSelectedItemRanks();
+            outState.putLongArray(STATE_SELECTED_RANKS, toLongArray(selectedRanks));
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (selectionModeEnabled) {
+            exitSelectionMode();
+            return;
+        }
+        super.onBackPressed();
     }
 
     private void applyTitle() {
@@ -2514,26 +2700,297 @@ public class RoomContentActivity extends Activity {
         showContainerDialog(null, -1, forcedParentRank, forcedFurnitureLevel);
     }
 
-    private void showMoveRoomContentDialog(@NonNull RoomContentItem item, int position) {
-        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
 
-        View dialogView = inflateDialogView(R.layout.dialog_move_room_content);
-        Spinner establishmentSpinner = dialogView.findViewById(R.id.spinner_move_establishment);
-        Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
-        RadioGroup containerRadioGroup = dialogView.findViewById(R.id.radio_group_move_container);
-        TextView containerLabel = dialogView.findViewById(R.id.label_move_container);
-        View furnitureDetailsContainer = dialogView.findViewById(R.id.container_move_furniture_details);
-        View furnitureLevelContainer = dialogView.findViewById(R.id.container_move_furniture_level);
-        EditText furnitureLevelInput = dialogView.findViewById(R.id.input_move_furniture_level);
-        View furnitureColumnContainer = dialogView.findViewById(R.id.container_move_furniture_column);
-        EditText furnitureColumnInput = dialogView.findViewById(R.id.input_move_furniture_column);
+private void showMoveRoomContentDialog(@NonNull RoomContentItem item, int position) {
+    showMoveRoomContentDialogInternal(Collections.singletonList(item));
+}
 
-        List<String> establishmentOptions = loadEstablishmentNames();
-        if (establishmentOptions.isEmpty()) {
-            Toast.makeText(this, R.string.dialog_move_room_content_empty_establishments,
-                    Toast.LENGTH_SHORT).show();
+private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem> items) {
+    showMoveRoomContentDialogInternal(new ArrayList<>(items));
+}
+
+private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> items) {
+    if (items.isEmpty()) {
+        return;
+    }
+    RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+    RoomContentItem primary = items.get(0);
+    int position = roomContentItems.indexOf(primary);
+    if (position < 0) {
+        Toast.makeText(this, R.string.dialog_move_room_content_missing_items,
+                Toast.LENGTH_SHORT).show();
+        return;
+    }
+
+    View dialogView = inflateDialogView(R.layout.dialog_move_room_content);
+    Spinner establishmentSpinner = dialogView.findViewById(R.id.spinner_move_establishment);
+    Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
+    RadioGroup containerRadioGroup = dialogView.findViewById(R.id.radio_group_move_container);
+    TextView containerLabel = dialogView.findViewById(R.id.label_move_container);
+    View furnitureDetailsContainer = dialogView.findViewById(R.id.container_move_furniture_details);
+    View furnitureLevelContainer = dialogView.findViewById(R.id.container_move_furniture_level);
+    EditText furnitureLevelInput = dialogView.findViewById(R.id.input_move_furniture_level);
+    View furnitureColumnContainer = dialogView.findViewById(R.id.container_move_furniture_column);
+    EditText furnitureColumnInput = dialogView.findViewById(R.id.input_move_furniture_column);
+
+    List<String> establishmentOptions = loadEstablishmentNames();
+    if (establishmentOptions.isEmpty()) {
+        Toast.makeText(this, R.string.dialog_move_room_content_empty_establishments,
+                Toast.LENGTH_SHORT).show();
+        return;
+    }
+    ArrayAdapter<String> establishmentAdapter = new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_item, establishmentOptions);
+    establishmentAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+    establishmentSpinner.setAdapter(establishmentAdapter);
+
+    int establishmentIndex = findIndexIgnoreCase(establishmentOptions, establishmentName);
+    if (establishmentIndex >= 0) {
+        establishmentSpinner.setSelection(establishmentIndex);
+    }
+
+    final boolean multipleSelection = items.size() > 1;
+    final List<RoomContentItem> selection = new ArrayList<>(items);
+    final String[] selectedEstablishmentHolder = new String[1];
+    final String[] selectedRoomHolder = new String[1];
+    final ContainerSelection selectedContainerHolder = new ContainerSelection();
+    Long initialRank = primary.getParentRank();
+    if (multipleSelection) {
+        for (int index = 1; index < selection.size(); index++) {
+            RoomContentItem current = selection.get(index);
+            Long parentRank = current.getParentRank();
+            if (initialRank == null ? parentRank != null : !initialRank.equals(parentRank)) {
+                initialRank = null;
+                break;
+            }
+        }
+        selectedContainerHolder.desiredRank = initialRank;
+        selectedContainerHolder.desiredLevel = null;
+        selectedContainerHolder.desiredColumn = null;
+    } else {
+        selectedContainerHolder.desiredRank = initialRank;
+        selectedContainerHolder.desiredLevel = primary.getContainerLevel();
+        selectedContainerHolder.desiredColumn = primary.getContainerColumn();
+    }
+
+    final Set<Long> additionalExcludedRanks = multipleSelection ? new HashSet<>() : null;
+    if (multipleSelection && additionalExcludedRanks != null) {
+        for (int index = 1; index < selection.size(); index++) {
+            RoomContentItem current = selection.get(index);
+            int currentPosition = roomContentItems.indexOf(current);
+            if (currentPosition >= 0) {
+                additionalExcludedRanks.addAll(collectGroupRanks(roomContentItems, currentPosition));
+            }
+        }
+    }
+
+    if (furnitureLevelInput != null) {
+        furnitureLevelInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                selectedContainerHolder.desiredLevel = parsePositiveInteger(s);
+                furnitureLevelInput.setError(null);
+            }
+        });
+    }
+
+    if (furnitureColumnInput != null) {
+        furnitureColumnInput.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                selectedContainerHolder.desiredColumn = parsePositiveInteger(s);
+                furnitureColumnInput.setError(null);
+            }
+        });
+    }
+
+    int titleRes = multipleSelection
+            ? R.string.dialog_move_room_content_selection_title
+            : R.string.dialog_move_room_content_title;
+    AlertDialog dialog = new AlertDialog.Builder(this)
+            .setTitle(titleRes)
+            .setView(dialogView)
+            .setNegativeButton(R.string.action_cancel, null)
+            .setPositiveButton(R.string.dialog_move_room_content_move_button, null)
+            .create();
+
+    AdapterView.OnItemSelectedListener establishmentListener = new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
+            Object value = parent.getItemAtPosition(spinnerPosition);
+            selectedEstablishmentHolder[0] = value != null ? value.toString() : null;
+            updateMoveDialogRooms(dialog, roomSpinner, selectedEstablishmentHolder[0],
+                    selectedRoomHolder[0]);
+            selectedRoomHolder[0] = roomSpinner.getSelectedItem() != null
+                    ? roomSpinner.getSelectedItem().toString()
+                    : null;
+            updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
+                    furnitureColumnContainer, furnitureColumnInput,
+                    selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
+                    selectedContainerHolder, additionalExcludedRanks);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+            selectedEstablishmentHolder[0] = null;
+            updateMoveDialogRooms(dialog, roomSpinner, null, selectedRoomHolder[0]);
+            selectedRoomHolder[0] = roomSpinner.getSelectedItem() != null
+                    ? roomSpinner.getSelectedItem().toString()
+                    : null;
+            updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
+                    furnitureColumnContainer, furnitureColumnInput,
+                    null, selectedRoomHolder[0], primary, position, selectedContainerHolder,
+                    additionalExcludedRanks);
+        }
+    };
+    establishmentSpinner.setOnItemSelectedListener(establishmentListener);
+
+    AdapterView.OnItemSelectedListener roomListener = new AdapterView.OnItemSelectedListener() {
+        @Override
+        public void onItemSelected(AdapterView<?> parent, View view, int spinnerPosition, long id) {
+            Object value = parent.getItemAtPosition(spinnerPosition);
+            selectedRoomHolder[0] = value != null ? value.toString() : null;
+            updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
+                    furnitureColumnContainer, furnitureColumnInput,
+                    selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
+                    selectedContainerHolder, additionalExcludedRanks);
+        }
+
+        @Override
+        public void onNothingSelected(AdapterView<?> parent) {
+            selectedRoomHolder[0] = null;
+            updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
+                    furnitureColumnContainer, furnitureColumnInput,
+                    selectedEstablishmentHolder[0], null, primary, position,
+                    selectedContainerHolder, additionalExcludedRanks);
+        }
+    };
+    roomSpinner.setOnItemSelectedListener(roomListener);
+
+    selectedEstablishmentHolder[0] = establishmentSpinner.getSelectedItem() != null
+            ? establishmentSpinner.getSelectedItem().toString()
+            : null;
+    selectedRoomHolder[0] = roomName;
+
+    updateMoveDialogRooms(dialog, roomSpinner, selectedEstablishmentHolder[0],
+            selectedRoomHolder[0]);
+    selectedRoomHolder[0] = roomSpinner.getSelectedItem() != null
+            ? roomSpinner.getSelectedItem().toString()
+            : selectedRoomHolder[0];
+    updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+            furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
+            furnitureColumnContainer, furnitureColumnInput,
+            selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
+            selectedContainerHolder, additionalExcludedRanks);
+
+    dialog.setOnShowListener(d -> {
+        updateMoveButtonState(dialog, roomSpinner);
+        Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positiveButton == null) {
             return;
         }
+        positiveButton.setOnClickListener(v -> {
+            String targetEstablishment = selectedEstablishmentHolder[0];
+            if (TextUtils.isEmpty(targetEstablishment)
+                    && establishmentSpinner.getSelectedItem() != null) {
+                targetEstablishment = establishmentSpinner.getSelectedItem().toString();
+            }
+            String targetRoom = selectedRoomHolder[0];
+            if (TextUtils.isEmpty(targetRoom) && roomSpinner.getSelectedItem() != null) {
+                targetRoom = roomSpinner.getSelectedItem().toString();
+            }
+            if (TextUtils.isEmpty(targetRoom)) {
+                Toast.makeText(RoomContentActivity.this,
+                        R.string.dialog_move_room_content_empty_rooms,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            ContainerOption targetOption = selectedContainerHolder.selectedOption;
+            Integer levelValue = selectedContainerHolder.desiredLevel;
+            Integer columnValue = selectedContainerHolder.desiredColumn;
+            if (targetOption != null && targetOption.container != null
+                    && targetOption.container.isFurniture()) {
+                RoomContentItem furniture = targetOption.container;
+                Integer maxLevels = furniture.getFurnitureLevels();
+                Integer maxColumns = furniture.getFurnitureColumns();
+                if (maxLevels == null || maxLevels > 0) {
+                    Integer parsedLevel = parsePositiveInteger(furnitureLevelInput != null
+                            ? furnitureLevelInput.getText()
+                            : null);
+                    if (parsedLevel == null || (maxLevels != null && parsedLevel > maxLevels)) {
+                        if (furnitureLevelInput != null) {
+                            furnitureLevelInput.setError(getString(
+                                    R.string.error_move_room_content_invalid_level));
+                            furnitureLevelInput.requestFocus();
+                        }
+                        return;
+                    }
+                    levelValue = parsedLevel;
+                    selectedContainerHolder.desiredLevel = parsedLevel;
+                } else {
+                    levelValue = null;
+                    selectedContainerHolder.desiredLevel = null;
+                }
+                if (maxColumns != null && maxColumns > 0) {
+                    Integer parsedColumn = parsePositiveInteger(furnitureColumnInput != null
+                            ? furnitureColumnInput.getText()
+                            : null);
+                    if (parsedColumn == null
+                            || (maxColumns != null && parsedColumn > maxColumns)) {
+                        if (furnitureColumnInput != null) {
+                            furnitureColumnInput.setError(getString(
+                                    R.string.error_move_room_content_invalid_column));
+                            furnitureColumnInput.requestFocus();
+                        }
+                        return;
+                    }
+                    columnValue = parsedColumn;
+                    selectedContainerHolder.desiredColumn = parsedColumn;
+                } else {
+                    columnValue = null;
+                    selectedContainerHolder.desiredColumn = null;
+                }
+            } else {
+                levelValue = null;
+                columnValue = null;
+                selectedContainerHolder.desiredLevel = null;
+                selectedContainerHolder.desiredColumn = null;
+            }
+            if (multipleSelection) {
+                moveRoomContentItems(selection, targetEstablishment, targetRoom,
+                        selectedContainerHolder.selectedOption, levelValue, columnValue);
+                dialog.dismiss();
+            } else {
+                if (moveRoomContentItem(primary, position, targetEstablishment, targetRoom,
+                        selectedContainerHolder.selectedOption, levelValue, columnValue)) {
+                    dialog.dismiss();
+                }
+            }
+        });
+    });
+
+    dialog.show();
+}
         ArrayAdapter<String> establishmentAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, establishmentOptions);
         establishmentAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -2608,7 +3065,7 @@ public class RoomContentActivity extends Activity {
                         furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                         furnitureColumnContainer, furnitureColumnInput,
                         selectedEstablishmentHolder[0], selectedRoomHolder[0], item, position,
-                        selectedContainerHolder);
+                        selectedContainerHolder, null);
             }
 
             @Override
@@ -2621,7 +3078,8 @@ public class RoomContentActivity extends Activity {
                 updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                         furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                         furnitureColumnContainer, furnitureColumnInput,
-                        null, selectedRoomHolder[0], item, position, selectedContainerHolder);
+                        null, selectedRoomHolder[0], item, position, selectedContainerHolder,
+                        null);
             }
         };
         establishmentSpinner.setOnItemSelectedListener(establishmentListener);
@@ -2635,7 +3093,7 @@ public class RoomContentActivity extends Activity {
                         furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                         furnitureColumnContainer, furnitureColumnInput,
                         selectedEstablishmentHolder[0], selectedRoomHolder[0], item, position,
-                        selectedContainerHolder);
+                        selectedContainerHolder, null);
             }
 
             @Override
@@ -2645,7 +3103,7 @@ public class RoomContentActivity extends Activity {
                         furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                         furnitureColumnContainer, furnitureColumnInput,
                         selectedEstablishmentHolder[0], null, item, position,
-                        selectedContainerHolder);
+                        selectedContainerHolder, null);
             }
         };
         roomSpinner.setOnItemSelectedListener(roomListener);
@@ -2664,7 +3122,7 @@ public class RoomContentActivity extends Activity {
                 furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                 furnitureColumnContainer, furnitureColumnInput,
                 selectedEstablishmentHolder[0], selectedRoomHolder[0], item, position,
-                selectedContainerHolder);
+                selectedContainerHolder, null);
 
         dialog.setOnShowListener(d -> {
             updateMoveButtonState(dialog, roomSpinner);
@@ -2790,6 +3248,21 @@ public class RoomContentActivity extends Activity {
                 .show();
     }
 
+    private void showDeleteRoomContentSelectionConfirmation(@NonNull List<RoomContentItem> items) {
+        if (items.isEmpty()) {
+            return;
+        }
+        int count = items.size();
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_delete_room_content_selection_title)
+                .setMessage(getResources().getQuantityString(
+                        R.plurals.dialog_delete_room_content_selection_message, count, count))
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_delete, (dialog, which) ->
+                        deleteRoomContentSelection(items))
+                .show();
+    }
+
     private void deleteRoomContent(int position) {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
@@ -2810,12 +3283,68 @@ public class RoomContentActivity extends Activity {
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
     }
 
+    private void deleteRoomContentSelection(@NonNull List<RoomContentItem> items) {
+        if (items.isEmpty()) {
+            return;
+        }
+        Set<RoomContentItem> selection = Collections.newSetFromMap(new IdentityHashMap<>());
+        selection.addAll(items);
+        boolean removedAny = false;
+        int removedContainers = 0;
+        int removedItems = 0;
+        Iterator<RoomContentItem> iterator = roomContentItems.iterator();
+        while (iterator.hasNext()) {
+            RoomContentItem current = iterator.next();
+            if (selection.contains(current)) {
+                removedAny = true;
+                if (current.isContainer()) {
+                    removedContainers++;
+                } else {
+                    removedItems++;
+                }
+                iterator.remove();
+            }
+        }
+        if (!removedAny) {
+            return;
+        }
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        sortRoomContentItems();
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+        saveRoomContent();
+        updateEmptyState();
+        int messageRes;
+        if (removedContainers > 0 && removedItems == 0) {
+            messageRes = R.string.room_content_deleted_selection_confirmation_containers;
+        } else if (removedItems > 0 && removedContainers == 0) {
+            messageRes = R.string.room_content_deleted_selection_confirmation_items;
+        } else {
+            messageRes = R.string.room_content_deleted_selection_confirmation;
+        }
+        Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+        exitSelectionMode();
+    }
+
     private boolean moveRoomContentItem(@NonNull RoomContentItem item, int position,
             @Nullable String targetEstablishment,
             @Nullable String targetRoom,
             @Nullable ContainerOption targetContainer,
             @Nullable Integer targetLevel,
             @Nullable Integer targetColumn) {
+        return moveRoomContentItem(item, position, targetEstablishment, targetRoom,
+                targetContainer, targetLevel, targetColumn, true);
+    }
+
+    private boolean moveRoomContentItem(@NonNull RoomContentItem item, int position,
+            @Nullable String targetEstablishment,
+            @Nullable String targetRoom,
+            @Nullable ContainerOption targetContainer,
+            @Nullable Integer targetLevel,
+            @Nullable Integer targetColumn,
+            boolean showToast) {
         String normalizedTargetRoom = normalizeName(targetRoom);
         if (normalizedTargetRoom.isEmpty()) {
             return false;
@@ -2832,8 +3361,49 @@ public class RoomContentActivity extends Activity {
             moveToDifferentRoom(item, position, targetEstablishment, targetRoom, targetContainer,
                     targetLevel, targetColumn);
         }
-        Toast.makeText(this, R.string.dialog_move_room_content_success, Toast.LENGTH_SHORT).show();
+        if (showToast) {
+            Toast.makeText(this, R.string.dialog_move_room_content_success, Toast.LENGTH_SHORT).show();
+        }
         return true;
+    }
+
+    private void moveRoomContentItems(@NonNull List<RoomContentItem> items,
+            @Nullable String targetEstablishment,
+            @Nullable String targetRoom,
+            @Nullable ContainerOption targetContainer,
+            @Nullable Integer targetLevel,
+            @Nullable Integer targetColumn) {
+        if (items.isEmpty()) {
+            return;
+        }
+        Set<RoomContentItem> selection = Collections.newSetFromMap(new IdentityHashMap<>());
+        selection.addAll(items);
+        List<RoomContentItem> ordered = new ArrayList<>();
+        for (RoomContentItem current : roomContentItems) {
+            if (selection.contains(current)) {
+                ordered.add(current);
+            }
+        }
+        for (RoomContentItem current : items) {
+            if (!ordered.contains(current)) {
+                ordered.add(current);
+            }
+        }
+        boolean movedAny = false;
+        for (RoomContentItem current : ordered) {
+            int position = roomContentItems.indexOf(current);
+            if (position < 0) {
+                continue;
+            }
+            boolean moved = moveRoomContentItem(current, position, targetEstablishment, targetRoom,
+                    targetContainer, targetLevel, targetColumn, false);
+            movedAny = movedAny || moved;
+        }
+        if (movedAny) {
+            Toast.makeText(this, R.string.dialog_move_room_content_success_multiple,
+                    Toast.LENGTH_SHORT).show();
+            exitSelectionMode();
+        }
     }
 
     private void moveWithinCurrentRoom(@NonNull RoomContentItem item, int position,
@@ -3036,6 +3606,15 @@ public class RoomContentActivity extends Activity {
     }
 
     @NonNull
+    private long[] toLongArray(@NonNull List<Long> values) {
+        long[] result = new long[values.size()];
+        for (int index = 0; index < values.size(); index++) {
+            result[index] = values.get(index);
+        }
+        return result;
+    }
+
+    @NonNull
     private List<String> loadEstablishmentNames() {
         SharedPreferences preferences = getSharedPreferences(ESTABLISHMENTS_PREFS, MODE_PRIVATE);
         String storedValue = preferences.getString(KEY_ESTABLISHMENTS, null);
@@ -3221,14 +3800,16 @@ public class RoomContentActivity extends Activity {
             @Nullable String room,
             @NonNull RoomContentItem item,
             int position,
-            @NonNull ContainerSelection selection) {
+            @NonNull ContainerSelection selection,
+            @Nullable Set<Long> additionalExcludedRanks) {
         if (containerGroup == null) {
             refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
                     furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
                     furnitureColumnInput, selection);
             return;
         }
-        List<ContainerOption> options = buildContainerOptions(establishment, room, item, position);
+        List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
+                additionalExcludedRanks);
         Context context = containerGroup.getContext();
         containerGroup.setOnCheckedChangeListener(null);
         containerGroup.removeAllViews();
@@ -3441,7 +4022,8 @@ public class RoomContentActivity extends Activity {
     private List<ContainerOption> buildContainerOptions(@Nullable String establishment,
             @Nullable String room,
             @NonNull RoomContentItem item,
-            int position) {
+            int position,
+            @Nullable Set<Long> additionalExcludedRanks) {
         List<ContainerOption> result = new ArrayList<>();
         String normalizedEstablishment = normalizeName(establishment);
         String normalizedCurrentEstablishment = normalizeName(establishmentName);
@@ -3452,6 +4034,9 @@ public class RoomContentActivity extends Activity {
         if (sameRoom) {
             RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
             Set<Long> excludedRanks = collectExcludedContainerRanks(roomContentItems, item, position);
+            if (additionalExcludedRanks != null && !additionalExcludedRanks.isEmpty()) {
+                excludedRanks.addAll(additionalExcludedRanks);
+            }
             for (RoomContentItem candidate : roomContentItems) {
                 if (!candidate.isContainer()) {
                     continue;
