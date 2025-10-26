@@ -60,7 +60,6 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
-        private final TextView commentView;
         private final ImageView menuView;
         private final ImageView photoView;
         private final int defaultPaddingStart;
@@ -74,7 +73,6 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
         ViewHolder(@NonNull View itemView, OnEstablishmentInteractionListener interactionListener) {
             super(itemView);
             nameView = itemView.findViewById(R.id.text_establishment_name);
-            commentView = itemView.findViewById(R.id.text_establishment_comment);
             menuView = itemView.findViewById(R.id.image_establishment_menu);
             photoView = itemView.findViewById(R.id.image_establishment_photo);
             defaultPaddingStart = photoView.getPaddingStart();
@@ -111,13 +109,6 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     item.getName()
             ));
             updatePhotoThumbnail(item);
-            String comment = item.getComment();
-            if (comment == null || comment.isEmpty()) {
-                commentView.setVisibility(View.GONE);
-            } else {
-                commentView.setVisibility(View.VISIBLE);
-                commentView.setText(comment);
-            }
         }
 
         private void updatePhotoThumbnail(Establishment item) {
