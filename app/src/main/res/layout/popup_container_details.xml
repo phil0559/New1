@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_container_popup_mauve"
     android:clipToPadding="false"
-    android:maxWidth="@dimen/container_popup_max_width"
     android:paddingStart="20dp"
     android:paddingTop="16dp"
     android:paddingEnd="20dp"
@@ -55,33 +54,6 @@
                 android:src="@drawable/ic_more_vertical"
                 android:tint="@color/icon_brown" />
         </LinearLayout>
-
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chip_group_container_popup_filters"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal"
-            app:singleLine="false">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_container_popup_filter_containers"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checkable="true"
-                android:text="@string/room_content_filter_containers" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chip_container_popup_filter_items"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:checkable="true"
-                android:text="@string/room_content_filter_items" />
-
-        </com.google.android.material.chip.ChipGroup>
 
         <ImageView
             android:id="@+id/image_container_popup_group_preview"
