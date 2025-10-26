@@ -103,7 +103,8 @@
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
             android:orientation="vertical"
-            android:paddingHorizontal="24dp">
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
 
             <Button
                 android:id="@+id/button_establishment"
