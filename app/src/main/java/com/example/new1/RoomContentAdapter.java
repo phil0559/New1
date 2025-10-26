@@ -1720,42 +1720,38 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             ViewGroup childrenContainer = popupView.findViewById(R.id.container_container_popup_children);
             if (childrenContainer != null) {
                 clearContainerPopupChildren(childrenContainer);
+                childrenContainer.setVisibility(View.VISIBLE);
             }
-            final boolean[] isPopupExpanded = new boolean[] {false};
             CharSequence resolvedLabel = nameView.getText();
             if (resolvedLabel == null || resolvedLabel.length() == 0) {
                 resolvedLabel = currentItem.getName();
             }
             final CharSequence toggleLabel = resolvedLabel;
-            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(position);
-            final int[] popupVisibilityMask = new int[] {visibilityMask};
+            final int[] popupVisibilityMask = new int[] {VISIBILITY_DEFAULT_MASK};
+            ViewGroup chipGroup = popupView.findViewById(R.id.chip_group_container_popup_filters);
+            Chip containersChip = popupView.findViewById(R.id.chip_container_popup_filter_containers);
+            Chip itemsChip = popupView.findViewById(R.id.chip_container_popup_filter_items);
             ImageView toggleIcon = popupView.findViewById(R.id.icon_container_popup_toggle);
             if (toggleIcon != null) {
                 if (childrenContainer == null) {
                     toggleIcon.setVisibility(View.GONE);
                     toggleIcon.setOnClickListener(null);
                 } else {
-                    updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
-                            popupVisibilityMask[0], toggleLabel);
+                    updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
+                            toggleLabel);
                     toggleIcon.setOnClickListener(view -> {
-                        int updatedPosition = getBindingAdapterPosition();
                         if (currentItem == null || !currentItem.hasAttachedItems()
                                 || childrenContainer == null) {
                             return;
                         }
-                        isPopupExpanded[0] = !isPopupExpanded[0];
-                        if (isPopupExpanded[0]) {
-                            int targetPosition = updatedPosition != RecyclerView.NO_POSITION
-                                    ? updatedPosition
-                                    : position;
-                            childrenContainer.setVisibility(View.VISIBLE);
-                                populateContainerPopupChildren(childrenContainer, targetPosition,
-                                        popupVisibilityMask[0]);
-                            } else {
-                                clearContainerPopupChildren(childrenContainer);
-                            }
-                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
-                                popupVisibilityMask[0], toggleLabel);
+                        popupVisibilityMask[0] = cyclePopupVisibilityMask(
+                                popupVisibilityMask[0]);
+                        refreshContainerPopupChildren(childrenContainer, position,
+                                popupVisibilityMask[0]);
+                        synchronizePopupFilterChips(containersChip, itemsChip,
+                                popupVisibilityMask[0]);
+                        updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
+                                toggleLabel);
                     });
                 }
             }
@@ -1763,18 +1759,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (menuIcon != null) {
                 menuIcon.setOnClickListener(view -> toggleOptionsMenu(menuIcon));
             }
-            ViewGroup chipGroup = popupView.findViewById(R.id.chip_group_container_popup_filters);
-            Chip containersChip = popupView.findViewById(R.id.chip_container_popup_filter_containers);
-            Chip itemsChip = popupView.findViewById(R.id.chip_container_popup_filter_items);
             ImageView groupPreviewView = popupView.findViewById(R.id.image_container_popup_group_preview);
-            suppressFilterCallbacks = true;
-            if (containersChip != null) {
-                containersChip.setChecked((visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0);
-            }
-            if (itemsChip != null) {
-                itemsChip.setChecked((visibilityMask & VISIBILITY_FLAG_ITEMS) != 0);
-            }
-            suppressFilterCallbacks = false;
+            synchronizePopupFilterChips(containersChip, itemsChip, popupVisibilityMask[0]);
             boolean hasAttachments = currentItem.hasAttachedItems();
             if (chipGroup != null) {
                 chipGroup.setVisibility(hasAttachments ? View.VISIBLE : View.GONE);
@@ -1790,22 +1776,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     if (suppressFilterCallbacks) {
                         return;
                     }
+                    int updatedMask = popupVisibilityMask[0];
                     if (containersChip.isChecked()) {
-                        popupVisibilityMask[0] |= VISIBILITY_FLAG_CONTAINERS;
+                        updatedMask |= VISIBILITY_FLAG_CONTAINERS;
                     } else {
-                        popupVisibilityMask[0] &= ~VISIBILITY_FLAG_CONTAINERS;
+                        updatedMask &= ~VISIBILITY_FLAG_CONTAINERS;
                     }
-                    if (childrenContainer != null && isPopupExpanded[0]) {
-                        int updatedPosition = getBindingAdapterPosition();
-                        int targetPosition = updatedPosition != RecyclerView.NO_POSITION
-                                ? updatedPosition
-                                : position;
-                        populateContainerPopupChildren(childrenContainer, targetPosition,
-                                popupVisibilityMask[0]);
-                    }
+                    popupVisibilityMask[0] = normalizePopupVisibilityMask(updatedMask);
+                    synchronizePopupFilterChips(containersChip, itemsChip,
+                            popupVisibilityMask[0]);
+                    refreshContainerPopupChildren(childrenContainer, position,
+                            popupVisibilityMask[0]);
                     if (toggleIcon != null) {
-                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
-                                popupVisibilityMask[0], toggleLabel);
+                        updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
+                                toggleLabel);
                     }
                 });
             }
@@ -1814,24 +1798,26 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     if (suppressFilterCallbacks) {
                         return;
                     }
+                    int updatedMask = popupVisibilityMask[0];
                     if (itemsChip.isChecked()) {
-                        popupVisibilityMask[0] |= VISIBILITY_FLAG_ITEMS;
+                        updatedMask |= VISIBILITY_FLAG_ITEMS;
                     } else {
-                        popupVisibilityMask[0] &= ~VISIBILITY_FLAG_ITEMS;
+                        updatedMask &= ~VISIBILITY_FLAG_ITEMS;
                     }
-                    if (childrenContainer != null && isPopupExpanded[0]) {
-                        int updatedPosition = getBindingAdapterPosition();
-                        int targetPosition = updatedPosition != RecyclerView.NO_POSITION
-                                ? updatedPosition
-                                : position;
-                        populateContainerPopupChildren(childrenContainer, targetPosition,
-                                popupVisibilityMask[0]);
-                    }
+                    popupVisibilityMask[0] = normalizePopupVisibilityMask(updatedMask);
+                    synchronizePopupFilterChips(containersChip, itemsChip,
+                            popupVisibilityMask[0]);
+                    refreshContainerPopupChildren(childrenContainer, position,
+                            popupVisibilityMask[0]);
                     if (toggleIcon != null) {
-                        updateContainerPopupToggleIcon(toggleIcon, isPopupExpanded[0],
-                                popupVisibilityMask[0], toggleLabel);
+                        updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
+                                toggleLabel);
                     }
                 });
+            }
+            if (childrenContainer != null) {
+                refreshContainerPopupChildren(childrenContainer, position,
+                        popupVisibilityMask[0]);
             }
             updateContainerPopupGroupPreview(groupPreviewView);
             PopupWindow popupWindow = new PopupWindow(popupView,
@@ -1851,7 +1837,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (childrenContainer != null) {
                     clearContainerPopupChildren(childrenContainer);
                 }
-                isPopupExpanded[0] = false;
             });
             containerPopup = popupWindow;
 
@@ -1949,7 +1934,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void updateContainerPopupToggleIcon(@NonNull ImageView toggleIcon,
-                boolean expanded, int visibilityMask, @Nullable CharSequence label) {
+                int visibilityMask, @Nullable CharSequence label) {
             boolean hasDetails = currentItem != null && currentItem.hasAttachedItems();
             if (!hasDetails) {
                 toggleIcon.setVisibility(View.GONE);
@@ -1959,8 +1944,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             toggleIcon.setVisibility(View.VISIBLE);
             toggleIcon.setRotation(0f);
-            toggleIcon.setImageResource(
-                    resolveContainerPopupToggleIcon(expanded, visibilityMask));
+            int normalizedMask = normalizePopupVisibilityMask(visibilityMask);
+            toggleIcon.setImageResource(resolveContainerPopupToggleIcon(normalizedMask));
             String labelText;
             if (label != null && label.length() > 0) {
                 labelText = label.toString();
@@ -1969,30 +1954,77 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             } else {
                 labelText = "";
             }
-            int descriptionRes = expanded
-                    ? R.string.content_description_room_content_collapse
-                    : R.string.content_description_room_content_expand;
+            @StringRes int descriptionRes;
+            if (normalizedMask == VISIBILITY_FLAG_CONTAINERS) {
+                descriptionRes = R.string
+                        .content_description_room_content_popup_filter_containers;
+            } else if (normalizedMask == VISIBILITY_FLAG_ITEMS) {
+                descriptionRes = R.string.content_description_room_content_popup_filter_items;
+            } else {
+                descriptionRes = R.string.content_description_room_content_popup_filter_all;
+            }
             toggleIcon.setContentDescription(
                     toggleIcon.getContext().getString(descriptionRes, labelText));
         }
 
         @DrawableRes
-        private int resolveContainerPopupToggleIcon(boolean expanded, int visibilityMask) {
-            if (expanded) {
-                return R.drawable.ic_square_cross;
-            }
-            boolean showContainers = (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0;
-            boolean showItems = (visibilityMask & VISIBILITY_FLAG_ITEMS) != 0;
-            if (showContainers && showItems) {
-                return R.drawable.ic_chevron_down;
-            }
-            if (showItems) {
-                return R.drawable.ic_square_items;
-            }
-            if (showContainers) {
+        private int resolveContainerPopupToggleIcon(int visibilityMask) {
+            if (visibilityMask == VISIBILITY_FLAG_CONTAINERS) {
                 return R.drawable.ic_square_containers;
             }
+            if (visibilityMask == VISIBILITY_FLAG_ITEMS) {
+                return R.drawable.ic_square_items;
+            }
             return R.drawable.ic_square_empty;
+        }
+
+        private int normalizePopupVisibilityMask(int visibilityMask) {
+            int normalized = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+            if (normalized == VISIBILITY_FLAG_CONTAINERS
+                    || normalized == VISIBILITY_FLAG_ITEMS) {
+                return normalized;
+            }
+            if ((normalized & VISIBILITY_FLAG_CONTAINERS) != 0
+                    && (normalized & VISIBILITY_FLAG_ITEMS) != 0) {
+                return VISIBILITY_DEFAULT_MASK;
+            }
+            return VISIBILITY_DEFAULT_MASK;
+        }
+
+        private int cyclePopupVisibilityMask(int currentMask) {
+            int normalized = normalizePopupVisibilityMask(currentMask);
+            if (normalized == VISIBILITY_DEFAULT_MASK) {
+                return VISIBILITY_FLAG_CONTAINERS;
+            }
+            if (normalized == VISIBILITY_FLAG_CONTAINERS) {
+                return VISIBILITY_FLAG_ITEMS;
+            }
+            return VISIBILITY_DEFAULT_MASK;
+        }
+
+        private void synchronizePopupFilterChips(@Nullable Chip containersChip,
+                @Nullable Chip itemsChip, int visibilityMask) {
+            suppressFilterCallbacks = true;
+            int normalized = normalizePopupVisibilityMask(visibilityMask);
+            if (containersChip != null) {
+                containersChip.setChecked((normalized & VISIBILITY_FLAG_CONTAINERS) != 0);
+            }
+            if (itemsChip != null) {
+                itemsChip.setChecked((normalized & VISIBILITY_FLAG_ITEMS) != 0);
+            }
+            suppressFilterCallbacks = false;
+        }
+
+        private void refreshContainerPopupChildren(@Nullable ViewGroup childrenContainer,
+                int fallbackPosition, int visibilityMask) {
+            if (childrenContainer == null) {
+                return;
+            }
+            int updatedPosition = getBindingAdapterPosition();
+            int targetPosition = updatedPosition != RecyclerView.NO_POSITION
+                    ? updatedPosition
+                    : fallbackPosition;
+            populateContainerPopupChildren(childrenContainer, targetPosition, visibilityMask);
         }
 
         private void populateContainerPopupChildren(@NonNull ViewGroup container,
