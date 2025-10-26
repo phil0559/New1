@@ -766,6 +766,9 @@ public class RoomContentActivity extends Activity {
         final RoomContentAdapter.ContainerPopupRestoreState restorePopupState = roomContentAdapter != null
                 ? roomContentAdapter.consumePendingContainerPopupRestoreState()
                 : null;
+        final RoomContentAdapter.FurniturePopupRestoreState restoreFurnitureState = roomContentAdapter != null
+                ? roomContentAdapter.consumePendingFurniturePopupRestoreState()
+                : null;
 
         dialog.show();
 
@@ -1280,6 +1283,9 @@ public class RoomContentActivity extends Activity {
             if (restorePopupState != null && roomContentAdapter != null && contentList != null) {
                 roomContentAdapter.restoreContainerPopup(contentList, restorePopupState);
             }
+            if (restoreFurnitureState != null && roomContentAdapter != null && contentList != null) {
+                roomContentAdapter.restoreFurniturePopup(contentList, restoreFurnitureState);
+            }
         });
 
         if (nameInput != null) {
@@ -1649,6 +1655,9 @@ public class RoomContentActivity extends Activity {
         final RoomContentAdapter.ContainerPopupRestoreState restorePopupState = roomContentAdapter != null
                 ? roomContentAdapter.consumePendingContainerPopupRestoreState()
                 : null;
+        final RoomContentAdapter.FurniturePopupRestoreState restoreFurnitureState = roomContentAdapter != null
+                ? roomContentAdapter.consumePendingFurniturePopupRestoreState()
+                : null;
 
         dialog.show();
 
@@ -1951,6 +1960,9 @@ public class RoomContentActivity extends Activity {
             if (restorePopupState != null && roomContentAdapter != null && contentList != null) {
                 roomContentAdapter.restoreContainerPopup(contentList, restorePopupState);
             }
+            if (restoreFurnitureState != null && roomContentAdapter != null && contentList != null) {
+                roomContentAdapter.restoreFurniturePopup(contentList, restoreFurnitureState);
+            }
         });
 
         if (dialog.getWindow() != null) {
@@ -1971,6 +1983,9 @@ public class RoomContentActivity extends Activity {
                 .create();
         final RoomContentAdapter.ContainerPopupRestoreState restorePopupState = roomContentAdapter != null
                 ? roomContentAdapter.consumePendingContainerPopupRestoreState()
+                : null;
+        final RoomContentAdapter.FurniturePopupRestoreState restoreFurnitureState = roomContentAdapter != null
+                ? roomContentAdapter.consumePendingFurniturePopupRestoreState()
                 : null;
         dialog.show();
 
@@ -2224,6 +2239,9 @@ public class RoomContentActivity extends Activity {
             }
             if (restorePopupState != null && roomContentAdapter != null && contentList != null) {
                 roomContentAdapter.restoreContainerPopup(contentList, restorePopupState);
+            }
+            if (restoreFurnitureState != null && roomContentAdapter != null && contentList != null) {
+                roomContentAdapter.restoreFurniturePopup(contentList, restoreFurnitureState);
             }
         });
 
