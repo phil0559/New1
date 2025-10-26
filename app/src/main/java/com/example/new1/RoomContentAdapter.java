@@ -2704,16 +2704,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         @Nullable
         private String formatFurniturePlacement(@NonNull RoomContentItem item) {
-            Integer level = item.getContainerLevel();
-            if (level == null) {
-                return null;
-            }
-            Context context = itemView.getContext();
-            List<String> parts = new ArrayList<>();
-            if (level != null) {
-                parts.add(context.getString(R.string.room_content_furniture_level_short, level));
-            }
-            return TextUtils.join(" · ", parts);
+            return null;
         }
 
         private void populateFurnitureSections(@NonNull LinearLayout container,
