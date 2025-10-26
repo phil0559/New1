@@ -1728,9 +1728,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             final CharSequence toggleLabel = resolvedLabel;
             final int[] popupVisibilityMask = new int[] {VISIBILITY_DEFAULT_MASK};
-            ViewGroup chipGroup = popupView.findViewById(R.id.chip_group_container_popup_filters);
-            Chip containersChip = popupView.findViewById(R.id.chip_container_popup_filter_containers);
-            Chip itemsChip = popupView.findViewById(R.id.chip_container_popup_filter_items);
             ImageView toggleIcon = popupView.findViewById(R.id.icon_container_popup_toggle);
             if (toggleIcon != null) {
                 if (childrenContainer == null) {
@@ -1748,8 +1745,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                 popupVisibilityMask[0]);
                         refreshContainerPopupChildren(childrenContainer, position,
                                 popupVisibilityMask[0]);
-                        synchronizePopupFilterChips(containersChip, itemsChip,
-                                popupVisibilityMask[0]);
                         updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
                                 toggleLabel);
                     });
@@ -1760,61 +1755,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 menuIcon.setOnClickListener(view -> toggleOptionsMenu(menuIcon));
             }
             ImageView groupPreviewView = popupView.findViewById(R.id.image_container_popup_group_preview);
-            synchronizePopupFilterChips(containersChip, itemsChip, popupVisibilityMask[0]);
             boolean hasAttachments = currentItem.hasAttachedItems();
-            if (chipGroup != null) {
-                chipGroup.setVisibility(hasAttachments ? View.VISIBLE : View.GONE);
-            }
-            if (containersChip != null) {
-                containersChip.setEnabled(hasAttachments);
-            }
-            if (itemsChip != null) {
-                itemsChip.setEnabled(hasAttachments);
-            }
-            if (containersChip != null) {
-                containersChip.setOnClickListener(view -> {
-                    if (suppressFilterCallbacks) {
-                        return;
-                    }
-                    int updatedMask = popupVisibilityMask[0];
-                    if (containersChip.isChecked()) {
-                        updatedMask |= VISIBILITY_FLAG_CONTAINERS;
-                    } else {
-                        updatedMask &= ~VISIBILITY_FLAG_CONTAINERS;
-                    }
-                    popupVisibilityMask[0] = normalizePopupVisibilityMask(updatedMask);
-                    synchronizePopupFilterChips(containersChip, itemsChip,
-                            popupVisibilityMask[0]);
-                    refreshContainerPopupChildren(childrenContainer, position,
-                            popupVisibilityMask[0]);
-                    if (toggleIcon != null) {
-                        updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
-                                toggleLabel);
-                    }
-                });
-            }
-            if (itemsChip != null) {
-                itemsChip.setOnClickListener(view -> {
-                    if (suppressFilterCallbacks) {
-                        return;
-                    }
-                    int updatedMask = popupVisibilityMask[0];
-                    if (itemsChip.isChecked()) {
-                        updatedMask |= VISIBILITY_FLAG_ITEMS;
-                    } else {
-                        updatedMask &= ~VISIBILITY_FLAG_ITEMS;
-                    }
-                    popupVisibilityMask[0] = normalizePopupVisibilityMask(updatedMask);
-                    synchronizePopupFilterChips(containersChip, itemsChip,
-                            popupVisibilityMask[0]);
-                    refreshContainerPopupChildren(childrenContainer, position,
-                            popupVisibilityMask[0]);
-                    if (toggleIcon != null) {
-                        updateContainerPopupToggleIcon(toggleIcon, popupVisibilityMask[0],
-                                toggleLabel);
-                    }
-                });
-            }
             if (childrenContainer != null) {
                 refreshContainerPopupChildren(childrenContainer, position,
                         popupVisibilityMask[0]);
@@ -1844,7 +1785,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             int popupWidth = popupView.getMeasuredWidth();
             int popupHeight = popupView.getMeasuredHeight();
-            int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
+            float density = itemView.getResources().getDisplayMetrics().density;
+            int verticalOffset = (int) (density * 8);
 
             Rect displayFrame = new Rect();
             bannerContainer.getWindowVisibleDisplayFrame(displayFrame);
@@ -1854,33 +1796,29 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int spaceBelow = displayFrame.bottom - anchorBottom;
             int spaceAbove = location[1] - displayFrame.top;
 
-            int totalHorizontalMargin = (int) (popupView.getResources().getDisplayMetrics().density * 32);
+            int totalHorizontalMargin = (int) (density * 32);
             int maxPopupWidth = displayFrame.width() - totalHorizontalMargin;
-            if (maxPopupWidth > 0 && popupWidth > maxPopupWidth) {
+            if (maxPopupWidth > 0) {
                 popupWindow.setWidth(maxPopupWidth);
             }
 
-            int maxHeightBelow = Math.max(0, spaceBelow - verticalOffset);
-            int maxHeightAbove = Math.max(0, spaceAbove - verticalOffset);
+            int totalVerticalMargin = (int) (density * 32);
+            int maxHeightBelow = Math.max(0, spaceBelow - totalVerticalMargin);
+            int maxHeightAbove = Math.max(0, spaceAbove - totalVerticalMargin);
             boolean showAbove;
-            if (spaceBelow >= popupHeight + verticalOffset) {
+            if (maxHeightBelow >= maxHeightAbove) {
                 showAbove = false;
-            } else if (spaceAbove >= popupHeight + verticalOffset) {
+            } else {
                 showAbove = true;
-            } else {
-                showAbove = spaceAbove > spaceBelow;
             }
-            int desiredHeight = popupHeight;
-            if (showAbove) {
-                if (maxHeightAbove > 0 && popupHeight > maxHeightAbove) {
-                    popupWindow.setHeight(maxHeightAbove);
-                    desiredHeight = maxHeightAbove;
-                }
+            int desiredHeight = showAbove ? maxHeightAbove : maxHeightBelow;
+            if (desiredHeight <= 0) {
+                desiredHeight = Math.max(maxHeightAbove, maxHeightBelow);
+            }
+            if (desiredHeight > 0) {
+                popupWindow.setHeight(desiredHeight);
             } else {
-                if (maxHeightBelow > 0 && popupHeight > maxHeightBelow) {
-                    popupWindow.setHeight(maxHeightBelow);
-                    desiredHeight = maxHeightBelow;
-                }
+                desiredHeight = popupHeight;
             }
 
             int yOffset = verticalOffset;
@@ -2000,19 +1938,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return VISIBILITY_FLAG_ITEMS;
             }
             return VISIBILITY_DEFAULT_MASK;
-        }
-
-        private void synchronizePopupFilterChips(@Nullable Chip containersChip,
-                @Nullable Chip itemsChip, int visibilityMask) {
-            suppressFilterCallbacks = true;
-            int normalized = normalizePopupVisibilityMask(visibilityMask);
-            if (containersChip != null) {
-                containersChip.setChecked((normalized & VISIBILITY_FLAG_CONTAINERS) != 0);
-            }
-            if (itemsChip != null) {
-                itemsChip.setChecked((normalized & VISIBILITY_FLAG_ITEMS) != 0);
-            }
-            suppressFilterCallbacks = false;
         }
 
         private void refreshContainerPopupChildren(@Nullable ViewGroup childrenContainer,
