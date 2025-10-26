@@ -18,6 +18,8 @@
     <dimen name="room_content_card_elevation_level_1">3dp</dimen>
     <dimen name="room_content_card_elevation_level_2">1dp</dimen>
     <dimen name="container_popup_max_width">320dp</dimen>
+    <dimen name="container_popup_screen_margin_horizontal">16dp</dimen>
+    <dimen name="container_popup_screen_margin_vertical">16dp</dimen>
     <dimen name="furniture_popup_horizontal_padding">24dp</dimen>
     <dimen name="furniture_popup_vertical_padding">20dp</dimen>
     <dimen name="furniture_popup_header_icon_size">28dp</dimen>

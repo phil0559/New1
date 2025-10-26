@@ -2,6 +2,7 @@ package com.example.new1;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -1785,7 +1786,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
             int popupWidth = popupView.getMeasuredWidth();
             int popupHeight = popupView.getMeasuredHeight();
-            float density = itemView.getResources().getDisplayMetrics().density;
+            Resources resources = itemView.getResources();
+            float density = resources.getDisplayMetrics().density;
             int verticalOffset = (int) (density * 8);
 
             Rect displayFrame = new Rect();
@@ -1796,13 +1798,15 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int spaceBelow = displayFrame.bottom - anchorBottom;
             int spaceAbove = location[1] - displayFrame.top;
 
-            int totalHorizontalMargin = (int) (density * 32);
+            int totalHorizontalMargin = resources.getDimensionPixelSize(
+                    R.dimen.container_popup_screen_margin_horizontal);
             int maxPopupWidth = displayFrame.width() - totalHorizontalMargin;
             if (maxPopupWidth > 0) {
                 popupWindow.setWidth(maxPopupWidth);
             }
 
-            int totalVerticalMargin = (int) (density * 32);
+            int totalVerticalMargin = resources.getDimensionPixelSize(
+                    R.dimen.container_popup_screen_margin_vertical);
             int maxHeightBelow = Math.max(0, spaceBelow - totalVerticalMargin);
             int maxHeightAbove = Math.max(0, spaceAbove - totalVerticalMargin);
             boolean showAbove;
