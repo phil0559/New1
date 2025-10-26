@@ -2345,6 +2345,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     RoomContentAdapter.this.applyBannerColor(bannerContainerView, child.getType());
                 }
             }
+            boolean isFurnitureChild = child.isFurniture();
+            boolean isContainerChild = child.isContainer();
+
             if (bannerContainerView != null) {
                 if (isContainerChild) {
                     bannerContainerView.setOnClickListener(view -> {
@@ -2360,9 +2363,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     bannerContainerView.setOnLongClickListener(null);
                 }
             }
-
-            boolean isFurnitureChild = child.isFurniture();
-            boolean isContainerChild = child.isContainer();
 
             if (photoIcon != null) {
                 if (isFurnitureChild) {
