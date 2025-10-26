@@ -703,6 +703,10 @@ public class RoomContentActivity extends Activity {
                 .setView(dialogView)
                 .create();
 
+        final RoomContentAdapter.ContainerPopupRestoreState restorePopupState = roomContentAdapter != null
+                ? roomContentAdapter.consumePendingContainerPopupRestoreState()
+                : null;
+
         dialog.show();
 
         EditText nameInput = dialogView.findViewById(R.id.input_room_content_name);
@@ -1191,6 +1195,9 @@ public class RoomContentActivity extends Activity {
             if (currentDialogController != null && currentDialogController.dialog == dialog) {
                 currentDialogController = null;
             }
+            if (restorePopupState != null && roomContentAdapter != null && contentList != null) {
+                roomContentAdapter.restoreContainerPopup(contentList, restorePopupState);
+            }
         });
 
         if (nameInput != null) {
@@ -1550,6 +1557,10 @@ public class RoomContentActivity extends Activity {
                 .setView(dialogView)
                 .create();
 
+        final RoomContentAdapter.ContainerPopupRestoreState restorePopupState = roomContentAdapter != null
+                ? roomContentAdapter.consumePendingContainerPopupRestoreState()
+                : null;
+
         dialog.show();
 
         TextView titleView = dialogView.findViewById(R.id.text_dialog_container_title);
@@ -1843,6 +1854,9 @@ public class RoomContentActivity extends Activity {
             if (currentFormState == formState) {
                 currentFormState = null;
             }
+            if (restorePopupState != null && roomContentAdapter != null && contentList != null) {
+                roomContentAdapter.restoreContainerPopup(contentList, restorePopupState);
+            }
         });
 
         if (dialog.getWindow() != null) {
@@ -1861,6 +1875,9 @@ public class RoomContentActivity extends Activity {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
+        final RoomContentAdapter.ContainerPopupRestoreState restorePopupState = roomContentAdapter != null
+                ? roomContentAdapter.consumePendingContainerPopupRestoreState()
+                : null;
         dialog.show();
 
         TextView titleView = dialogView.findViewById(R.id.text_dialog_furniture_title);
@@ -2110,6 +2127,9 @@ public class RoomContentActivity extends Activity {
         dialog.setOnDismissListener(d -> {
             if (currentFormState == formState) {
                 currentFormState = null;
+            }
+            if (restorePopupState != null && roomContentAdapter != null && contentList != null) {
+                roomContentAdapter.restoreContainerPopup(contentList, restorePopupState);
             }
         });
 
