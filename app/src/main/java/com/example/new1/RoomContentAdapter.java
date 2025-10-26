@@ -1793,6 +1793,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         ? displayedName
                         : currentItem.getName());
             }
+            View closeIcon = popupView.findViewById(R.id.icon_container_popup_close);
+            if (closeIcon != null) {
+                closeIcon.setOnClickListener(view -> {
+                    if (containerPopup != null) {
+                        containerPopup.dismiss();
+                    }
+                });
+            }
             ViewGroup childrenContainer = popupView.findViewById(R.id.container_container_popup_children);
             if (childrenContainer != null) {
                 clearContainerPopupChildren(childrenContainer);

@@ -37,6 +37,7 @@
     <string name="content_description_room_content_menu">Mostrar opciones para %1$s</string>
     <string name="content_description_room_content_expand">Mostrar el resumen de %1$s</string>
     <string name="content_description_room_content_collapse">Ocultar el resumen de %1$s</string>
+    <string name="container_popup_close_content_description">Cerrar la ventana del contenedor</string>
     <string name="content_description_room_content_popup_filter_all">Mostrar todos los elementos vinculados a %1$s</string>
     <string name="content_description_room_content_popup_filter_containers">Mostrar solo los contenedores vinculados a %1$s</string>
     <string name="content_description_room_content_popup_filter_items">Mostrar solo los elementos independientes vinculados a %1$s</string>
