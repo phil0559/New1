@@ -38,6 +38,7 @@
     <string name="content_description_room_content_expand">Afficher le résumé de %1$s</string>
     <string name="content_description_room_content_collapse">Masquer le résumé de %1$s</string>
     <string name="container_popup_close_content_description">Fermer la fenêtre du contenant</string>
+    <string name="container_popup_add_content_description">Ajouter un contenu dans le contenant</string>
     <string name="content_description_room_content_popup_filter_all">Afficher tous les éléments liés à %1$s</string>
     <string name="content_description_room_content_popup_filter_containers">Afficher uniquement les contenants liés à %1$s</string>
     <string name="content_description_room_content_popup_filter_items">Afficher uniquement les éléments liés à %1$s</string>

@@ -38,6 +38,7 @@
     <string name="content_description_room_content_expand">Zusammenfassung für %1$s anzeigen</string>
     <string name="content_description_room_content_collapse">Zusammenfassung für %1$s ausblenden</string>
     <string name="container_popup_close_content_description">Fenster des Behälters schließen</string>
+    <string name="container_popup_add_content_description">Inhalt zum Behälter hinzufügen</string>
     <string name="content_description_room_content_popup_filter_all">Alle Elemente zu %1$s anzeigen</string>
     <string name="content_description_room_content_popup_filter_containers">Nur Behälter zu %1$s anzeigen</string>
     <string name="content_description_room_content_popup_filter_items">Nur eigenständige Elemente zu %1$s anzeigen</string>
