@@ -3355,7 +3355,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             name = getString(R.string.dialog_room_content_item_placeholder);
         }
         final int targetPosition = position;
-        int messageRes = item.isContainer()
+        int messageRes = item.isFurniture()
+                ? R.string.dialog_delete_room_furniture_message
+                : item.isContainer()
                 ? R.string.dialog_delete_room_container_message
                 : R.string.dialog_delete_room_content_message;
         new AlertDialog.Builder(this)

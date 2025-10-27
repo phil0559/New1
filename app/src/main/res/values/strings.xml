@@ -125,6 +125,7 @@
     <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
     <string name="dialog_delete_room_content_message">Voulez-vous supprimer l’élément %1$s ?</string>
     <string name="dialog_delete_room_container_message">Voulez-vous supprimer le contenant %1$s ?</string>
+    <string name="dialog_delete_room_furniture_message">Voulez-vous supprimer le mobilier %1$s ?</string>
     <string name="dialog_delete_room_content_selection_title">Supprimer la sélection</string>
     <plurals name="dialog_delete_room_content_selection_message">
         <item quantity="one">Voulez-vous supprimer l’élément sélectionné ?</item>
