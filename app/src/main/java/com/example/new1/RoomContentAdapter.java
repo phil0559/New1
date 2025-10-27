@@ -41,6 +41,12 @@ import android.widget.Toast;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
 
+import androidx.activity.result.ActivityResultCallback;
+import androidx.activity.result.ActivityResultCaller;
+import androidx.activity.result.ActivityResultCallerKt;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.ActivityResultRegistry;
+import androidx.activity.result.contract.ActivityResultContract;
 import androidx.annotation.ColorInt;
 import androidx.annotation.ColorRes;
 import androidx.annotation.DrawableRes;
@@ -2078,6 +2084,24 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 RoomContentAdapter.this.pendingContainerPopupRestore = null;
                 itemView.post(() -> reopenContainerPopup(autoOpenState.visibilityMask));
             }
+        }
+
+        @NonNull
+        public <I, O> ActivityResultLauncher<I> registerForActivityResult(
+                @NonNull ActivityResultContract<I, O> contract,
+                @NonNull ActivityResultRegistry registry,
+                @NonNull ActivityResultCallback<O> callback) {
+            Context adapterContext = RoomContentAdapter.this.context;
+            if (!(adapterContext instanceof ActivityResultCaller)) {
+                throw new IllegalStateException("Le contexte ne peut pas enregistrer de résultats d'activité.");
+            }
+            ActivityResultLauncher<I> launcher = ActivityResultCallerKt.registerForActivityResult(
+                    (ActivityResultCaller) adapterContext,
+                    contract,
+                    registry,
+                    callback
+            );
+            return launcher;
         }
 
         void updateSelectionAppearance(boolean selectionMode, boolean isSelectable,
