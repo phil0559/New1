@@ -30,11 +30,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -1715,6 +1719,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private int containerPopupVisibilityMask = VISIBILITY_DEFAULT_MASK;
         private int containerPopupAdapterPosition = RecyclerView.NO_POSITION;
         private boolean suppressFilterCallbacks;
+        private boolean suppressColumnSelectionCallbacks;
         private final int defaultPhotoVisibility;
         private final int defaultMenuVisibility;
         private final int defaultToggleVisibility;
@@ -1838,6 +1843,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         void bind(@NonNull RoomContentItem item, int position) {
             currentItem = item;
             selectedFurnitureColumn = null;
+            suppressColumnSelectionCallbacks = false;
             dismissOptionsMenu();
             dismissContainerPopup();
             dismissFurniturePopup();
@@ -3058,8 +3064,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
             LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
+            HorizontalScrollView columnsScroll = popupView.findViewById(R.id.scroll_furniture_columns);
+            Spinner columnDropdown = popupView.findViewById(R.id.spinner_furniture_columns);
             if (columnsContainer != null && currentItem != null) {
-                populateFurniturePopupColumns(columnsContainer, sectionsContainer, currentItem);
+                populateFurniturePopupColumns(columnsContainer, sectionsContainer, currentItem,
+                        columnsScroll, columnDropdown);
             }
             if (sectionsContainer != null && currentItem != null) {
                 populateFurnitureSections(sectionsContainer, currentItem, levelToExpand);
@@ -3319,11 +3328,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         private void populateFurniturePopupColumns(@NonNull LinearLayout container,
                 @Nullable LinearLayout sectionsContainer,
-                @NonNull RoomContentItem item) {
+                @NonNull RoomContentItem item,
+                @Nullable HorizontalScrollView scrollContainer,
+                @Nullable Spinner dropdownView) {
             container.removeAllViews();
             Context context = container.getContext();
             LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
+            if (scrollContainer != null) {
+                scrollContainer.setVisibility(View.VISIBLE);
+            }
             container.setVisibility(View.VISIBLE);
+            if (dropdownView != null) {
+                dropdownView.setVisibility(View.GONE);
+                dropdownView.setOnItemSelectedListener(null);
+                dropdownView.setAdapter(null);
+            }
+            suppressColumnSelectionCallbacks = false;
             int requestedColumns = item.getFurnitureColumns() != null
                     ? item.getFurnitureColumns()
                     : 1;
@@ -3332,6 +3352,57 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     || selectedFurnitureColumn <= 0
                     || selectedFurnitureColumn > columnCount) {
                 selectedFurnitureColumn = 1;
+            }
+            boolean useDropdown = dropdownView != null && columnCount > 5;
+            if (useDropdown) {
+                if (scrollContainer != null) {
+                    scrollContainer.setVisibility(View.GONE);
+                }
+                container.setVisibility(View.GONE);
+                dropdownView.setVisibility(View.VISIBLE);
+                String columnPrefix = resolveColumnPrefix(context);
+                List<String> labels = new ArrayList<>(columnCount);
+                for (int index = 1; index <= columnCount; index++) {
+                    labels.add(columnPrefix + index);
+                }
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
+                        android.R.layout.simple_spinner_item, labels);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                dropdownView.setAdapter(adapter);
+                int selectionIndex = Math.min(columnCount, Math.max(1, selectedFurnitureColumn)) - 1;
+                suppressColumnSelectionCallbacks = true;
+                dropdownView.setSelection(selectionIndex, false);
+                suppressColumnSelectionCallbacks = false;
+                dropdownView.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position,
+                            long id) {
+                        if (suppressColumnSelectionCallbacks) {
+                            return;
+                        }
+                        int columnIndex = position + 1;
+                        if (Objects.equals(selectedFurnitureColumn, columnIndex)) {
+                            return;
+                        }
+                        selectedFurnitureColumn = columnIndex;
+                        if (sectionsContainer != null) {
+                            populateFurnitureSections(sectionsContainer, item,
+                                    RoomContentAdapter.this.activeFurniturePopupExpandedLevel);
+                        }
+                        int adapterPosition = getBindingAdapterPosition();
+                        if (adapterPosition != RecyclerView.NO_POSITION) {
+                            RoomContentAdapter.this.setActiveFurniturePopup(adapterPosition,
+                                    RoomContentAdapter.this.activeFurniturePopupExpandedLevel,
+                                    selectedFurnitureColumn);
+                        }
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+                        // Ignoré : aucune action requise lorsque rien n'est sélectionné.
+                    }
+                });
+                return;
             }
             String columnPrefix = resolveColumnPrefix(context);
             int spacing = context.getResources()
