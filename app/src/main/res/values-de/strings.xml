@@ -296,5 +296,7 @@
     <string name="furniture_popup_photos_menu_manage">Foto-Menü</string>
     <string name="furniture_popup_photos_menu_view">Fotoanzeige</string>
     <string name="furniture_popup_photos_empty">Keine Fotos verfügbar.</string>
+    <string name="furniture_menu_title">Mobiliar</string>
+    <string name="furniture_menu_print">Drucken</string>
     <string name="dialog_furniture_type_shelf">- Regal</string>
 </resources>

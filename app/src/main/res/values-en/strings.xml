@@ -170,6 +170,8 @@
     <string name="furniture_popup_photos_menu_manage">Photo menu</string>
     <string name="furniture_popup_photos_menu_view">Photo viewer</string>
     <string name="furniture_popup_photos_empty">No photos available.</string>
+    <string name="furniture_menu_title">Furniture</string>
+    <string name="furniture_menu_print">Print</string>
     <string name="dialog_furniture_type_shelf">- Shelf</string>
     <string name="popup_add_room_content_option_furniture">- Furniture</string>
     <string name="error_furniture_name_required">The furniture name is required</string>
