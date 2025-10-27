@@ -66,28 +66,36 @@
         android:textSize="16sp"
         android:textStyle="bold" />
 
-    <HorizontalScrollView
-        android:id="@+id/scroll_furniture_columns"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:overScrollMode="never"
-        android:scrollbars="none">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
-        <LinearLayout
-            android:id="@+id/container_furniture_columns"
+        <HorizontalScrollView
+            android:id="@+id/scroll_furniture_columns"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/container_furniture_columns"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="start"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+
+        <Spinner
+            android:id="@+id/spinner_furniture_columns"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="start"
-            android:orientation="horizontal" />
-    </HorizontalScrollView>
-
-    <Spinner
-        android:id="@+id/spinner_furniture_columns"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:visibility="gone" />
+            android:layout_marginStart="12dp"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/container_furniture_sections"
