@@ -1699,7 +1699,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         private final int defaultGroupPaddingTop;
         private final int defaultGroupPaddingRight;
         private final int defaultGroupPaddingBottom;
-        private static final int MAX_VISIBLE_FURNITURE_COLUMNS = 5;
         @Nullable
         private PopupWindow optionsPopup;
         @Nullable
@@ -3186,7 +3185,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             String columnPrefix = resolveColumnPrefix(context);
             int spacing = context.getResources()
                     .getDimensionPixelSize(R.dimen.furniture_popup_column_chip_spacing);
-            for (int index = 1; index <= Math.min(columnCount, MAX_VISIBLE_FURNITURE_COLUMNS); index++) {
+            for (int index = 1; index <= columnCount; index++) {
                 final RoomContentItem targetItem = item;
                 TextView chip = (TextView) layoutInflater.inflate(
                         R.layout.item_furniture_column_chip, container, false);
@@ -3194,10 +3193,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 chip.setContentDescription(context.getString(
                         R.string.furniture_popup_columns_title) + " " + index);
                 boolean isSelected = Objects.equals(index, selectedFurnitureColumn);
-                boolean hasMoreColumns = columnCount > MAX_VISIBLE_FURNITURE_COLUMNS;
-                if (hasMoreColumns && index == MAX_VISIBLE_FURNITURE_COLUMNS) {
-                    applyDropdownIndicator(chip);
-                }
                 chip.setTag(R.id.tag_furniture_column_index, index);
                 updateColumnChipBackground(chip, isSelected);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -3244,20 +3239,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     updateColumnChipBackground((TextView) child, columnIndex == selectedIndex);
                 }
             }
-        }
-
-        private void applyDropdownIndicator(@NonNull TextView chip) {
-            Context context = chip.getContext();
-            Drawable arrow = AppCompatResources.getDrawable(context, R.drawable.ic_chevron_down);
-            if (arrow == null) {
-                return;
-            }
-            Drawable wrappedArrow = DrawableCompat.wrap(arrow.mutate());
-            DrawableCompat.setTint(wrappedArrow, ContextCompat.getColor(context, R.color.text_dark));
-            chip.setCompoundDrawablesWithIntrinsicBounds(null, null, wrappedArrow, null);
-            int padding = context.getResources()
-                    .getDimensionPixelSize(R.dimen.furniture_popup_column_drawable_padding);
-            chip.setCompoundDrawablePadding(padding);
         }
 
         @NonNull
