@@ -139,6 +139,8 @@ public class RoomContentActivity extends Activity {
     private static final String STATE_FURNITURE_POPUP_POSITION = "state_furniture_popup_position";
     private static final String STATE_FURNITURE_POPUP_HAS_LEVEL = "state_furniture_popup_has_level";
     private static final String STATE_FURNITURE_POPUP_LEVEL = "state_furniture_popup_level";
+    private static final String STATE_FURNITURE_POPUP_HAS_COLUMN = "state_furniture_popup_has_column";
+    private static final String STATE_FURNITURE_POPUP_COLUMN = "state_furniture_popup_column";
     private static final String STATE_OPTIONS_POPUP_POSITION = "state_options_popup_position";
     private static final int ADD_MENU_ANCHOR_MAIN = 0;
     private static final int ADD_MENU_ANCHOR_FURNITURE_LEVEL = 1;
@@ -788,8 +790,12 @@ public class RoomContentActivity extends Activity {
                 if (savedInstanceState.getBoolean(STATE_FURNITURE_POPUP_HAS_LEVEL, false)) {
                     level = savedInstanceState.getInt(STATE_FURNITURE_POPUP_LEVEL);
                 }
+                Integer column = null;
+                if (savedInstanceState.getBoolean(STATE_FURNITURE_POPUP_HAS_COLUMN, false)) {
+                    column = savedInstanceState.getInt(STATE_FURNITURE_POPUP_COLUMN);
+                }
                 pendingFurniturePopupState = new RoomContentAdapter.FurniturePopupRestoreState(
-                        furniturePosition, level, false);
+                        furniturePosition, level, column, false);
             }
         }
         if (savedInstanceState.containsKey(STATE_OPTIONS_POPUP_POSITION)) {
@@ -1156,6 +1162,13 @@ public class RoomContentActivity extends Activity {
                             furnitureState.levelToExpand);
                 } else {
                     outState.putBoolean(STATE_FURNITURE_POPUP_HAS_LEVEL, false);
+                }
+                if (furnitureState.columnToDisplay != null) {
+                    outState.putBoolean(STATE_FURNITURE_POPUP_HAS_COLUMN, true);
+                    outState.putInt(STATE_FURNITURE_POPUP_COLUMN,
+                            furnitureState.columnToDisplay);
+                } else {
+                    outState.putBoolean(STATE_FURNITURE_POPUP_HAS_COLUMN, false);
                 }
             }
             RoomContentAdapter.OptionsPopupRestoreState optionsState =

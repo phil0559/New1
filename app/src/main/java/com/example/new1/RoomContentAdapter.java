@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Objects;
 
 public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.ViewHolder> {
 
@@ -125,6 +126,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private int activeFurniturePopupAdapterPosition = RecyclerView.NO_POSITION;
     @Nullable
     private Integer activeFurniturePopupExpandedLevel;
+    @Nullable
+    private Integer activeFurniturePopupSelectedColumn;
     private int activeOptionsPopupAdapterPosition = RecyclerView.NO_POSITION;
     private final RecyclerView.AdapterDataObserver hierarchyInvalidatingObserver =
             new RecyclerView.AdapterDataObserver() {
@@ -1339,12 +1342,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final int furniturePosition;
         @Nullable
         final Integer levelToExpand;
+        @Nullable
+        final Integer columnToDisplay;
         final boolean autoOpenWhenBound;
 
-        FurniturePopupRestoreState(int furniturePosition, @Nullable Integer levelToExpand,
+        FurniturePopupRestoreState(int furniturePosition,
+                @Nullable Integer levelToExpand,
+                @Nullable Integer columnToDisplay,
                 boolean autoOpenWhenBound) {
             this.furniturePosition = furniturePosition;
             this.levelToExpand = levelToExpand;
+            this.columnToDisplay = columnToDisplay;
             this.autoOpenWhenBound = autoOpenWhenBound;
         }
     }
@@ -1370,15 +1378,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         maybeRestoreFurniturePopup();
     }
 
-    private void setActiveFurniturePopup(int position, @Nullable Integer levelToExpand) {
+    private void setActiveFurniturePopup(int position,
+            @Nullable Integer levelToExpand,
+            @Nullable Integer columnToDisplay) {
         activeFurniturePopupAdapterPosition = position;
         activeFurniturePopupExpandedLevel = levelToExpand;
+        activeFurniturePopupSelectedColumn = columnToDisplay;
     }
 
     private void onFurniturePopupDismissed(int position) {
         if (activeFurniturePopupAdapterPosition == position) {
             activeFurniturePopupAdapterPosition = RecyclerView.NO_POSITION;
             activeFurniturePopupExpandedLevel = null;
+            activeFurniturePopupSelectedColumn = null;
         }
     }
 
@@ -1412,7 +1424,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return null;
         }
         return new FurniturePopupRestoreState(activeFurniturePopupAdapterPosition,
-                activeFurniturePopupExpandedLevel, false);
+                activeFurniturePopupExpandedLevel,
+                activeFurniturePopupSelectedColumn,
+                false);
     }
 
     private void preparePendingContainerPopupRestore(int targetPosition, int visibilityMask,
@@ -1454,6 +1468,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     private void preparePendingFurniturePopupRestore(int furniturePosition,
             @Nullable Integer levelToExpand,
+            @Nullable Integer columnToDisplay,
             boolean autoOpenWhenBound) {
         if (furniturePosition < 0 || furniturePosition >= items.size()) {
             return;
@@ -1463,7 +1478,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         pendingFurniturePopupRestore = new FurniturePopupRestoreState(furniturePosition,
-                levelToExpand, autoOpenWhenBound);
+                levelToExpand, columnToDisplay, autoOpenWhenBound);
     }
 
     @Nullable
@@ -1509,14 +1524,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         RecyclerView.ViewHolder holder = recyclerView
                 .findViewHolderForAdapterPosition(state.furniturePosition);
         if (holder instanceof ViewHolder) {
-            ((ViewHolder) holder).reopenFurniturePopup(state.levelToExpand);
+            ((ViewHolder) holder).reopenFurniturePopup(state.levelToExpand,
+                    state.columnToDisplay);
         } else {
             recyclerView.scrollToPosition(state.furniturePosition);
             recyclerView.post(() -> {
                 RecyclerView.ViewHolder postHolder = recyclerView
                         .findViewHolderForAdapterPosition(state.furniturePosition);
                 if (postHolder instanceof ViewHolder) {
-                    ((ViewHolder) postHolder).reopenFurniturePopup(state.levelToExpand);
+                    ((ViewHolder) postHolder).reopenFurniturePopup(state.levelToExpand,
+                            state.columnToDisplay);
                 }
             });
         }
@@ -1652,6 +1669,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final OnRoomContentInteractionListener interactionListener;
         @Nullable
         private RoomContentItem currentItem;
+        @Nullable
+        private Integer selectedFurnitureColumn;
         private final int defaultPaddingStart;
         private final int defaultPaddingTop;
         private final int defaultPaddingEnd;
@@ -1810,6 +1829,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         void bind(@NonNull RoomContentItem item, int position) {
             currentItem = item;
+            selectedFurnitureColumn = null;
             dismissOptionsMenu();
             dismissContainerPopup();
             dismissFurniturePopup();
@@ -2529,10 +2549,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             openContainerPopup(adapterPosition, visibilityMask);
         }
 
-        void reopenFurniturePopup(@Nullable Integer levelToExpand) {
+        void reopenFurniturePopup(@Nullable Integer levelToExpand,
+                @Nullable Integer columnToDisplay) {
             if (currentItem == null || !currentItem.isFurniture()) {
                 return;
             }
+            selectedFurnitureColumn = columnToDisplay;
             int adapterPosition = getBindingAdapterPosition();
             if (adapterPosition == RecyclerView.NO_POSITION) {
                 return;
@@ -2968,11 +2990,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (photosIcon != null) {
                 photosIcon.setOnClickListener(view -> showFurniturePhotoMenu(photosIcon));
             }
+            LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
             LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
             if (columnsContainer != null && currentItem != null) {
-                populateFurniturePopupColumns(columnsContainer, currentItem);
+                populateFurniturePopupColumns(columnsContainer, sectionsContainer, currentItem);
             }
-            LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
             if (sectionsContainer != null && currentItem != null) {
                 populateFurnitureSections(sectionsContainer, currentItem, levelToExpand);
             }
@@ -2993,7 +3015,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 furnitureAddAnchors.clear();
             });
             furniturePopup = popupWindow;
-            RoomContentAdapter.this.setActiveFurniturePopup(position, levelToExpand);
+            RoomContentAdapter.this.setActiveFurniturePopup(position, levelToExpand,
+                    selectedFurnitureColumn);
             dismissOptionsMenu();
             popupWindow.showAtLocation(itemView, Gravity.CENTER, 0, 0);
         }
@@ -3127,6 +3150,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
 
         private void populateFurniturePopupColumns(@NonNull LinearLayout container,
+                @Nullable LinearLayout sectionsContainer,
                 @NonNull RoomContentItem item) {
             container.removeAllViews();
             Context context = container.getContext();
@@ -3136,16 +3160,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     ? item.getFurnitureColumns()
                     : 1;
             int columnCount = Math.max(1, requestedColumns);
+            if (selectedFurnitureColumn == null
+                    || selectedFurnitureColumn <= 0
+                    || selectedFurnitureColumn > columnCount) {
+                selectedFurnitureColumn = 1;
+            }
             String columnPrefix = resolveColumnPrefix(context);
             int spacing = context.getResources()
                     .getDimensionPixelSize(R.dimen.furniture_popup_column_chip_spacing);
             for (int index = 1; index <= Math.min(columnCount, MAX_VISIBLE_FURNITURE_COLUMNS); index++) {
+                final RoomContentItem targetItem = item;
                 TextView chip = (TextView) layoutInflater.inflate(
                         R.layout.item_furniture_column_chip, container, false);
                 chip.setText(columnPrefix + index);
                 chip.setContentDescription(context.getString(
                         R.string.furniture_popup_columns_title) + " " + index);
-                boolean isSelected = index == 1;
+                boolean isSelected = Objects.equals(index, selectedFurnitureColumn);
                 boolean hasMoreColumns = columnCount > MAX_VISIBLE_FURNITURE_COLUMNS;
                 if (hasMoreColumns && index == MAX_VISIBLE_FURNITURE_COLUMNS) {
                     applyDropdownIndicator(chip);
@@ -3158,7 +3188,35 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     params.leftMargin = spacing;
                 }
                 chip.setLayoutParams(params);
+                final int columnIndex = index;
+                chip.setOnClickListener(view -> {
+                    if (Objects.equals(selectedFurnitureColumn, columnIndex)) {
+                        return;
+                    }
+                    selectedFurnitureColumn = columnIndex;
+                    updateFurnitureColumnSelection(container, columnIndex);
+                    if (sectionsContainer != null) {
+                        populateFurnitureSections(sectionsContainer, targetItem,
+                                RoomContentAdapter.this.activeFurniturePopupExpandedLevel);
+                    }
+                    int adapterPosition = getBindingAdapterPosition();
+                    if (adapterPosition != RecyclerView.NO_POSITION) {
+                        RoomContentAdapter.this.setActiveFurniturePopup(adapterPosition,
+                                RoomContentAdapter.this.activeFurniturePopupExpandedLevel,
+                                selectedFurnitureColumn);
+                    }
+                });
                 container.addView(chip);
+            }
+        }
+
+        private void updateFurnitureColumnSelection(@NonNull LinearLayout container,
+                int selectedIndex) {
+            for (int i = 0; i < container.getChildCount(); i++) {
+                View child = container.getChildAt(i);
+                if (child instanceof TextView) {
+                    updateColumnChipBackground((TextView) child, (i + 1) == selectedIndex);
+                }
             }
         }
 
@@ -3206,6 +3264,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @NonNull RoomContentItem item,
                 @Nullable Integer levelToExpand) {
             container.removeAllViews();
+            furnitureAddAnchors.clear();
             Context context = container.getContext();
             LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
             boolean hasTop = item.hasFurnitureTop();
@@ -3345,12 +3404,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return Collections.emptyList();
             }
             List<RoomContentItem> matches = new ArrayList<>();
+            Integer selectedColumn = selectedFurnitureColumn;
             for (RoomContentItem child : children) {
                 if (child == null) {
                     continue;
                 }
                 Integer childLevel = child.getContainerLevel();
                 if (childLevel != null && childLevel == desiredLevel) {
+                    if (selectedColumn != null) {
+                        Integer childColumn = child.getContainerColumn();
+                        if (childColumn == null) {
+                            if (selectedColumn != 1) {
+                                continue;
+                            }
+                        } else if (!childColumn.equals(selectedColumn)) {
+                            continue;
+                        }
+                    }
                     matches.add(child);
                 }
             }
@@ -3551,7 +3621,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @Nullable Integer levelIndex) {
             if (furniturePosition >= 0) {
                 RoomContentAdapter.this.preparePendingFurniturePopupRestore(furniturePosition,
-                        levelIndex, false);
+                        levelIndex, selectedFurnitureColumn, false);
             }
             notifyEdit(targetItem, targetPosition);
         }
@@ -3561,7 +3631,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @Nullable Integer levelIndex) {
             if (furniturePosition >= 0) {
                 RoomContentAdapter.this.preparePendingFurniturePopupRestore(furniturePosition,
-                        levelIndex, true);
+                        levelIndex, selectedFurnitureColumn, true);
             }
             dismissContainerPopup();
             RoomContentAdapter.this.openContainerPopupAtPosition(containerPosition);
