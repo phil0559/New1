@@ -122,7 +122,7 @@ public class RoomAdapter extends RecyclerView.Adapter<RoomAdapter.ViewHolder> {
         void onDeleteRoom(@NonNull Room room, int position);
     }
 
-    static class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
         private final TextView nameView;
         private final ImageView photoView;
         private final TextView commentView;
