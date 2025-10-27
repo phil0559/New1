@@ -1704,6 +1704,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         private PopupWindow furniturePopup;
         @Nullable
+        private PopupWindow furnitureMenuPopup;
+        @Nullable
         private PopupWindow furniturePhotoMenuPopup;
         @Nullable
         private PopupWindow containerPopup;
@@ -3007,6 +3009,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (photosIcon != null) {
                 photosIcon.setOnClickListener(view -> showFurniturePhotoMenu(photosIcon));
             }
+            ImageView menuIcon = popupView.findViewById(R.id.icon_furniture_popup_menu);
+            if (menuIcon != null) {
+                menuIcon.setOnClickListener(view -> showFurnitureOptionsMenu(menuIcon));
+            }
             LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
             LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
             if (columnsContainer != null && currentItem != null) {
@@ -3036,6 +3042,108 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     selectedFurnitureColumn);
             dismissOptionsMenu();
             popupWindow.showAtLocation(itemView, Gravity.CENTER, 0, 0);
+        }
+
+        private void showFurnitureOptionsMenu(@NonNull View anchor) {
+            if (currentItem == null) {
+                return;
+            }
+            if (furnitureMenuPopup != null && furnitureMenuPopup.isShowing()) {
+                furnitureMenuPopup.dismiss();
+                return;
+            }
+            dismissFurniturePhotoMenu();
+            dismissOptionsMenu();
+            LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
+            View popupView = layoutInflater.inflate(R.layout.popup_furniture_menu, null);
+            PopupWindow popupWindow = new PopupWindow(
+                    popupView,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    true
+            );
+            popupWindow.setOutsideTouchable(true);
+            popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+            View printButton = popupView.findViewById(R.id.button_furniture_menu_print);
+            if (printButton != null) {
+                if (interactionListener != null) {
+                    printButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        notifyCopy();
+                    });
+                    printButton.setEnabled(true);
+                } else {
+                    printButton.setOnClickListener(null);
+                    printButton.setEnabled(false);
+                }
+            }
+
+            View editButton = popupView.findViewById(R.id.button_furniture_menu_edit);
+            if (editButton != null) {
+                if (interactionListener != null) {
+                    editButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        notifyEdit();
+                    });
+                    editButton.setEnabled(true);
+                } else {
+                    editButton.setOnClickListener(null);
+                    editButton.setEnabled(false);
+                }
+            }
+
+            View moveButton = popupView.findViewById(R.id.button_furniture_menu_move);
+            if (moveButton != null) {
+                if (interactionListener != null) {
+                    moveButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        notifyMove();
+                    });
+                    moveButton.setEnabled(true);
+                } else {
+                    moveButton.setOnClickListener(null);
+                    moveButton.setEnabled(false);
+                }
+            }
+
+            View deleteButton = popupView.findViewById(R.id.button_furniture_menu_delete);
+            if (deleteButton != null) {
+                if (interactionListener != null) {
+                    deleteButton.setOnClickListener(view -> {
+                        popupWindow.dismiss();
+                        notifyDelete();
+                    });
+                    deleteButton.setEnabled(true);
+                } else {
+                    deleteButton.setOnClickListener(null);
+                    deleteButton.setEnabled(false);
+                }
+            }
+
+            popupWindow.setOnDismissListener(() -> furnitureMenuPopup = null);
+            furnitureMenuPopup = popupWindow;
+
+            popupView.measure(View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+            int popupHeight = popupView.getMeasuredHeight();
+            int verticalOffset = (int) (itemView.getResources().getDisplayMetrics().density * 8);
+
+            Rect displayFrame = new Rect();
+            anchor.getWindowVisibleDisplayFrame(displayFrame);
+            int[] location = new int[2];
+            anchor.getLocationOnScreen(location);
+            int anchorBottom = location[1] + anchor.getHeight();
+            int spaceBelow = displayFrame.bottom - anchorBottom;
+            int spaceAbove = location[1] - displayFrame.top;
+
+            int yOffset = verticalOffset;
+            if (spaceBelow < popupHeight + verticalOffset
+                    && spaceAbove >= popupHeight + verticalOffset) {
+                yOffset = -(anchor.getHeight() + popupHeight + verticalOffset);
+            }
+
+            PopupWindowCompat.showAsDropDown(popupWindow, anchor, 0, yOffset, Gravity.END);
         }
 
         private void showFurniturePhotoMenu(@NonNull View anchor) {
@@ -3607,6 +3715,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return Integer.compare(left, right);
         }
 
+        private void dismissFurnitureMenu() {
+            if (furnitureMenuPopup != null) {
+                furnitureMenuPopup.dismiss();
+                furnitureMenuPopup = null;
+            }
+        }
+
         private void dismissFurniturePhotoMenu() {
             if (furniturePhotoMenuPopup != null) {
                 furniturePhotoMenuPopup.dismiss();
@@ -3619,6 +3734,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 furniturePopup.dismiss();
                 furniturePopup = null;
             }
+            dismissFurnitureMenu();
             dismissFurniturePhotoMenu();
         }
 

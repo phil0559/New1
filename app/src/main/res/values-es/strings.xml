@@ -296,5 +296,7 @@
     <string name="furniture_popup_photos_menu_manage">Menú de fotos</string>
     <string name="furniture_popup_photos_menu_view">Visualización de fotos</string>
     <string name="furniture_popup_photos_empty">No hay fotos disponibles.</string>
+    <string name="furniture_menu_title">Mobiliario</string>
+    <string name="furniture_menu_print">Imprimir</string>
     <string name="dialog_furniture_type_shelf">- Estantería</string>
 </resources>
