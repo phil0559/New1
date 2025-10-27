@@ -3365,9 +3365,51 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 for (int index = 1; index <= columnCount; index++) {
                     labels.add(columnPrefix + index);
                 }
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
-                        android.R.layout.simple_spinner_item, labels);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                final ArrayAdapter<String> adapter = new ArrayAdapter<String>(context,
+                        R.layout.item_furniture_column_spinner, labels) {
+                    @NonNull
+                    @Override
+                    public View getView(int position, @Nullable View convertView,
+                            @NonNull ViewGroup parent) {
+                        View view = convertView;
+                        if (view == null) {
+                            view = layoutInflater.inflate(
+                                    R.layout.item_furniture_column_spinner, parent, false);
+                        }
+                        TextView textView = view.findViewById(R.id.text_column_spinner);
+                        if (textView != null) {
+                            textView.setText(getItem(position));
+                            textView.setContentDescription(context.getString(
+                                    R.string.furniture_popup_columns_title) + " "
+                                    + (position + 1));
+                            updateColumnChipBackground(textView, true);
+                        }
+                        return view;
+                    }
+
+                    @Override
+                    public View getDropDownView(int position, @Nullable View convertView,
+                            @NonNull ViewGroup parent) {
+                        View view = convertView;
+                        if (view == null) {
+                            view = layoutInflater.inflate(
+                                    R.layout.item_furniture_column_spinner_dropdown,
+                                    parent, false);
+                        }
+                        TextView textView = view.findViewById(
+                                R.id.text_column_spinner_dropdown);
+                        if (textView != null) {
+                            textView.setText(getItem(position));
+                            textView.setContentDescription(context.getString(
+                                    R.string.furniture_popup_columns_title) + " "
+                                    + (position + 1));
+                            boolean isSelected = position
+                                    == dropdownView.getSelectedItemPosition();
+                            updateColumnChipBackground(textView, isSelected);
+                        }
+                        return view;
+                    }
+                };
                 dropdownView.setAdapter(adapter);
                 int selectionIndex = Math.min(columnCount, Math.max(1, selectedFurnitureColumn)) - 1;
                 suppressColumnSelectionCallbacks = true;
@@ -3385,6 +3427,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                             return;
                         }
                         selectedFurnitureColumn = columnIndex;
+                        adapter.notifyDataSetChanged();
                         if (sectionsContainer != null) {
                             populateFurnitureSections(sectionsContainer, item,
                                     RoomContentAdapter.this.activeFurniturePopupExpandedLevel);
