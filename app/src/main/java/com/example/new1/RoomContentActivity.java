@@ -513,8 +513,6 @@ public class RoomContentActivity extends Activity {
     @Nullable
     private ImageView searchButton;
     @Nullable
-    private ImageView multiSelectButton;
-    @Nullable
     private ImageView moveSelectedButton;
     @Nullable
     private ImageView deleteSelectedButton;
@@ -600,11 +598,6 @@ public class RoomContentActivity extends Activity {
             deleteSelectedButton.setOnClickListener(view -> handleDeleteSelection());
         }
 
-        multiSelectButton = findViewById(R.id.button_multi_select);
-        if (multiSelectButton != null) {
-            multiSelectButton.setOnClickListener(view -> toggleSelectionMode());
-        }
-
         Intent intent = getIntent();
         establishmentName = intent != null ? intent.getStringExtra(EXTRA_ESTABLISHMENT_NAME) : null;
         roomName = intent != null ? intent.getStringExtra(EXTRA_ROOM_NAME) : null;
@@ -654,6 +647,15 @@ public class RoomContentActivity extends Activity {
                                                                          int level,
                                                                          @NonNull View anchor) {
                             showFurnitureLevelAddMenu(anchor, furniture, level);
+                        }
+
+                        @Override
+                        public void onRequestSelectionMode(@NonNull RoomContentItem item,
+                                                            int position) {
+                            enterSelectionMode();
+                            if (roomContentAdapter != null) {
+                                roomContentAdapter.selectItemAt(position);
+                            }
                         }
                     });
             roomContentAdapter.setSelectionChangedListener(this::updateSelectionActions);
@@ -898,14 +900,6 @@ public class RoomContentActivity extends Activity {
         }, 100);
     }
 
-    private void toggleSelectionMode() {
-        if (selectionModeEnabled) {
-            exitSelectionMode();
-        } else {
-            enterSelectionMode();
-        }
-    }
-
     private void enterSelectionMode() {
         if (selectionModeEnabled) {
             return;
@@ -934,14 +928,6 @@ public class RoomContentActivity extends Activity {
     }
 
     private void refreshSelectionUi() {
-        if (multiSelectButton != null) {
-            multiSelectButton.setImageResource(selectionModeEnabled
-                    ? R.drawable.ic_close
-                    : R.drawable.ic_multi_select);
-            multiSelectButton.setContentDescription(getString(selectionModeEnabled
-                    ? R.string.content_description_close_selection
-                    : R.string.content_description_multi_select));
-        }
         if (moveSelectedButton != null) {
             moveSelectedButton.setVisibility(selectionModeEnabled ? View.VISIBLE : View.GONE);
         }

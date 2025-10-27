@@ -400,6 +400,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         notifySelectionChanged();
     }
 
+    public void selectItemAt(int position) {
+        if (!selectionModeEnabled) {
+            return;
+        }
+        setItemSelection(position, true);
+    }
+
     public int getSelectedItemCount() {
         sanitizeSelectionPositions();
         return selectedPositions.size();
@@ -1625,6 +1632,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     interface OnRoomContentInteractionListener {
+        void onRequestSelectionMode(@NonNull RoomContentItem item, int position);
+
         void onCopyRoomContent(@NonNull RoomContentItem item, int position);
 
         void onMoveRoomContent(@NonNull RoomContentItem item, int position);
@@ -1754,6 +1763,24 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             itemsFilterChip = itemView.findViewById(R.id.chip_room_content_filter_items);
             this.interactionListener = interactionListener;
             bannerContainer.setOnClickListener(view -> handleBannerClick());
+            bannerContainer.setOnLongClickListener(view -> {
+                RoomContentItem item = currentItem;
+                if (item == null || item.isFurniture()) {
+                    return false;
+                }
+                if (!RoomContentAdapter.this.selectionModeEnabled) {
+                    if (interactionListener != null) {
+                        int adapterPosition = getBindingAdapterPosition();
+                        if (adapterPosition != RecyclerView.NO_POSITION) {
+                            interactionListener.onRequestSelectionMode(item, adapterPosition);
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                toggleSelection();
+                return true;
+            });
             if (photoView != null) {
                 photoView.setOnClickListener(view -> notifyEdit());
             }
