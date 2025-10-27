@@ -6,6 +6,13 @@
     <dimen name="barcode_preview_height">120dp</dimen>
     <dimen name="dialog_barcode_input_padding">24dp</dimen>
     <dimen name="list_item_action_icon_size">32dp</dimen>
+    <dimen name="container_popup_filter_panel_padding_horizontal">16dp</dimen>
+    <dimen name="container_popup_filter_panel_padding_vertical">12dp</dimen>
+    <dimen name="container_popup_filter_icon_size">44dp</dimen>
+    <dimen name="container_popup_filter_icon_padding">12dp</dimen>
+    <dimen name="container_popup_filter_option_spacing">8dp</dimen>
+    <dimen name="container_popup_filter_panel_corner_radius">20dp</dimen>
+    <dimen name="container_popup_filter_panel_stroke_width">2dp</dimen>
     <dimen name="room_content_hierarchy_indent">20dp</dimen>
     <dimen name="room_content_card_corner_radius">10dp</dimen>
     <dimen name="room_content_card_border_width">2dp</dimen>
