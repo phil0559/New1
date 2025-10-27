@@ -22,6 +22,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.util.Base64;
 import android.util.DisplayMetrics;
+import android.util.LongSparseArray;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
@@ -95,7 +96,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     @Nullable
     private final OnRoomContentInteractionListener interactionListener;
     private final SparseBooleanArray expandedStates = new SparseBooleanArray();
-    private final SparseIntArray containerVisibilityStates = new SparseIntArray();
+    private final LongSparseArray<Integer> containerVisibilityStates = new LongSparseArray<>();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final float cardElevationLevel0Px;
@@ -292,7 +293,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (!hasComment && !hasMetadata) {
             expandedStates.delete(position);
         }
-        boolean isContainerExpanded = isContainerExpanded(position);
+        boolean isContainerExpanded = isContainerExpanded(item);
         boolean shouldDisplayDetails;
         if (canToggleContainer) {
             shouldDisplayDetails = isContainerExpanded && (hasComment || hasMetadata);
@@ -781,7 +782,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         int containerPosition = findAttachedContainerPosition(position);
         boolean isDirectParent = true;
         while (containerPosition >= 0) {
-            int visibilityMask = getContainerVisibilityMask(containerPosition);
+            RoomContentItem container = getItemAt(containerPosition);
+            int visibilityMask = getContainerVisibilityMask(container);
             if (visibilityMask == 0) {
                 return true;
             }
@@ -868,53 +870,112 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     }
 
     private boolean isContainerExpanded(int position) {
-        return getContainerVisibilityMask(position) != 0;
+        RoomContentItem item = getItemAt(position);
+        return isContainerExpanded(item);
+    }
+
+    private boolean isContainerExpanded(@Nullable RoomContentItem item) {
+        return getContainerVisibilityMask(item) != 0;
     }
 
     private int getContainerVisibilityMask(int position) {
         if (position < 0) {
             return VISIBILITY_DEFAULT_MASK;
         }
-        SparseIntArray visibilityStates = containerVisibilityStates;
+        RoomContentItem item = getItemAt(position);
+        return getContainerVisibilityMask(item);
+    }
+
+    private int getContainerVisibilityMask(@Nullable RoomContentItem item) {
+        if (item == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        LongSparseArray<Integer> visibilityStates = containerVisibilityStates;
         if (visibilityStates == null) {
             return VISIBILITY_DEFAULT_MASK;
         }
-        return visibilityStates.get(position, VISIBILITY_DEFAULT_MASK);
+        long rank = item.getRank();
+        if (rank < 0) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        Integer stored = visibilityStates.get(rank);
+        if (stored == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        return stored;
     }
 
     private int resolvePopupVisibilityMask(int position) {
-        int visibilityMask = getContainerVisibilityMask(position);
+        if (position < 0) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        RoomContentItem item = getItemAt(position);
+        return resolvePopupVisibilityMask(item);
+    }
+
+    private int resolvePopupVisibilityMask(@Nullable RoomContentItem item) {
+        int visibilityMask = getContainerVisibilityMask(item);
         if (visibilityMask != 0) {
             return visibilityMask;
         }
-        if (position < 0 || position >= items.size()) {
+        if (item == null) {
             return visibilityMask;
         }
-        RoomContentItem item = items.get(position);
-        if (item != null && item.isContainer() && item.hasAttachedItems()) {
+        if (item.isContainer() && item.hasAttachedItems()) {
             return VISIBILITY_DEFAULT_MASK;
         }
         return visibilityMask;
     }
 
     private void setContainerExpanded(int position, boolean expanded) {
+        RoomContentItem item = getItemAt(position);
+        setContainerExpanded(item, position, expanded);
+    }
+
+    private void setContainerExpanded(@Nullable RoomContentItem item, int position,
+            boolean expanded) {
+        if (item == null) {
+            return;
+        }
+        if (!item.isContainer()) {
+            return;
+        }
         int visibilityMask = expanded ? VISIBILITY_DEFAULT_MASK : 0;
-        setContainerVisibilityMask(position, visibilityMask);
+        setContainerVisibilityMask(item, position, visibilityMask);
     }
 
     private void setContainerVisibilityMask(int position, int visibilityMask) {
+        RoomContentItem item = getItemAt(position);
+        setContainerVisibilityMask(item, position, visibilityMask);
+    }
+
+    private void setContainerVisibilityMask(@Nullable RoomContentItem item, int position,
+            int visibilityMask) {
+        if (item == null) {
+            return;
+        }
         if (position < 0 || position >= items.size()) {
             return;
         }
-        SparseIntArray visibilityStates = containerVisibilityStates;
+        LongSparseArray<Integer> visibilityStates = containerVisibilityStates;
         if (visibilityStates == null) {
             return;
         }
+        if (!item.isContainer()) {
+            long rank = item.getRank();
+            if (rank >= 0) {
+                visibilityStates.delete(rank);
+            }
+            return;
+        }
         int normalizedMask = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
-        if (normalizedMask == VISIBILITY_DEFAULT_MASK) {
-            visibilityStates.delete(position);
-        } else {
-            visibilityStates.put(position, normalizedMask);
+        long rank = item.getRank();
+        if (rank >= 0) {
+            if (normalizedMask == VISIBILITY_DEFAULT_MASK) {
+                visibilityStates.delete(rank);
+            } else {
+                visibilityStates.put(rank, normalizedMask);
+            }
         }
         updateAttachedItemsDisplayState(position, normalizedMask);
         invalidateDecorations();
@@ -975,7 +1036,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (!item.isContainer()) {
                 continue;
             }
-            setContainerVisibilityMask(index, 0);
+            setContainerVisibilityMask(item, index, 0);
         }
     }
 
@@ -1915,11 +1976,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     ? RoomContentAdapter.this.items.get(parentPosition)
                     : null;
             boolean parentExpanded = parentItem != null
-                    && RoomContentAdapter.this.isContainerExpanded(parentPosition)
+                    && RoomContentAdapter.this.isContainerExpanded(parentItem)
                     && parentItem.hasAttachedItems();
             boolean hasAttachedItems = item.isContainer() && item.hasAttachedItems();
             boolean isContainerExpanded = hasAttachedItems
-                    && RoomContentAdapter.this.isContainerExpanded(position);
+                    && RoomContentAdapter.this.isContainerExpanded(item);
             boolean showGroupBorder = hasAttachedItems;
             boolean isFirstInGroup = showGroupBorder;
             boolean isLastInGroup = showGroupBorder && !isContainerExpanded;
@@ -1946,7 +2007,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (hasAttachedItems) {
                     filterChipGroup.setVisibility(View.VISIBLE);
                     suppressFilterCallbacks = true;
-                    int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(position);
+                    int visibilityMask = RoomContentAdapter.this.getContainerVisibilityMask(item);
                     if (containersFilterChip != null) {
                         containersFilterChip.setChecked(
                                 (visibilityMask & VISIBILITY_FLAG_CONTAINERS) != 0);
@@ -2012,7 +2073,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                             .findAttachedContainerPosition(position);
                     if (containerPosition >= 0) {
                         boolean containerExpanded = RoomContentAdapter.this
-                                .isContainerExpanded(containerPosition)
+                                .isContainerExpanded(attachedContainer)
                                 && attachedContainer.hasAttachedItems();
                         if (containerExpanded) {
                             isPartOfExpandedContainer = true;
@@ -2065,7 +2126,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 itemView.setLayoutParams(params);
             }
             if (filledIndicatorView != null) {
-                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(position);
+                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(item);
                 boolean showIndicator = item.isContainer() && item.hasAttachedItems() && !isExpanded;
                 filledIndicatorView.setVisibility(showIndicator ? View.VISIBLE : View.GONE);
             }
@@ -2930,15 +2991,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (child.isContainer()) {
                 boolean hasAttachments = child.hasAttachedItems();
                 boolean isExpanded = hasAttachments
-                        && RoomContentAdapter.this.isContainerExpanded(childPosition);
+                        && RoomContentAdapter.this.isContainerExpanded(child);
                 boolean joinsParentFrame = false;
                 boolean isLastChildInParent = true;
                 int parentPosition = RoomContentAdapter.this
                         .findAttachedContainerPosition(childPosition);
                 if (parentPosition >= 0 && parentPosition != childPosition) {
-                    boolean parentExpanded = RoomContentAdapter.this.isContainerExpanded(parentPosition)
-                            && RoomContentAdapter.this.items.get(parentPosition) != null
-                            && RoomContentAdapter.this.items.get(parentPosition).hasAttachedItems();
+                    RoomContentItem parent = RoomContentAdapter.this.getItemAt(parentPosition);
+                    boolean parentExpanded = RoomContentAdapter.this.isContainerExpanded(parent)
+                            && parent != null
+                            && parent.hasAttachedItems();
                     if (parentExpanded) {
                         joinsParentFrame = parentPosition == containerPosition;
                         isLastChildInParent = RoomContentAdapter.this
@@ -4039,9 +4101,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             dismissFurniturePopup();
             if (currentItem != null && currentItem.isContainer()
                     && currentItem.hasAttachedItems()) {
-                boolean isExpanded = RoomContentAdapter.this
-                        .isContainerExpanded(adapterPosition);
-                RoomContentAdapter.this.setContainerExpanded(adapterPosition, !isExpanded);
+                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(currentItem);
+                RoomContentAdapter.this.setContainerExpanded(currentItem, adapterPosition,
+                        !isExpanded);
                 notifyItemChanged(adapterPosition);
                 RoomContentAdapter.this.notifyAttachedItemsChanged(adapterPosition);
             } else {
@@ -4064,13 +4126,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             boolean checked = chip.isChecked();
-            int visibilityMask = RoomContentAdapter.this.resolvePopupVisibilityMask(adapterPosition);
+            RoomContentItem containerItem = currentItem != null
+                    ? currentItem
+                    : RoomContentAdapter.this.getItemAt(adapterPosition);
+            int visibilityMask = RoomContentAdapter.this
+                    .resolvePopupVisibilityMask(containerItem);
             if (checked) {
                 visibilityMask |= visibilityFlag;
             } else {
                 visibilityMask &= ~visibilityFlag;
             }
-            RoomContentAdapter.this.setContainerVisibilityMask(adapterPosition, visibilityMask);
+            RoomContentAdapter.this.setContainerVisibilityMask(containerItem, adapterPosition,
+                    visibilityMask);
             notifyItemChanged(adapterPosition);
             RoomContentAdapter.this.notifyAttachedItemsChanged(adapterPosition);
         }
@@ -4090,7 +4157,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                             .findAttachedContainerPosition(position);
                     if (containerPosition >= 0) {
                         boolean containerExpanded = RoomContentAdapter.this
-                                .isContainerExpanded(containerPosition)
+                                .isContainerExpanded(container)
                                 && container.hasAttachedItems();
                         if (containerExpanded) {
                             boolean isLastAttachment = RoomContentAdapter.this
@@ -4372,7 +4439,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return container != null
                     && container.isContainer()
                     && container.hasAttachedItems()
-                    && isContainerExpanded(containerPosition)
+                    && isContainerExpanded(container)
                     && hasVisibleDirectChildren(containerPosition);
         }
 
