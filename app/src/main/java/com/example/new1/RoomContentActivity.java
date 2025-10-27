@@ -885,7 +885,7 @@ public class RoomContentActivity extends Activity {
             return;
         }
         RoomContentAdapter.ViewHolder viewHolder = (RoomContentAdapter.ViewHolder) holder;
-        viewHolder.reopenFurniturePopup(state.furnitureLevelIndex);
+        viewHolder.reopenFurniturePopup(state.furnitureLevelIndex, null);
         contentList.postDelayed(() -> {
             View anchor = viewHolder.findFurnitureAddAnchor(state.furnitureLevelIndex);
             if (anchor != null) {
