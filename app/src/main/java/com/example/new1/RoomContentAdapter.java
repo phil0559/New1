@@ -3198,6 +3198,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (hasMoreColumns && index == MAX_VISIBLE_FURNITURE_COLUMNS) {
                     applyDropdownIndicator(chip);
                 }
+                chip.setTag(R.id.tag_furniture_column_index, index);
                 updateColumnChipBackground(chip, isSelected);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -3233,7 +3234,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             for (int i = 0; i < container.getChildCount(); i++) {
                 View child = container.getChildAt(i);
                 if (child instanceof TextView) {
-                    updateColumnChipBackground((TextView) child, (i + 1) == selectedIndex);
+                    Object tag = child.getTag(R.id.tag_furniture_column_index);
+                    int columnIndex;
+                    if (tag instanceof Integer) {
+                        columnIndex = (Integer) tag;
+                    } else {
+                        columnIndex = i + 1;
+                    }
+                    updateColumnChipBackground((TextView) child, columnIndex == selectedIndex);
                 }
             }
         }
