@@ -110,6 +110,7 @@
     <string name="dialog_add_room_content_title">Add an item</string>
     <string name="dialog_edit_room_content_title">Edit item</string>
     <string name="dialog_delete_room_container_message">Do you want to delete the container %1$s?</string>
+    <string name="dialog_delete_room_furniture_message">Do you want to delete the piece of furniture %1$s?</string>
     <string name="dialog_delete_room_content_selection_title">Delete selection</string>
     <plurals name="dialog_delete_room_content_selection_message">
         <item quantity="one">Do you want to delete the selected item?</item>

@@ -110,6 +110,7 @@
     <string name="dialog_add_room_content_title">Element hinzufügen</string>
     <string name="dialog_edit_room_content_title">Element bearbeiten</string>
     <string name="dialog_delete_room_container_message">Möchten Sie den Behälter %1$s löschen?</string>
+    <string name="dialog_delete_room_furniture_message">Möchten Sie das Möbelstück %1$s löschen?</string>
     <string name="dialog_delete_room_content_selection_title">Auswahl löschen</string>
     <plurals name="dialog_delete_room_content_selection_message">
         <item quantity="one">Möchten Sie das ausgewählte Element löschen?</item>
