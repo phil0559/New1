@@ -55,7 +55,9 @@ import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
+import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.widget.ImageViewCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -2378,28 +2380,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             containerPopupVisibilityMask = initialVisibilityMask;
             containerPopupAdapterPosition = position;
             RoomContentAdapter.this.setActiveContainerPopup(position, containerPopupVisibilityMask);
-            ImageView toggleIcon = popupView.findViewById(R.id.icon_container_popup_toggle);
-            if (toggleIcon != null) {
+            View filterPanel = popupView.findViewById(R.id.container_container_popup_filter_panel);
+            View filterShowAll = popupView.findViewById(R.id.filter_show_all);
+            View filterShowContainers = popupView.findViewById(R.id.filter_show_containers);
+            View filterShowItems = popupView.findViewById(R.id.filter_show_items);
+            if (filterPanel != null) {
                 if (childrenContainer == null) {
-                    toggleIcon.setVisibility(View.GONE);
-                    toggleIcon.setOnClickListener(null);
+                    filterPanel.setVisibility(View.GONE);
                 } else {
-                    updateContainerPopupToggleIcon(toggleIcon, containerPopupVisibilityMask,
+                    updateContainerPopupFilterPanel(filterPanel, filterShowAll,
+                            filterShowContainers, filterShowItems, containerPopupVisibilityMask,
                             toggleLabel);
-                    toggleIcon.setOnClickListener(view -> {
-                        if (currentItem == null || !currentItem.hasAttachedItems()
-                                || childrenContainer == null) {
-                            return;
-                        }
-                        containerPopupVisibilityMask = cyclePopupVisibilityMask(
-                                containerPopupVisibilityMask);
-                        RoomContentAdapter.this.setActiveContainerPopup(position,
-                                containerPopupVisibilityMask);
-                        refreshContainerPopupChildren(childrenContainer, position,
-                                containerPopupVisibilityMask);
-                        updateContainerPopupToggleIcon(toggleIcon, containerPopupVisibilityMask,
-                                toggleLabel);
-                    });
+                    ViewGroup finalChildrenContainer = childrenContainer;
+                    setupContainerPopupFilterOption(filterShowAll, VISIBILITY_DEFAULT_MASK,
+                            filterPanel, finalChildrenContainer, position, filterShowAll,
+                            filterShowContainers, filterShowItems, toggleLabel);
+                    setupContainerPopupFilterOption(filterShowContainers,
+                            VISIBILITY_FLAG_CONTAINERS, filterPanel, finalChildrenContainer,
+                            position, filterShowAll, filterShowContainers, filterShowItems,
+                            toggleLabel);
+                    setupContainerPopupFilterOption(filterShowItems, VISIBILITY_FLAG_ITEMS,
+                            filterPanel, finalChildrenContainer, position, filterShowAll,
+                            filterShowContainers, filterShowItems, toggleLabel);
                 }
             }
             ImageView addIcon = popupView.findViewById(R.id.icon_container_popup_add);
@@ -2634,49 +2636,101 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
         }
 
-        private void updateContainerPopupToggleIcon(@NonNull ImageView toggleIcon,
-                int visibilityMask, @Nullable CharSequence label) {
-            boolean hasDetails = currentItem != null && currentItem.hasAttachedItems();
-            if (!hasDetails) {
-                toggleIcon.setVisibility(View.GONE);
-                toggleIcon.setContentDescription(null);
-                toggleIcon.setImageDrawable(null);
+        private void setupContainerPopupFilterOption(@Nullable View optionView, int targetMask,
+                @Nullable View filterPanel, @Nullable ViewGroup childrenContainer,
+                int position, @Nullable View showAllView, @Nullable View showContainersView,
+                @Nullable View showItemsView, @Nullable CharSequence label) {
+            if (optionView == null) {
                 return;
             }
-            toggleIcon.setVisibility(View.VISIBLE);
-            toggleIcon.setRotation(0f);
-            int normalizedMask = normalizePopupVisibilityMask(visibilityMask);
-            toggleIcon.setImageResource(resolveContainerPopupToggleIcon(normalizedMask));
-            String labelText;
-            if (label != null && label.length() > 0) {
-                labelText = label.toString();
-            } else if (currentItem != null && currentItem.getName() != null) {
-                labelText = currentItem.getName();
-            } else {
-                labelText = "";
-            }
-            @StringRes int descriptionRes;
-            if (normalizedMask == VISIBILITY_FLAG_CONTAINERS) {
-                descriptionRes = R.string
-                        .content_description_room_content_popup_filter_containers;
-            } else if (normalizedMask == VISIBILITY_FLAG_ITEMS) {
-                descriptionRes = R.string.content_description_room_content_popup_filter_items;
-            } else {
-                descriptionRes = R.string.content_description_room_content_popup_filter_all;
-            }
-            toggleIcon.setContentDescription(
-                    toggleIcon.getContext().getString(descriptionRes, labelText));
+            optionView.setOnClickListener(view -> handleContainerPopupFilterSelection(targetMask,
+                    filterPanel, childrenContainer, position, showAllView, showContainersView,
+                    showItemsView, label));
         }
 
-        @DrawableRes
-        private int resolveContainerPopupToggleIcon(int visibilityMask) {
-            if (visibilityMask == VISIBILITY_FLAG_CONTAINERS) {
-                return R.drawable.ic_filter_containers;
+        private void handleContainerPopupFilterSelection(int newMask,
+                @Nullable View filterPanel, @Nullable ViewGroup childrenContainer,
+                int position, @Nullable View showAllView, @Nullable View showContainersView,
+                @Nullable View showItemsView, @Nullable CharSequence label) {
+            if (currentItem == null || !currentItem.hasAttachedItems()
+                    || childrenContainer == null) {
+                return;
             }
-            if (visibilityMask == VISIBILITY_FLAG_ITEMS) {
-                return R.drawable.ic_filter_items;
+            containerPopupVisibilityMask = newMask;
+            RoomContentAdapter.this.setActiveContainerPopup(position,
+                    containerPopupVisibilityMask);
+            refreshContainerPopupChildren(childrenContainer, position,
+                    containerPopupVisibilityMask);
+            updateContainerPopupFilterPanel(filterPanel, showAllView, showContainersView,
+                    showItemsView, containerPopupVisibilityMask, label);
+        }
+
+        private void updateContainerPopupFilterPanel(@Nullable View filterPanel,
+                @Nullable View showAllView, @Nullable View showContainersView,
+                @Nullable View showItemsView, int visibilityMask,
+                @Nullable CharSequence label) {
+            boolean hasDetails = currentItem != null && currentItem.hasAttachedItems();
+            if (filterPanel != null) {
+                if (!hasDetails) {
+                    filterPanel.setVisibility(View.GONE);
+                } else {
+                    filterPanel.setVisibility(View.VISIBLE);
+                }
             }
-            return R.drawable.ic_filter_all;
+            if (!hasDetails) {
+                return;
+            }
+            int normalizedMask = normalizePopupVisibilityMask(visibilityMask);
+            String labelText = resolveContainerPopupLabel(label);
+            updateContainerPopupFilterOption(showAllView,
+                    normalizedMask == VISIBILITY_DEFAULT_MASK, labelText,
+                    R.string.content_description_room_content_popup_filter_all,
+                    R.drawable.ic_filter_circle_full);
+            updateContainerPopupFilterOption(showContainersView,
+                    normalizedMask == VISIBILITY_FLAG_CONTAINERS, labelText,
+                    R.string.content_description_room_content_popup_filter_containers,
+                    R.drawable.ic_filter_circle_left);
+            updateContainerPopupFilterOption(showItemsView,
+                    normalizedMask == VISIBILITY_FLAG_ITEMS, labelText,
+                    R.string.content_description_room_content_popup_filter_items,
+                    R.drawable.ic_filter_circle_right);
+            if (filterPanel != null) {
+                filterPanel.setContentDescription(filterPanel.getContext().getString(
+                        R.string.content_description_room_content_popup_filter_group,
+                        labelText));
+            }
+        }
+
+        private void updateContainerPopupFilterOption(@Nullable View optionView,
+                boolean activated, @NonNull String labelText, @StringRes int descriptionRes,
+                @DrawableRes int iconRes) {
+            if (optionView == null) {
+                return;
+            }
+            optionView.setVisibility(View.VISIBLE);
+            optionView.setActivated(activated);
+            optionView.setFocusable(true);
+            Context context = optionView.getContext();
+            optionView.setContentDescription(context.getString(descriptionRes, labelText));
+            if (optionView instanceof ImageView) {
+                ImageView imageView = (ImageView) optionView;
+                imageView.setImageResource(iconRes);
+                int activeColor = ContextCompat.getColor(context, R.color.icon_brown);
+                int inactiveColor = ColorUtils.setAlphaComponent(activeColor, 153);
+                int tintColor = activated ? activeColor : inactiveColor;
+                ImageViewCompat.setImageTintList(imageView, ColorStateList.valueOf(tintColor));
+            }
+        }
+
+        @NonNull
+        private String resolveContainerPopupLabel(@Nullable CharSequence label) {
+            if (label != null && label.length() > 0) {
+                return label.toString();
+            }
+            if (currentItem != null && currentItem.getName() != null) {
+                return currentItem.getName();
+            }
+            return "";
         }
 
         private int normalizePopupVisibilityMask(int visibilityMask) {
@@ -2688,17 +2742,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if ((normalized & VISIBILITY_FLAG_CONTAINERS) != 0
                     && (normalized & VISIBILITY_FLAG_ITEMS) != 0) {
                 return VISIBILITY_DEFAULT_MASK;
-            }
-            return VISIBILITY_DEFAULT_MASK;
-        }
-
-        private int cyclePopupVisibilityMask(int currentMask) {
-            int normalized = normalizePopupVisibilityMask(currentMask);
-            if (normalized == VISIBILITY_DEFAULT_MASK) {
-                return VISIBILITY_FLAG_CONTAINERS;
-            }
-            if (normalized == VISIBILITY_FLAG_CONTAINERS) {
-                return VISIBILITY_FLAG_ITEMS;
             }
             return VISIBILITY_DEFAULT_MASK;
         }
