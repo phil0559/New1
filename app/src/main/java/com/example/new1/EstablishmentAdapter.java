@@ -248,11 +248,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     if (interactionListener == null || currentItem == null) {
                         return;
                     }
-                    int adapterPosition = getBindingAdapterPosition();
-                    if (adapterPosition == RecyclerView.NO_POSITION) {
+                    int currentAdapterPosition = getBindingAdapterPosition();
+                    if (currentAdapterPosition == RecyclerView.NO_POSITION) {
                         return;
                     }
-                    interactionListener.onEditEstablishment(currentItem, adapterPosition);
+                    interactionListener.onEditEstablishment(currentItem, currentAdapterPosition);
                 });
             }
 
@@ -265,11 +265,11 @@ public class EstablishmentAdapter extends RecyclerView.Adapter<EstablishmentAdap
                     if (interactionListener == null || currentItem == null) {
                         return;
                     }
-                    int adapterPosition = getBindingAdapterPosition();
-                    if (adapterPosition == RecyclerView.NO_POSITION) {
+                    int currentAdapterPosition = getBindingAdapterPosition();
+                    if (currentAdapterPosition == RecyclerView.NO_POSITION) {
                         return;
                     }
-                    interactionListener.onDeleteEstablishment(currentItem, adapterPosition);
+                    interactionListener.onDeleteEstablishment(currentItem, currentAdapterPosition);
                 });
             }
 
