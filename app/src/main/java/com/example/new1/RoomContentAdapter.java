@@ -4061,6 +4061,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (resolvedPosition == RecyclerView.NO_POSITION) {
                 return;
             }
+            RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
             interactionListener.onCopyRoomContent(targetItem, resolvedPosition);
         }
 
