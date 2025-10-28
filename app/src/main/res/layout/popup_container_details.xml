@@ -58,7 +58,10 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
-                android:orientation="horizontal">
+
+                android:orientation="horizontal"
+                android:visibility="gone">
+
 
                 <TextView
                     android:id="@+id/text_container_popup_selection_count"
@@ -67,6 +70,7 @@
                     android:textColor="@color/text_dark"
                     android:textSize="14sp"
                     android:textStyle="bold" />
+
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_move"
@@ -103,6 +107,7 @@
                     app:iconGravity="textStart"
                     app:iconPadding="8dp"
                     app:iconTint="@color/icon_brown" />
+
 
             </LinearLayout>
 

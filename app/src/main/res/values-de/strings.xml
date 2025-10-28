@@ -123,8 +123,12 @@
         <item quantity="one">%d Element ausgewählt</item>
         <item quantity="other">%d Elemente ausgewählt</item>
     </plurals>
+
+
     <string name="container_popup_action_move">Verschieben</string>
     <string name="container_popup_action_delete">Löschen</string>
+
+
     <string name="dialog_move_room_content_establishment_label">Einrichtung</string>
     <string name="dialog_move_room_content_room_label">Zielraum auswählen</string>
     <string name="dialog_move_room_content_container_label">Wählen Sie den übergeordneten Behälter oder das Möbelstück zum Ablegen des Elements.</string>
