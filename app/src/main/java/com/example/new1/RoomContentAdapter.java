@@ -4067,12 +4067,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (interactionListener == null || targetItem == null) {
                 return;
             }
+            ContainerPopupRestoreState activeContainerPopupState = RoomContentAdapter.this
+                    .captureActiveContainerPopupState();
+            int resolvedPosition = resolveAdapterPosition(targetItem, targetPosition);
+            if (resolvedPosition == RecyclerView.NO_POSITION) {
+                dismissOptionsMenu();
+                dismissFurniturePopup();
+                dismissContainerPopup();
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
+                return;
+            }
+            if (activeContainerPopupState != null
+                    && activeContainerPopupState.containerPosition == resolvedPosition) {
+                activeContainerPopupState = null;
+            }
             dismissOptionsMenu();
             dismissFurniturePopup();
             dismissContainerPopup();
-            int resolvedPosition = resolveAdapterPosition(targetItem, targetPosition);
-            if (resolvedPosition == RecyclerView.NO_POSITION) {
-                return;
+            if (activeContainerPopupState != null) {
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(
+                        activeContainerPopupState, resolvedPosition, true);
+            } else {
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
             }
             interactionListener.onDeleteRoomContent(targetItem, resolvedPosition);
         }
