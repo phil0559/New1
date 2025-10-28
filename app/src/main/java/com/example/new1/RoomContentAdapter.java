@@ -3183,10 +3183,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (!isFurnitureChild) {
                 selectionLongClickListener = view -> {
 
+
                     if (popupSelectionController.handleLongPress(child, childPosition)) {
                         bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                 currentBaseDepth, currentChildPosition);
                     }
+
 
                     return true;
                 };
@@ -3210,6 +3212,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     selectedInPopup || selectedInMain);
 
 
+
+
             if (selectionCheckBox != null) {
                 boolean showCheckbox = popupSelectionActive && selectableForSelection;
                 if (showCheckbox) {
@@ -3231,8 +3235,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     bannerContainerView.setOnClickListener(view -> {
                         if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                             bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                     currentBaseDepth, currentChildPosition);
+
 
                             return;
                         }
@@ -3246,8 +3252,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     bannerContainerView.setOnLongClickListener(view -> {
                         if (popupSelectionController.handleLongPress(child, childPosition)) {
 
+
                             bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                     currentBaseDepth, currentChildPosition);
+
 
                             return true;
                         }
@@ -3258,8 +3266,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     bannerContainerView.setOnClickListener(view -> {
                         if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                             bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                     currentBaseDepth, currentChildPosition);
+
 
                             return;
                         }
@@ -3301,8 +3311,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnClickListener(view -> {
                             if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return;
                             }
@@ -3316,8 +3328,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnLongClickListener(view -> {
                             if (popupSelectionController.handleLongPress(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return true;
                             }
@@ -3328,8 +3342,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnClickListener(view -> {
                             if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return;
                             }
@@ -3503,8 +3519,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 selectionModeEnabled = false;
                 selectedPositions.clear();
 
+
                 notifySelectionChanged();
 
+>
             }
 
             boolean isSelectionModeEnabled() {
@@ -3515,7 +3533,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return selectedPositions.get(adapterPosition, false);
             }
 
-
+<
             int getSelectionCount() {
                 return selectedPositions.size();
             }
@@ -3563,7 +3581,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     selectionModeEnabled = false;
                 }
 
+
                 notifySelectionChanged();
+
 
             }
 
@@ -4343,8 +4363,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         bannerContainer.setOnClickListener(view -> {
                             if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return;
                             }
@@ -4359,8 +4381,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         bannerContainer.setOnLongClickListener(view -> {
                             if (popupSelectionController.handleLongPress(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return true;
                             }
@@ -4371,8 +4395,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         bannerContainer.setOnClickListener(view -> {
                             if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return;
                             }
@@ -4395,8 +4421,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnClickListener(view -> {
                             if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return;
                             }
@@ -4411,8 +4439,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnLongClickListener(view -> {
                             if (popupSelectionController.handleLongPress(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return true;
                             }
@@ -4423,8 +4453,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnClickListener(view -> {
                             if (popupSelectionController.handleClick(child, childPosition)) {
 
+
                                 bindContainerPopupEntry(currentEntryView, currentContainerPosition,
                                         currentBaseDepth, currentChildPosition);
+
 
                                 return;
                             }

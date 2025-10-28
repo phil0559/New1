@@ -69,27 +69,43 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
-                <ImageView
-                    android:id="@+id/button_container_popup_selection_move"
-                    android:layout_width="@dimen/list_item_action_icon_size"
-                    android:layout_height="@dimen/list_item_action_icon_size"
-                    android:layout_marginStart="12dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/content_description_move_selected"
-                    android:padding="4dp"
-                    android:src="@drawable/ic_move"
-                    android:tint="@color/icon_brown" />
 
-                <ImageView
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/button_container_popup_selection_move"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:minHeight="0dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="16dp"
+                    android:text="@string/container_popup_action_move"
+                    android:textAllCaps="false"
+                    android:textColor="@color/icon_brown"
+                    android:textSize="14sp"
+                    app:icon="@drawable/ic_move"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconTint="@color/icon_brown" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_delete"
-                    android:layout_width="@dimen/list_item_action_icon_size"
-                    android:layout_height="@dimen/list_item_action_icon_size"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/content_description_delete_selected"
-                    android:padding="4dp"
-                    android:src="@drawable/ic_delete_outline"
-                    android:tint="@color/icon_brown" />
+                    android:minHeight="0dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="16dp"
+                    android:text="@string/container_popup_action_delete"
+                    android:textAllCaps="false"
+                    android:textColor="@color/icon_brown"
+                    android:textSize="14sp"
+                    app:icon="@drawable/ic_delete_outline"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconTint="@color/icon_brown" />
+
 
             </LinearLayout>
 
