@@ -1497,6 +1497,37 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 activeContainerPopupVisibilityMask);
     }
 
+    private void preparePendingContainerPopupRestore(
+            @Nullable ContainerPopupRestoreState restoreState,
+            int targetPosition,
+            boolean autoOpenWhenBound) {
+        if (restoreState == null) {
+            pendingContainerPopupRestore = null;
+            return;
+        }
+        if (targetPosition < 0 || targetPosition >= items.size()) {
+            pendingContainerPopupRestore = null;
+            return;
+        }
+        int containerPosition = restoreState.containerPosition;
+        if (containerPosition < 0 || containerPosition >= items.size()) {
+            pendingContainerPopupRestore = null;
+            return;
+        }
+        RoomContentItem containerItem = getItemAt(containerPosition);
+        if (containerItem == null || !containerItem.isContainer()) {
+            pendingContainerPopupRestore = null;
+            return;
+        }
+        if (targetPosition != containerPosition
+                && !isDescendantOf(containerPosition, targetPosition)) {
+            pendingContainerPopupRestore = null;
+            return;
+        }
+        pendingContainerPopupRestore = new ContainerPopupRestoreState(containerPosition,
+                restoreState.visibilityMask, autoOpenWhenBound);
+    }
+
     @Nullable
     public FurniturePopupRestoreState captureActiveFurniturePopupState() {
         if (activeFurniturePopupAdapterPosition == RecyclerView.NO_POSITION) {
@@ -4054,6 +4085,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (interactionListener == null || targetItem == null) {
                 return;
             }
+            ContainerPopupRestoreState activeContainerPopupState = RoomContentAdapter.this
+                    .captureActiveContainerPopupState();
             dismissOptionsMenu();
             dismissFurniturePopup();
             dismissContainerPopup();
@@ -4061,7 +4094,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (resolvedPosition == RecyclerView.NO_POSITION) {
                 return;
             }
-            RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
+            if (activeContainerPopupState != null) {
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(
+                        activeContainerPopupState, resolvedPosition, true);
+            } else {
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
+            }
             interactionListener.onCopyRoomContent(targetItem, resolvedPosition);
         }
 
