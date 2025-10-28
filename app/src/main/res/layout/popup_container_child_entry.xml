@@ -81,6 +81,16 @@
                     android:src="@drawable/ic_more_vertical"
                     android:tint="@color/icon_brown" />
 
+                <CheckBox
+                    android:id="@+id/checkbox_container_popup_child_select"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:buttonTint="@color/icon_brown"
+                    android:clickable="true"
+                    android:focusable="false"
+                    android:visibility="gone" />
+
             </LinearLayout>
 
             <TextView

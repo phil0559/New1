@@ -636,6 +636,16 @@ public class RoomContentActivity extends Activity {
                         }
 
                         @Override
+                        public void onMoveRoomContentSelection(@NonNull List<RoomContentItem> items) {
+                            showMoveRoomContentDialogForSelection(items);
+                        }
+
+                        @Override
+                        public void onDeleteRoomContentSelection(@NonNull List<RoomContentItem> items) {
+                            showDeleteRoomContentSelectionConfirmation(items);
+                        }
+
+                        @Override
                         public void onAddRoomContentToContainer(@NonNull RoomContentItem container,
                                                                   int position) {
                             showAddRoomContentDialog(container.getRank());

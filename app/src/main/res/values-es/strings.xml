@@ -118,6 +118,13 @@
     </plurals>
     <string name="dialog_move_room_content_title">Mover el elemento</string>
     <string name="dialog_move_room_content_selection_title">Mover la selección</string>
+
+    <plurals name="container_popup_selection_count">
+        <item quantity="one">%d elemento seleccionado</item>
+        <item quantity="other">%d elementos seleccionados</item>
+    </plurals>
+    <string name="container_popup_action_move">Mover</string>
+    <string name="container_popup_action_delete">Eliminar</string>
     <string name="dialog_move_room_content_establishment_label">Establecimiento</string>
     <string name="dialog_move_room_content_room_label">Elige la habitación de destino</string>
     <string name="dialog_move_room_content_container_label">Elige el contenedor padre o el mueble donde colocar el elemento.</string>
