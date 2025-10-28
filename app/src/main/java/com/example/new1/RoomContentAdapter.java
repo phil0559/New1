@@ -3263,12 +3263,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (overlay != null) {
                     overlay = overlay.mutate();
                 }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    bannerView.setForeground(overlay);
-                } else {
-                    ViewCompat.setForeground(bannerView, overlay);
-                }
+                setForegroundCompat(bannerView, overlay);
                 bannerView.setSelected(highlighted);
+            }
+        }
+
+        private void setForegroundCompat(@NonNull View target, @Nullable Drawable foreground) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                target.setForeground(foreground);
+            } else {
+                ViewCompat.setForeground(target, foreground);
             }
         }
 
