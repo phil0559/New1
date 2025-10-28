@@ -58,7 +58,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -3255,6 +3254,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             }
             if (bannerView != null) {
+
                 Drawable overlay = highlighted
                         ? AppCompatResources.getDrawable(bannerView.getContext(),
                                 R.drawable.popup_container_child_selection_foreground)
@@ -3264,6 +3264,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 ViewCompat.setForeground(bannerView, overlay);
                 bannerView.setSelected(highlighted);
+
             }
         }
 
