@@ -28,7 +28,7 @@
                 android:id="@+id/container_popup_child_banner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_room_content_banner_clickable"
+                android:background="@drawable/popup_container_child_banner_background"
                 android:clickable="true"
                 android:focusable="true"
                 android:gravity="center_vertical"

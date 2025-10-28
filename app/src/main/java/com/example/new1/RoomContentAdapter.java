@@ -14,7 +14,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
-import android.os.Build;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -59,11 +58,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
-import androidx.core.view.ViewCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -3256,23 +3253,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             }
             if (bannerView != null) {
-                Drawable overlay = highlighted
-                        ? AppCompatResources.getDrawable(bannerView.getContext(),
-                                R.drawable.popup_container_child_selection_foreground)
-                        : null;
-                if (overlay != null) {
-                    overlay = overlay.mutate();
-                }
-                setForegroundCompat(bannerView, overlay);
                 bannerView.setSelected(highlighted);
-            }
-        }
-
-        private void setForegroundCompat(@NonNull View target, @Nullable Drawable foreground) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                target.setForeground(foreground);
-            } else {
-                ViewCompat.setForeground(target, foreground);
+                bannerView.setActivated(highlighted);
+                bannerView.refreshDrawableState();
+                bannerView.jumpDrawablesToCurrentState();
             }
         }
 
