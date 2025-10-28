@@ -466,6 +466,24 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         setItemSelection(position, !currentlySelected);
     }
 
+    private boolean handleSelectionLongClick(@NonNull RoomContentItem item, int position) {
+        if (position == RecyclerView.NO_POSITION || position < 0 || position >= items.size()) {
+            return false;
+        }
+        if (item.isFurniture()) {
+            return false;
+        }
+        if (!selectionModeEnabled) {
+            if (interactionListener != null) {
+                interactionListener.onRequestSelectionMode(item, position);
+                return true;
+            }
+            return false;
+        }
+        toggleItemSelection(position);
+        return true;
+    }
+
     private boolean setItemSelection(int position, boolean selected) {
         if (!selectionModeEnabled) {
             return false;
@@ -1857,21 +1875,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             bannerContainer.setOnClickListener(view -> handleBannerClick());
             bannerContainer.setOnLongClickListener(view -> {
                 RoomContentItem item = currentItem;
-                if (item == null || item.isFurniture()) {
+                if (item == null) {
                     return false;
                 }
-                if (!RoomContentAdapter.this.selectionModeEnabled) {
-                    if (interactionListener != null) {
-                        int adapterPosition = getBindingAdapterPosition();
-                        if (adapterPosition != RecyclerView.NO_POSITION) {
-                            interactionListener.onRequestSelectionMode(item, adapterPosition);
-                            return true;
-                        }
-                    }
-                    return false;
+                int adapterPosition = getBindingAdapterPosition();
+                if (RoomContentAdapter.this.handleSelectionLongClick(item, adapterPosition)) {
+                    return true;
                 }
-                toggleSelection();
-                return true;
+                return false;
             });
             if (photoView != null) {
                 photoView.setOnClickListener(view -> notifyEdit());
@@ -3064,6 +3075,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         RoomContentAdapter.this.openContainerPopupAtPosition(childPosition);
                     });
                     bannerContainerView.setOnLongClickListener(view -> {
+                        if (RoomContentAdapter.this
+                                .handleSelectionLongClick(child, childPosition)) {
+                            dismissContainerPopup();
+                            return true;
+                        }
                         toggleOptionsMenu(view, child, childPosition);
                         return true;
                     });
@@ -3100,6 +3116,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                             RoomContentAdapter.this.openContainerPopupAtPosition(childPosition);
                         });
                         photoIcon.setOnLongClickListener(view -> {
+                            if (RoomContentAdapter.this
+                                    .handleSelectionLongClick(child, childPosition)) {
+                                dismissContainerPopup();
+                                return true;
+                            }
                             toggleOptionsMenu(view, child, childPosition);
                             return true;
                         });
@@ -3887,6 +3908,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                 openContainerFromFurniture(childPosition, furniturePosition,
                                         levelIndex));
                         bannerContainer.setOnLongClickListener(view -> {
+                            if (RoomContentAdapter.this
+                                    .handleSelectionLongClick(child, childPosition)) {
+                                dismissContainerPopup();
+                                return true;
+                            }
                             toggleOptionsMenu(view, child, childPosition);
                             return true;
                         });
@@ -3907,6 +3933,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                                 openContainerFromFurniture(childPosition, furniturePosition,
                                         levelIndex));
                         photoIcon.setOnLongClickListener(view -> {
+                            if (RoomContentAdapter.this
+                                    .handleSelectionLongClick(child, childPosition)) {
+                                dismissContainerPopup();
+                                return true;
+                            }
                             toggleOptionsMenu(view, child, childPosition);
                             return true;
                         });
@@ -4067,12 +4098,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (interactionListener == null || targetItem == null) {
                 return;
             }
+            ContainerPopupRestoreState activeContainerPopupState = RoomContentAdapter.this
+                    .captureActiveContainerPopupState();
+            int resolvedPosition = resolveAdapterPosition(targetItem, targetPosition);
+            if (resolvedPosition == RecyclerView.NO_POSITION) {
+                dismissOptionsMenu();
+                dismissFurniturePopup();
+                dismissContainerPopup();
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
+                return;
+            }
+            if (activeContainerPopupState != null
+                    && activeContainerPopupState.containerPosition == resolvedPosition) {
+                activeContainerPopupState = null;
+            }
             dismissOptionsMenu();
             dismissFurniturePopup();
             dismissContainerPopup();
-            int resolvedPosition = resolveAdapterPosition(targetItem, targetPosition);
-            if (resolvedPosition == RecyclerView.NO_POSITION) {
-                return;
+            if (activeContainerPopupState != null) {
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(
+                        activeContainerPopupState, resolvedPosition, true);
+            } else {
+                RoomContentAdapter.this.preparePendingContainerPopupRestore(resolvedPosition);
             }
             interactionListener.onDeleteRoomContent(targetItem, resolvedPosition);
         }
