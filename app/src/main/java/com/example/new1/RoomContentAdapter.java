@@ -14,6 +14,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -58,6 +59,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
@@ -3262,7 +3264,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (overlay != null) {
                     overlay = overlay.mutate();
                 }
-                ViewCompat.setForeground(bannerView, overlay);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    bannerView.setForeground(overlay);
+                } else {
+                    ViewCompat.setBackground(bannerView, overlay);
+                }
                 bannerView.setSelected(highlighted);
 
             }
