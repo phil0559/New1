@@ -57,31 +57,36 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center_vertical"
+                android:gravity="start"
 
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:visibility="gone">
 
 
                 <TextView
                     android:id="@+id/text_container_popup_selection_count"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:gravity="start"
                     android:textColor="@color/text_dark"
                     android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    android:textAlignment="viewStart" />
 
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_move"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="12dp"
                     android:minHeight="0dp"
+                    android:gravity="start|center_vertical"
                     android:paddingStart="12dp"
                     android:paddingEnd="16dp"
                     android:text="@string/container_popup_action_move"
+                    android:textAlignment="viewStart"
                     android:textAllCaps="false"
                     android:textColor="@color/icon_brown"
                     android:textSize="14sp"
@@ -93,13 +98,16 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_delete"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="4dp"
                     android:minHeight="0dp"
+                    android:gravity="start|center_vertical"
                     android:paddingStart="12dp"
                     android:paddingEnd="16dp"
                     android:text="@string/container_popup_action_delete"
+                    android:textAlignment="viewStart"
                     android:textAllCaps="false"
                     android:textColor="@color/icon_brown"
                     android:textSize="14sp"
