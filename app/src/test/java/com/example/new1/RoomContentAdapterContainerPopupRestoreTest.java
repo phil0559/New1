@@ -1,0 +1,268 @@
+package com.example.new1;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import sun.misc.Unsafe;
+
+public class RoomContentAdapterContainerPopupRestoreTest {
+
+    private Method prepareRestoreMethod;
+    private Field pendingRestoreField;
+    private Field itemsField;
+    private Field hierarchyParentsField;
+    private Field hierarchyDirtyField;
+    private Field activeContainerPositionField;
+    private Field activeContainerMaskField;
+
+    @Before
+    public void setUp() throws Exception {
+        prepareRestoreMethod = RoomContentAdapter.class.getDeclaredMethod(
+                "preparePendingContainerPopupRestore",
+                RoomContentAdapter.ContainerPopupRestoreState.class,
+                int.class,
+                boolean.class);
+        prepareRestoreMethod.setAccessible(true);
+
+        pendingRestoreField = RoomContentAdapter.class.getDeclaredField(
+                "pendingContainerPopupRestore");
+        pendingRestoreField.setAccessible(true);
+
+        itemsField = RoomContentAdapter.class.getDeclaredField("items");
+        itemsField.setAccessible(true);
+
+        hierarchyParentsField = RoomContentAdapter.class.getDeclaredField(
+                "hierarchyParentPositions");
+        hierarchyParentsField.setAccessible(true);
+
+        hierarchyDirtyField = RoomContentAdapter.class.getDeclaredField("hierarchyDirty");
+        hierarchyDirtyField.setAccessible(true);
+
+        activeContainerPositionField = RoomContentAdapter.class.getDeclaredField(
+                "activeContainerPopupAdapterPosition");
+        activeContainerPositionField.setAccessible(true);
+
+        activeContainerMaskField = RoomContentAdapter.class.getDeclaredField(
+                "activeContainerPopupVisibilityMask");
+        activeContainerMaskField.setAccessible(true);
+    }
+
+    @Test
+    public void restoresPopupWhenTargetIsSameContainer() throws Exception {
+        List<RoomContentItem> items = new ArrayList<>();
+        items.add(createContainer("Boîte"));
+
+        RoomContentAdapter adapter = instantiateAdapter(items, new int[]{-1});
+
+        RoomContentAdapter.ContainerPopupRestoreState state =
+                new RoomContentAdapter.ContainerPopupRestoreState(0, 5);
+
+        prepareRestoreMethod.invoke(adapter, state, 0, true);
+
+        RoomContentAdapter.ContainerPopupRestoreState pending =
+                (RoomContentAdapter.ContainerPopupRestoreState) pendingRestoreField.get(adapter);
+
+        assertNotNull(pending);
+        assertEquals(0, pending.containerPosition);
+        assertEquals(5, pending.visibilityMask);
+        assertTrue(pending.autoOpenWhenBound);
+    }
+
+    @Test
+    public void restoresPopupWhenTargetIsDescendant() throws Exception {
+        List<RoomContentItem> items = new ArrayList<>();
+        items.add(createContainer("Boîte"));
+        items.add(createItem("Livre"));
+
+        RoomContentAdapter adapter = instantiateAdapter(items, new int[]{-1, 0});
+
+        RoomContentAdapter.ContainerPopupRestoreState state =
+                new RoomContentAdapter.ContainerPopupRestoreState(0, 3);
+
+        prepareRestoreMethod.invoke(adapter, state, 1, true);
+
+        RoomContentAdapter.ContainerPopupRestoreState pending =
+                (RoomContentAdapter.ContainerPopupRestoreState) pendingRestoreField.get(adapter);
+
+        assertNotNull(pending);
+        assertEquals(0, pending.containerPosition);
+        assertEquals(3, pending.visibilityMask);
+        assertTrue(pending.autoOpenWhenBound);
+    }
+
+    @Test
+    public void clearsPendingStateWhenTargetIsUnrelated() throws Exception {
+        List<RoomContentItem> items = new ArrayList<>();
+        items.add(createContainer("Boîte"));
+        items.add(createItem("Livre"));
+        items.add(createItem("Vase"));
+
+        RoomContentAdapter adapter = instantiateAdapter(items, new int[]{-1, 0, -1});
+
+        pendingRestoreField.set(adapter, new RoomContentAdapter.ContainerPopupRestoreState(0, 1));
+
+        RoomContentAdapter.ContainerPopupRestoreState state =
+                new RoomContentAdapter.ContainerPopupRestoreState(0, 7);
+
+        prepareRestoreMethod.invoke(adapter, state, 2, true);
+
+        assertNull(pendingRestoreField.get(adapter));
+    }
+
+    @Test
+    public void notifyDeleteRestoresPopupWhenRemovingDescendant() throws Exception {
+        List<RoomContentItem> items = new ArrayList<>();
+        RoomContentItem container = createContainer("Boîte");
+        RoomContentItem child = createItem("Livre");
+        items.add(container);
+        items.add(child);
+
+        RoomContentAdapter adapter = instantiateAdapter(items, new int[]{-1, 0});
+        activeContainerPositionField.setInt(adapter, 0);
+        activeContainerMaskField.setInt(adapter, 5);
+
+        RecordingInteractionListener interactionListener = new RecordingInteractionListener();
+        RoomContentAdapter.ViewHolder viewHolder = instantiateViewHolder(adapter,
+                interactionListener);
+
+        pendingRestoreField.set(adapter, null);
+
+        Method notifyDeleteMethod = RoomContentAdapter.ViewHolder.class.getDeclaredMethod(
+                "notifyDelete",
+                RoomContentItem.class,
+                int.class);
+        notifyDeleteMethod.setAccessible(true);
+        notifyDeleteMethod.invoke(viewHolder, child, 1);
+
+        RoomContentAdapter.ContainerPopupRestoreState pending =
+                (RoomContentAdapter.ContainerPopupRestoreState) pendingRestoreField.get(adapter);
+
+        assertNotNull(pending);
+        assertEquals(0, pending.containerPosition);
+        assertEquals(5, pending.visibilityMask);
+        assertTrue(pending.autoOpenWhenBound);
+        assertEquals(child, interactionListener.deletedItem);
+        assertNotNull(interactionListener.deletedPosition);
+        assertEquals(1, (int) interactionListener.deletedPosition);
+    }
+
+    @Test
+    public void notifyDeleteClearsPendingWhenRemovingActiveContainer() throws Exception {
+        List<RoomContentItem> items = new ArrayList<>();
+        RoomContentItem container = createContainer("Boîte");
+        items.add(container);
+
+        RoomContentAdapter adapter = instantiateAdapter(items, new int[]{-1});
+        activeContainerPositionField.setInt(adapter, 0);
+        activeContainerMaskField.setInt(adapter, 7);
+
+        RecordingInteractionListener interactionListener = new RecordingInteractionListener();
+        RoomContentAdapter.ViewHolder viewHolder = instantiateViewHolder(adapter,
+                interactionListener);
+
+        pendingRestoreField.set(adapter, new RoomContentAdapter.ContainerPopupRestoreState(0, 7));
+
+        Method notifyDeleteMethod = RoomContentAdapter.ViewHolder.class.getDeclaredMethod(
+                "notifyDelete",
+                RoomContentItem.class,
+                int.class);
+        notifyDeleteMethod.setAccessible(true);
+        notifyDeleteMethod.invoke(viewHolder, container, 0);
+
+        assertNull(pendingRestoreField.get(adapter));
+        assertEquals(container, interactionListener.deletedItem);
+        assertNotNull(interactionListener.deletedPosition);
+        assertEquals(0, (int) interactionListener.deletedPosition);
+    }
+
+    private RoomContentAdapter instantiateAdapter(List<RoomContentItem> items, int[] parentPositions)
+            throws Exception {
+        RoomContentAdapter adapter = (RoomContentAdapter) getUnsafe()
+                .allocateInstance(RoomContentAdapter.class);
+        itemsField.set(adapter, items);
+        hierarchyParentsField.set(adapter, parentPositions);
+        hierarchyDirtyField.set(adapter, false);
+        return adapter;
+    }
+
+    private RoomContentAdapter.ViewHolder instantiateViewHolder(RoomContentAdapter adapter,
+            RoomContentAdapter.OnRoomContentInteractionListener interactionListener)
+            throws Exception {
+        RoomContentAdapter.ViewHolder viewHolder = (RoomContentAdapter.ViewHolder) getUnsafe()
+                .allocateInstance(RoomContentAdapter.ViewHolder.class);
+        Field outerField = RoomContentAdapter.ViewHolder.class.getDeclaredField("this$0");
+        outerField.setAccessible(true);
+        outerField.set(viewHolder, adapter);
+        Field interactionField = RoomContentAdapter.ViewHolder.class.getDeclaredField(
+                "interactionListener");
+        interactionField.setAccessible(true);
+        interactionField.set(viewHolder, interactionListener);
+        return viewHolder;
+    }
+
+    private RoomContentItem createContainer(String name) {
+        return new RoomContentItem(name, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, true, 0);
+    }
+
+    private RoomContentItem createItem(String name) {
+        return new RoomContentItem(name, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, false, 0);
+    }
+
+    private Unsafe getUnsafe() throws Exception {
+        Field field = Unsafe.class.getDeclaredField("theUnsafe");
+        field.setAccessible(true);
+        return (Unsafe) field.get(null);
+    }
+
+    private static class RecordingInteractionListener
+            implements RoomContentAdapter.OnRoomContentInteractionListener {
+
+        RoomContentItem deletedItem;
+        Integer deletedPosition;
+
+        @Override
+        public void onRequestSelectionMode(RoomContentItem item, int position) {
+        }
+
+        @Override
+        public void onCopyRoomContent(RoomContentItem item, int position) {
+        }
+
+        @Override
+        public void onMoveRoomContent(RoomContentItem item, int position) {
+        }
+
+        @Override
+        public void onEditRoomContent(RoomContentItem item, int position) {
+        }
+
+        @Override
+        public void onDeleteRoomContent(RoomContentItem item, int position) {
+            deletedItem = item;
+            deletedPosition = position;
+        }
+
+        @Override
+        public void onAddRoomContentToContainer(RoomContentItem container, int position) {
+        }
+
+        @Override
+        public void onAddRoomContentToFurnitureLevel(RoomContentItem furniture,
+                int position,
+                int level,
+                android.view.View anchor) {
+        }
+    }
+}
