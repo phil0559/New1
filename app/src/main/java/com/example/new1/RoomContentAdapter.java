@@ -61,6 +61,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.drawable.DrawableCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.RecyclerView;
@@ -3253,10 +3254,17 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             }
             if (bannerView != null) {
+
+                Drawable overlay = highlighted
+                        ? AppCompatResources.getDrawable(bannerView.getContext(),
+                                R.drawable.popup_container_child_selection_foreground)
+                        : null;
+                if (overlay != null) {
+                    overlay = overlay.mutate();
+                }
+                ViewCompat.setForeground(bannerView, overlay);
                 bannerView.setSelected(highlighted);
-                bannerView.setActivated(highlighted);
-                bannerView.refreshDrawableState();
-                bannerView.jumpDrawablesToCurrentState();
+
             }
         }
 
