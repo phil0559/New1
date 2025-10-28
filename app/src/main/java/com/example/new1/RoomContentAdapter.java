@@ -1884,6 +1884,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         private View popupSelectionActionsContainer;
         @Nullable
+        private View popupActionButtonsContainer;
+        @Nullable
         private TextView popupSelectionCountView;
         @Nullable
         private View popupSelectionMoveButton;
@@ -1896,6 +1898,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         private View popupMenuActionView;
         private int popupFilterPanelDefaultVisibility = View.GONE;
+        private int popupActionButtonsDefaultVisibility = View.GONE;
         private int popupAddDefaultVisibility = View.GONE;
         private int popupMenuDefaultVisibility = View.GONE;
 
@@ -2575,6 +2578,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
             popupSelectionActionsContainer = popupView.findViewById(
                     R.id.container_container_popup_selection_actions);
+            View actionButtonsContainer = popupView.findViewById(
+                    R.id.container_container_popup_action_buttons);
+            popupActionButtonsContainer = actionButtonsContainer;
+            popupActionButtonsDefaultVisibility = actionButtonsContainer != null
+                    ? actionButtonsContainer.getVisibility()
+                    : View.GONE;
             popupSelectionCountView = popupView.findViewById(
                     R.id.text_container_popup_selection_count);
             View selectionMoveButton = popupView.findViewById(
@@ -2670,13 +2679,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 popupSelectionController.reset();
 
                 popupSelectionActionsContainer = null;
+                popupActionButtonsContainer = null;
                 popupSelectionCountView = null;
                 popupSelectionMoveButton = null;
                 popupSelectionDeleteButton = null;
                 popupFilterPanel = null;
                 popupAddActionView = null;
                 popupMenuActionView = null;
-
+                popupActionButtonsDefaultVisibility = View.GONE;
                 if (groupPreviewView != null) {
                     groupPreviewView.setImageDrawable(null);
                     groupPreviewView.setVisibility(View.GONE);
@@ -3440,6 +3450,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (popupSelectionActionsContainer != null) {
 
                 popupSelectionActionsContainer.setVisibility(hasSelection ? View.VISIBLE : View.GONE);
+            }
+            if (popupActionButtonsContainer != null) {
+                popupActionButtonsContainer.setVisibility(hasSelection ? View.GONE
+                        : popupActionButtonsDefaultVisibility);
             }
             if (popupSelectionCountView != null) {
 
