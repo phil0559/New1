@@ -12,6 +12,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="2mm"
             android:background="@drawable/bg_menu_banner"
             android:elevation="8dp"
             android:gravity="center_vertical"
