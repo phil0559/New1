@@ -393,7 +393,7 @@ public class EstablishmentActivity extends Activity {
                     continue;
                 }
 
-                String oldKey = RoomContentStorage.buildKey(previousEstablishmentName, roomName);
+                String oldKey = RoomContentStorage.resolveKey(contentPreferences, previousEstablishmentName, roomName);
                 String newKey = RoomContentStorage.buildKey(newEstablishmentName, roomName);
                 if (oldKey.equals(newKey)) {
                     continue;

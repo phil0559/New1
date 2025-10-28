@@ -288,12 +288,12 @@ public class EstablishmentContentActivity extends Activity {
         if (trimmedPrevious.equals(trimmedNew)) {
             return;
         }
-        String oldKey = RoomContentStorage.buildKey(establishmentName, previousName);
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        String oldKey = RoomContentStorage.resolveKey(preferences, establishmentName, previousName);
         String newKey = RoomContentStorage.buildKey(establishmentName, newName);
         if (oldKey.equals(newKey)) {
             return;
         }
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
         String storedValue = preferences.getString(oldKey, null);
         if (storedValue == null) {
             return;

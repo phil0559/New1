@@ -3815,7 +3815,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @Nullable String room) {
         List<RoomContentItem> result = new ArrayList<>();
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String key = RoomContentStorage.buildKey(establishment, room);
+        String key = RoomContentStorage.resolveKey(preferences, establishment, room);
         String storedValue = preferences.getString(key, null);
         if (storedValue == null || storedValue.trim().isEmpty()) {
             return result;
@@ -3830,6 +3830,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 RoomContentItem parsed = RoomContentItem.fromJson(itemObject);
                 result.add(parsed);
             }
+            RoomContentStorage.ensureCanonicalKey(preferences, establishment, room, key);
         } catch (JSONException exception) {
             preferences.edit().remove(key).apply();
         }
@@ -4246,7 +4247,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     private void loadRoomContent() {
         SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String storedValue = preferences.getString(buildRoomContentKey(), null);
+        String resolvedKey = RoomContentStorage.resolveKey(preferences, establishmentName, roomName);
+        String storedValue = preferences.getString(resolvedKey, null);
         roomContentItems.clear();
         if (storedValue == null || storedValue.trim().isEmpty()) {
             if (roomContentAdapter != null) {
@@ -4261,9 +4263,10 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 RoomContentItem item = RoomContentItem.fromJson(itemObject);
                 roomContentItems.add(item);
             }
+            RoomContentStorage.ensureCanonicalKey(preferences, establishmentName, roomName, resolvedKey);
         } catch (JSONException e) {
             roomContentItems.clear();
-            preferences.edit().remove(buildRoomContentKey()).apply();
+            preferences.edit().remove(resolvedKey).apply();
         }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
