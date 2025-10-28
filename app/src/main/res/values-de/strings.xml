@@ -124,8 +124,10 @@
         <item quantity="other">%d Elemente ausgewählt</item>
     </plurals>
 
+
     <string name="container_popup_action_move">Verschieben</string>
     <string name="container_popup_action_delete">Löschen</string>
+
 
     <string name="dialog_move_room_content_establishment_label">Einrichtung</string>
     <string name="dialog_move_room_content_room_label">Zielraum auswählen</string>

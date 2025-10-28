@@ -124,6 +124,7 @@
         <item quantity="other">%d elementos seleccionados</item>
     </plurals>
 
+
     <string name="container_popup_action_move">Mover</string>
     <string name="container_popup_action_delete">Eliminar</string>
 
