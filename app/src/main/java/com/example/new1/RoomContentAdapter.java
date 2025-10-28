@@ -390,7 +390,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
         selectionModeEnabled = enabled;
         selectedPositions.clear();
-        notifyDataSetChanged();
+        notifySelectionModeChanged();
         notifySelectionChanged();
         refreshActiveContainerPopupSelection();
     }
@@ -400,7 +400,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         selectedPositions.clear();
-        notifyDataSetChanged();
+        notifySelectionModeChanged();
         notifySelectionChanged();
         refreshActiveContainerPopupSelection();
     }
@@ -448,7 +448,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     void restoreSelectionByRanks(@NonNull Set<Long> ranks) {
         selectedPositions.clear();
         if (ranks.isEmpty()) {
-            notifyDataSetChanged();
+            notifySelectionModeChanged();
             notifySelectionChanged();
             return;
         }
@@ -461,7 +461,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 selectedPositions.put(index, true);
             }
         }
-        notifyDataSetChanged();
+        notifySelectionModeChanged();
         notifySelectionChanged();
     }
 
@@ -516,6 +516,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     private boolean isItemSelected(int position) {
         return selectedPositions.get(position, false);
+    }
+
+    private void notifySelectionModeChanged() {
+        int itemCount = getItemCount();
+        if (itemCount > 0) {
+            notifyItemRangeChanged(0, itemCount, PAYLOAD_SELECTION);
+        }
     }
 
     private void sanitizeSelectionPositions() {
