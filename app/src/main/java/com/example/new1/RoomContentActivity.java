@@ -3346,13 +3346,24 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 : item.isContainer()
                 ? R.string.dialog_delete_room_container_message
                 : R.string.dialog_delete_room_content_message;
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.dialog_delete_room_content_title)
                 .setMessage(getString(messageRes, name))
                 .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton(R.string.action_delete, (dialog, which) ->
+                .setPositiveButton(R.string.action_delete, (dialogInterface, which) ->
                         deleteRoomContent(targetPosition))
-                .show();
+                .create();
+        dialog.setOnDismissListener(dismissDialog -> {
+            if (roomContentAdapter == null) {
+                return;
+            }
+            RoomContentAdapter.ContainerPopupRestoreState restoreState =
+                    roomContentAdapter.consumePendingContainerPopupRestoreState();
+            if (restoreState != null && contentList != null) {
+                roomContentAdapter.restoreContainerPopup(contentList, restoreState);
+            }
+        });
+        dialog.show();
     }
 
     private void showDeleteRoomContentSelectionConfirmation(@NonNull List<RoomContentItem> items) {
