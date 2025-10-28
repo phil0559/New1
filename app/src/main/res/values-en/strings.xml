@@ -123,8 +123,10 @@
         <item quantity="one">%d item selected</item>
         <item quantity="other">%d items selected</item>
     </plurals>
+
     <string name="container_popup_action_move">Move</string>
     <string name="container_popup_action_delete">Delete</string>
+
     <string name="dialog_move_room_content_establishment_label">Establishment</string>
     <string name="dialog_move_room_content_room_label">Choose the destination room</string>
     <string name="dialog_move_room_content_container_label">Choose the parent container or furniture where to place the item.</string>

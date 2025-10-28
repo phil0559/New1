@@ -139,8 +139,10 @@
         <item quantity="one">%d élément sélectionné</item>
         <item quantity="other">%d éléments sélectionnés</item>
     </plurals>
+
     <string name="container_popup_action_move">Déplacer</string>
     <string name="container_popup_action_delete">Supprimer</string>
+
     <string name="dialog_move_room_content_establishment_label">Établissement</string>
     <string name="dialog_move_room_content_room_label">Choisissez la pièce de destination</string>
     <string name="dialog_move_room_content_container_label">Choisissez le contenant parent ou le mobilier où placer l’élément.</string>

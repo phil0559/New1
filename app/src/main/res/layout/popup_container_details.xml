@@ -69,6 +69,7 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_move"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
@@ -104,6 +105,7 @@
                     app:iconGravity="textStart"
                     app:iconPadding="8dp"
                     app:iconTint="@color/icon_brown" />
+
 
             </LinearLayout>
 
