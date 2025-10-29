@@ -57,65 +57,58 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="start"
-
-                android:orientation="vertical"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:visibility="gone">
-
 
                 <TextView
                     android:id="@+id/text_container_popup_selection_count"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="12dp"
+                    android:layout_weight="1"
                     android:gravity="start"
+                    android:textAlignment="viewStart"
                     android:textColor="@color/text_dark"
                     android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:textAlignment="viewStart" />
-
+                    android:textStyle="bold" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_move"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginStart="12dp"
+                    android:minWidth="0dp"
                     android:minHeight="0dp"
-                    android:gravity="start|center_vertical"
+                    android:contentDescription="@string/content_description_move_selected"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
                     android:paddingStart="12dp"
-                    android:paddingEnd="16dp"
-                    android:text="@string/container_popup_action_move"
-                    android:textAlignment="viewStart"
+                    android:paddingEnd="12dp"
                     android:textAllCaps="false"
-                    android:textColor="@color/icon_brown"
-                    android:textSize="14sp"
                     app:icon="@drawable/ic_move"
                     app:iconGravity="textStart"
-                    app:iconPadding="8dp"
+                    app:iconPadding="0dp"
                     app:iconTint="@color/icon_brown" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/button_container_popup_selection_delete"
                     style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="4dp"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="0dp"
                     android:minHeight="0dp"
-                    android:gravity="start|center_vertical"
+                    android:contentDescription="@string/content_description_delete_selected"
+                    android:insetLeft="0dp"
+                    android:insetRight="0dp"
                     android:paddingStart="12dp"
-                    android:paddingEnd="16dp"
-                    android:text="@string/container_popup_action_delete"
-                    android:textAlignment="viewStart"
+                    android:paddingEnd="12dp"
                     android:textAllCaps="false"
-                    android:textColor="@color/icon_brown"
-                    android:textSize="14sp"
                     app:icon="@drawable/ic_delete_outline"
                     app:iconGravity="textStart"
-                    app:iconPadding="8dp"
+                    app:iconPadding="0dp"
                     app:iconTint="@color/icon_brown" />
-
 
             </LinearLayout>
 
