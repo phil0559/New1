@@ -131,8 +131,10 @@ public class MainActivity extends Activity {
     }
 
     private void applyLanguageSelection(String languageTag) {
-        LocaleHelper.persistLanguage(this, languageTag);
-        flagIcon.setImageResource(flagIconForTag(languageTag));
+        String appliedTag = LocaleHelper.persistLanguage(this, languageTag);
+        flagIcon.setImageResource(flagIconForTag(
+            appliedTag != null ? appliedTag : languageTag
+        ));
         // Empêche la restauration après un changement de langue appliqué.
         shouldRestoreLanguagePopup = false;
         if (languagePopup != null) {
@@ -154,7 +156,7 @@ public class MainActivity extends Activity {
     }
 
     private int flagIconForTag(String languageTag) {
-        String normalized = languageTag.toLowerCase(Locale.ROOT);
+        String normalized = languageTag.replace('_', '-').toLowerCase(Locale.ROOT);
         if (normalized.startsWith("en")) {
             return R.drawable.ic_flag_united_kingdom;
         }
