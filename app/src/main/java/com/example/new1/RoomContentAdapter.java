@@ -2224,8 +2224,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 itemView.setLayoutParams(params);
             }
             if (filledIndicatorView != null) {
-                boolean isExpanded = RoomContentAdapter.this.isContainerExpanded(item);
-                boolean showIndicator = item.isContainer() && item.hasAttachedItems() && !isExpanded;
+                boolean showIndicator = item.isContainer() && item.hasAttachedItems();
                 filledIndicatorView.setVisibility(showIndicator ? View.VISIBLE : View.GONE);
             }
             if (item.isFurniture()) {
