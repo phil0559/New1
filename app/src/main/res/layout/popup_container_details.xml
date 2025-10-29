@@ -85,13 +85,12 @@
                     android:gravity="start|center_vertical"
                     android:paddingStart="12dp"
                     android:paddingEnd="16dp"
-                    android:text="@string/container_popup_action_move"
-                    android:textAlignment="viewStart"
+                    android:contentDescription="@string/content_description_move_selected"
                     android:textAllCaps="false"
                     android:textColor="@color/icon_brown"
                     android:textSize="14sp"
                     app:icon="@drawable/ic_move"
-                    app:iconGravity="textStart"
+                    app:iconGravity="start"
                     app:iconPadding="8dp"
                     app:iconTint="@color/icon_brown" />
 
@@ -106,13 +105,12 @@
                     android:gravity="start|center_vertical"
                     android:paddingStart="12dp"
                     android:paddingEnd="16dp"
-                    android:text="@string/container_popup_action_delete"
-                    android:textAlignment="viewStart"
+                    android:contentDescription="@string/content_description_delete_selected"
                     android:textAllCaps="false"
                     android:textColor="@color/icon_brown"
                     android:textSize="14sp"
                     app:icon="@drawable/ic_delete_outline"
-                    app:iconGravity="textStart"
+                    app:iconGravity="start"
                     app:iconPadding="8dp"
                     app:iconTint="@color/icon_brown" />
 
