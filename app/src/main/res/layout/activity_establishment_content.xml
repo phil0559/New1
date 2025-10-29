@@ -16,7 +16,7 @@
             android:elevation="8dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:layout_marginTop="2mm"
+            android:layout_marginTop="24dp"
             android:paddingStart="20dp"
             android:paddingTop="14dp"
             android:paddingEnd="20dp"
