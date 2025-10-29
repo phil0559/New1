@@ -3588,7 +3588,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     return false;
                 }
                 toggleSelection(adapterPosition);
-                return true;
+                return selectionModeEnabled;
             }
 
             boolean handleLongPress(@NonNull RoomContentItem item, int adapterPosition) {
