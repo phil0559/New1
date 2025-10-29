@@ -3095,6 +3095,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 cardBackground = cardFrame;
             }
             View bannerContainerView = entryView.findViewById(R.id.container_popup_child_banner);
+            View filledIndicatorView = entryView.findViewById(
+                    R.id.view_container_popup_child_filled_indicator);
             TextView titleView = entryView.findViewById(R.id.text_container_popup_child_title);
             TextView commentView = entryView.findViewById(R.id.text_container_popup_child_comment);
             ImageView photoIcon = entryView.findViewById(R.id.image_container_popup_child_photo);
@@ -3177,12 +3179,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     RoomContentAdapter.this.applyContainerBannerColor(bannerContainerView, style,
                             child.getType());
                 }
+                if (filledIndicatorView != null) {
+                    RoomContentAdapter.this.applyFilledIndicatorStyle(filledIndicatorView);
+                    filledIndicatorView
+                            .setVisibility(hasAttachments ? View.VISIBLE : View.GONE);
+                }
             } else {
                 if (cardBackground != null) {
                     RoomContentAdapter.this.applyStandaloneContentBackground(cardBackground, style);
                 }
                 if (bannerContainerView != null) {
                     RoomContentAdapter.this.applyBannerColor(bannerContainerView, child.getType());
+                }
+                if (filledIndicatorView != null) {
+                    filledIndicatorView.setVisibility(View.GONE);
                 }
             }
             boolean isFurnitureChild = child.isFurniture();
