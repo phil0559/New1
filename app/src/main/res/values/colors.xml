@@ -18,6 +18,7 @@
     <color name="button_blue">#4A53FF</color>
     <color name="popup_dark_green">#1B4332</color>
     <color name="popup_purple">#D7B6F2</color>
+    <color name="popup_container_light_blue_background">#CDEBFF</color>
     <color name="popup_delete_red">#D32F2F</color>
     <color name="popup_container_blue">#D6EEF8</color>
     <color name="popup_container_light_gray">#F2F2F2</color>
