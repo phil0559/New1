@@ -3243,17 +3243,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (bannerContainerView != null) {
                 if (isContainerChild) {
                     bannerContainerView.setOnClickListener(view -> {
-                        if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                            bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                    currentBaseDepth, currentChildPosition);
-
-
-
-                            return;
-                        }
+                        clearContainerPopupSelectionIfActive();
                         if (RoomContentAdapter.this.selectionModeEnabled
                                 && !child.isFurniture()) {
                             RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -3278,17 +3268,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     });
                 } else {
                     bannerContainerView.setOnClickListener(view -> {
-                        if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                            bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                    currentBaseDepth, currentChildPosition);
-
-
-
-                            return;
-                        }
+                        clearContainerPopupSelectionIfActive();
                         if (RoomContentAdapter.this.selectionModeEnabled
                                 && !child.isFurniture()) {
                             RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -3325,17 +3305,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     }
                     if (isContainerChild) {
                         photoIcon.setOnClickListener(view -> {
-                            if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                                bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                        currentBaseDepth, currentChildPosition);
-
-
-
-                                return;
-                            }
+                            clearContainerPopupSelectionIfActive();
                             if (RoomContentAdapter.this.selectionModeEnabled
                                     && !child.isFurniture()) {
                                 RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -3360,17 +3330,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         });
                     } else {
                         photoIcon.setOnClickListener(view -> {
-                            if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                                bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                        currentBaseDepth, currentChildPosition);
-
-
-
-                                return;
-                            }
+                            clearContainerPopupSelectionIfActive();
                             if (RoomContentAdapter.this.selectionModeEnabled
                                     && !child.isFurniture()) {
                                 RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -3438,6 +3398,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             target.setOnLongClickListener(listener);
             target.setLongClickable(listener != null);
+        }
+
+
+        private void clearContainerPopupSelectionIfActive() {
+            if (!popupSelectionController.isSelectionModeEnabled()) {
+                return;
+            }
+            popupSelectionController.reset();
         }
 
 
@@ -4395,17 +4363,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (bannerContainer != null) {
                     if (isContainerChild) {
                         bannerContainer.setOnClickListener(view -> {
-                            if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                                bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                        currentBaseDepth, currentChildPosition);
-
-
-
-                                return;
-                            }
+                            clearContainerPopupSelectionIfActive();
                             if (RoomContentAdapter.this.selectionModeEnabled
                                     && !child.isFurniture()) {
                                 RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -4431,17 +4389,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         });
                     } else {
                         bannerContainer.setOnClickListener(view -> {
-                            if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                                bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                        currentBaseDepth, currentChildPosition);
-
-
-
-                                return;
-                            }
+                            clearContainerPopupSelectionIfActive();
                             if (RoomContentAdapter.this.selectionModeEnabled
                                     && !child.isFurniture()) {
                                 RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -4459,17 +4407,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         photoIcon.setOnLongClickListener(null);
                     } else if (isContainerChild) {
                         photoIcon.setOnClickListener(view -> {
-                            if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                                bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                        currentBaseDepth, currentChildPosition);
-
-
-
-                                return;
-                            }
+                            clearContainerPopupSelectionIfActive();
                             if (RoomContentAdapter.this.selectionModeEnabled
                                     && !child.isFurniture()) {
                                 RoomContentAdapter.this.toggleItemSelection(childPosition);
@@ -4495,17 +4433,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         });
                     } else {
                         photoIcon.setOnClickListener(view -> {
-                            if (popupSelectionController.handleClick(child, childPosition)) {
-
-
-
-                                bindContainerPopupEntry(currentEntryView, currentContainerPosition,
-                                        currentBaseDepth, currentChildPosition);
-
-
-
-                                return;
-                            }
+                            clearContainerPopupSelectionIfActive();
                             if (RoomContentAdapter.this.selectionModeEnabled
                                     && !child.isFurniture()) {
                                 RoomContentAdapter.this.toggleItemSelection(childPosition);
