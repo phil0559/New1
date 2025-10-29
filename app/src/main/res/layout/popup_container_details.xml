@@ -84,11 +84,16 @@
                     android:insetLeft="0dp"
                     android:insetRight="0dp"
                     android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
+
+                    android:paddingEnd="16dp"
+                    android:contentDescription="@string/content_description_move_selected"
+
                     android:textAllCaps="false"
                     app:icon="@drawable/ic_move"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
+
+                    app:iconGravity="start"
+                    app:iconPadding="8dp"
+
                     app:iconTint="@color/icon_brown" />
 
                 <com.google.android.material.button.MaterialButton
@@ -103,11 +108,16 @@
                     android:insetLeft="0dp"
                     android:insetRight="0dp"
                     android:paddingStart="12dp"
-                    android:paddingEnd="12dp"
+
+                    android:paddingEnd="16dp"
+                    android:contentDescription="@string/content_description_delete_selected"
+
                     android:textAllCaps="false"
                     app:icon="@drawable/ic_delete_outline"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp"
+
+                    app:iconGravity="start"
+                    app:iconPadding="8dp"
+
                     app:iconTint="@color/icon_brown" />
 
             </LinearLayout>
