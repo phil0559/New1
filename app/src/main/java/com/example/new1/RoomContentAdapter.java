@@ -3214,11 +3214,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     return true;
                 };
             }
-            applyContainerPopupSelectionListener(entryView, selectionLongClickListener);
-            applyContainerPopupSelectionListener(cardFrame, selectionLongClickListener);
-            applyContainerPopupSelectionListener(cardBackground, selectionLongClickListener);
-            applyContainerPopupSelectionListener(titleView, selectionLongClickListener);
-            applyContainerPopupSelectionListener(commentView, selectionLongClickListener);
+            applyContainerPopupSelectionListener(entryView, selectionLongClickListener,
+                    bannerContainerView);
+            applyContainerPopupSelectionListener(cardFrame, selectionLongClickListener,
+                    bannerContainerView);
+            applyContainerPopupSelectionListener(cardBackground, selectionLongClickListener,
+                    bannerContainerView);
+            applyContainerPopupSelectionListener(titleView, selectionLongClickListener,
+                    bannerContainerView);
+            applyContainerPopupSelectionListener(commentView, selectionLongClickListener,
+                    bannerContainerView);
 
             boolean selectableForSelection = !isFurnitureChild;
             boolean popupSelectionActive = popupSelectionController.isSelectionModeEnabled();
@@ -3402,11 +3407,19 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         private void applyContainerPopupSelectionListener(@Nullable View target,
                 @Nullable View.OnLongClickListener listener) {
+            applyContainerPopupSelectionListener(target, listener, null);
+        }
+
+        private void applyContainerPopupSelectionListener(@Nullable View target,
+                @Nullable View.OnLongClickListener listener, @Nullable View clickDelegate) {
             if (target == null) {
                 return;
             }
             target.setOnLongClickListener(listener);
             target.setLongClickable(listener != null);
+            if (clickDelegate != null && clickDelegate != target) {
+                target.setOnClickListener(view -> clickDelegate.performClick());
+            }
         }
 
 
