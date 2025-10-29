@@ -93,6 +93,15 @@
 
             </LinearLayout>
 
+            <View
+                android:id="@+id/view_container_popup_child_filled_indicator"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:background="@color/icon_brown"
+                android:visibility="gone" />
+
             <TextView
                 android:id="@+id/text_container_popup_child_comment"
                 android:layout_width="match_parent"
