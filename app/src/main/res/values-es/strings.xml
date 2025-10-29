@@ -39,6 +39,7 @@
     <string name="content_description_room_content_collapse">Ocultar el resumen de %1$s</string>
     <string name="content_description_multi_select">Selección múltiple</string>
     <string name="content_description_close_selection">Cerrar la selección</string>
+    <string name="dialog_close_content_description">Cerrar el cuadro de diálogo</string>
     <string name="content_description_move_selected">Mover la selección</string>
     <string name="content_description_delete_selected">Eliminar la selección</string>
     <string name="content_description_room_content_select">Seleccionar %1$s</string>

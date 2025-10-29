@@ -39,6 +39,7 @@
     <string name="content_description_room_content_collapse">Hide the summary for %1$s</string>
     <string name="content_description_multi_select">Select multiple</string>
     <string name="content_description_close_selection">Close selection</string>
+    <string name="dialog_close_content_description">Close the dialog</string>
     <string name="content_description_move_selected">Move selection</string>
     <string name="content_description_delete_selected">Delete selection</string>
     <string name="content_description_room_content_select">Select %1$s</string>
