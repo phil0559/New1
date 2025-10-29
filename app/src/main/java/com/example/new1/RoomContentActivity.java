@@ -1253,6 +1253,7 @@ public class RoomContentActivity extends Activity {
         ImageButton openTypeListButton = dialogView.findViewById(R.id.button_open_type_list);
         ImageButton editCustomTypeButton = dialogView.findViewById(R.id.button_edit_custom_type);
         ImageButton deleteCustomTypeButton = dialogView.findViewById(R.id.button_delete_custom_type);
+        ImageButton closeDialogButton = dialogView.findViewById(R.id.button_close_room_content_dialog);
         Button selectCategoryButton = dialogView.findViewById(R.id.button_select_category);
         ImageButton openCategoryListButton = dialogView.findViewById(R.id.button_open_category_list);
         ImageButton editCustomCategoryButton = dialogView.findViewById(R.id.button_edit_custom_category);
@@ -1278,6 +1279,9 @@ public class RoomContentActivity extends Activity {
         EditText customFieldValueOne = dialogView.findViewById(R.id.input_custom_field_value_1);
         EditText customFieldValueTwo = dialogView.findViewById(R.id.input_custom_field_value_2);
         TextView dialogTitle = dialogView.findViewById(R.id.text_dialog_room_content_title);
+        if (closeDialogButton != null) {
+            closeDialogButton.setOnClickListener(v -> dialog.dismiss());
+        }
         final TypeFieldViews typeFieldViews = new TypeFieldViews(nameLabel,
                 nameInput,
                 commentLabel,
@@ -2137,11 +2141,16 @@ public class RoomContentActivity extends Activity {
         TextView photoLabel = dialogView.findViewById(R.id.text_container_photos_label);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
+        ImageButton closeDialogButton = dialogView.findViewById(R.id.button_close_container_dialog);
 
         if (titleView != null) {
             titleView.setText(isEditing
                     ? R.string.dialog_edit_container_title
                     : R.string.dialog_add_container_title);
+        }
+
+        if (closeDialogButton != null) {
+            closeDialogButton.setOnClickListener(v -> dialog.dismiss());
         }
 
         final FormState formState = new FormState();
