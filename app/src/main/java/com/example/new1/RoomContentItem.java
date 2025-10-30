@@ -39,6 +39,7 @@ public class RoomContentItem {
     private static final String KEY_FURNITURE_COLUMNS = "furnitureColumns";
     private static final String KEY_FURNITURE_HAS_TOP = "furnitureHasTop";
     private static final String KEY_FURNITURE_HAS_BOTTOM = "furnitureHasBottom";
+    private static final String KEY_FURNITURE_STORAGE_TOWER = "furnitureStorageTower";
     private static final String KEY_ATTACHED_LEVEL = "attachedLevel";
     private static final String KEY_ATTACHED_COLUMN = "attachedColumn";
 
@@ -72,6 +73,7 @@ public class RoomContentItem {
     private final List<RoomContentItem> children;
     private final boolean container;
     private final boolean furniture;
+    private final boolean storageTower;
     @Nullable
     private final String furnitureType;
     @Nullable
@@ -111,7 +113,7 @@ public class RoomContentItem {
                            boolean isContainer) {
         this(name, comment, type, category, barcode, series, number, author, publisher,
                 edition, publicationDate, summary, tracks, photos, isContainer, 0,
-                false, null, null, null, null, false, false, null, null);
+                false, false, null, null, null, null, false, false, null, null);
     }
 
     public RoomContentItem(@NonNull String name,
@@ -132,35 +134,36 @@ public class RoomContentItem {
                            int ignoredAttachedItemCount) {
         this(name, comment, type, category, barcode, series, number, author, publisher,
                 edition, publicationDate, summary, tracks, photos, isContainer,
-                ignoredAttachedItemCount, false, null, null, null, null, false, false,
-                null, null);
+                ignoredAttachedItemCount, false, false, null, null, null, null, false,
+                false, null, null);
     }
 
     private RoomContentItem(@NonNull String name,
-                            @Nullable String comment,
-                            @Nullable String type,
-                            @Nullable String category,
-                            @Nullable String barcode,
-                            @Nullable String series,
-                            @Nullable String number,
-                            @Nullable String author,
-                            @Nullable String publisher,
-                            @Nullable String edition,
-                            @Nullable String publicationDate,
-                            @Nullable String summary,
-                            @Nullable List<String> tracks,
-                            @Nullable List<String> photos,
-                            boolean isContainer,
-                            int ignoredAttachedItemCount,
-                            boolean isFurniture,
-                            @Nullable String furnitureType,
-                            @Nullable String furnitureCustomType,
-                            @Nullable Integer furnitureLevels,
-                            @Nullable Integer furnitureColumns,
-                            boolean hasTop,
-                            boolean hasBottom,
-                            @Nullable Integer attachedLevel,
-                            @Nullable Integer attachedColumn) {
+                           @Nullable String comment,
+                           @Nullable String type,
+                           @Nullable String category,
+                           @Nullable String barcode,
+                           @Nullable String series,
+                           @Nullable String number,
+                           @Nullable String author,
+                           @Nullable String publisher,
+                           @Nullable String edition,
+                           @Nullable String publicationDate,
+                           @Nullable String summary,
+                           @Nullable List<String> tracks,
+                           @Nullable List<String> photos,
+                           boolean isContainer,
+                           int ignoredAttachedItemCount,
+                           boolean isFurniture,
+                           boolean isStorageTower,
+                           @Nullable String furnitureType,
+                           @Nullable String furnitureCustomType,
+                           @Nullable Integer furnitureLevels,
+                           @Nullable Integer furnitureColumns,
+                           boolean hasTop,
+                           boolean hasBottom,
+                           @Nullable Integer attachedLevel,
+                           @Nullable Integer attachedColumn) {
         // Le paramètre ignoredAttachedItemCount est conservé pour la compatibilité
         // binaire mais n'est plus utilisé : chaque élément est stocké sans lien.
         this.name = name;
@@ -193,6 +196,7 @@ public class RoomContentItem {
         this.children = new ArrayList<>();
         this.container = isContainer;
         this.furniture = isFurniture;
+        this.storageTower = isFurniture && isStorageTower;
         this.furnitureType = isNullOrEmpty(furnitureType) ? null : furnitureType;
         this.furnitureCustomType = isNullOrEmpty(furnitureCustomType)
                 ? null
@@ -240,12 +244,49 @@ public class RoomContentItem {
                 true,
                 0,
                 true,
+                false,
                 type,
                 customType,
                 levels,
                 columns,
                 hasTop,
                 hasBottom,
+                null,
+                null);
+    }
+
+    public static RoomContentItem createStorageTower(@NonNull String name,
+                                                     @Nullable String comment,
+                                                     @Nullable String type,
+                                                     @Nullable String customType,
+                                                     @Nullable List<String> photos,
+                                                     @Nullable Integer drawers,
+                                                     @Nullable Integer columns,
+                                                     boolean hasTop) {
+        return new RoomContentItem(name,
+                comment,
+                type,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                photos,
+                true,
+                0,
+                true,
+                true,
+                type,
+                customType,
+                drawers,
+                columns,
+                hasTop,
+                false,
                 null,
                 null);
     }
@@ -326,6 +367,10 @@ public class RoomContentItem {
 
     public boolean isFurniture() {
         return furniture;
+    }
+
+    public boolean isStorageTower() {
+        return storageTower;
     }
 
     @Nullable
@@ -449,6 +494,9 @@ public class RoomContentItem {
                 }
                 if (furnitureHasBottom) {
                     object.put(KEY_FURNITURE_HAS_BOTTOM, true);
+                }
+                if (storageTower) {
+                    object.put(KEY_FURNITURE_STORAGE_TOWER, true);
                 }
             }
             if (containerLevel != null) {
@@ -577,6 +625,7 @@ public class RoomContentItem {
         Integer parsedFurnitureColumns = null;
         boolean parsedHasTop = false;
         boolean parsedHasBottom = false;
+        boolean parsedStorageTower = false;
         Integer parsedAttachedLevel = null;
         Integer parsedAttachedColumn = null;
         if (isFurniture) {
@@ -601,6 +650,7 @@ public class RoomContentItem {
             }
             parsedHasTop = object.optBoolean(KEY_FURNITURE_HAS_TOP, false);
             parsedHasBottom = object.optBoolean(KEY_FURNITURE_HAS_BOTTOM, false);
+            parsedStorageTower = object.optBoolean(KEY_FURNITURE_STORAGE_TOWER, false);
         }
         if (object.has(KEY_ATTACHED_LEVEL) && !object.isNull(KEY_ATTACHED_LEVEL)) {
             int value = object.optInt(KEY_ATTACHED_LEVEL, 0);
@@ -636,6 +686,7 @@ public class RoomContentItem {
                 isContainer,
                 0,
                 isFurniture,
+                parsedStorageTower,
                 parsedFurnitureType,
                 parsedFurnitureCustomType,
                 parsedFurnitureLevels,

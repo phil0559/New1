@@ -56,6 +56,25 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/button_popup_add_room_content_storage_tower"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/popup_add_room_content_option_storage_tower"
+            android:textColor="@android:color/white"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/button_popup_add_room_content_furniture"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
