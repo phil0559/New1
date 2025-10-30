@@ -90,6 +90,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private static final int VISIBILITY_DEFAULT_MASK = VISIBILITY_FLAG_CONTAINERS
             | VISIBILITY_FLAG_ITEMS;
     static final int FURNITURE_SECTION_INDEX_TOP = 0; // Identifiant réservé pour la section « Dessus ».
+    static final int FURNITURE_SECTION_INDEX_BOTTOM = -1; // Identifiant réservé pour la section « Dessous ».
 
     private final List<RoomContentItem> items;
     private final LayoutInflater inflater;
@@ -1792,6 +1793,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         void onAddRoomContentToFurnitureLevel(@NonNull RoomContentItem furniture,
                 int position,
                 int level,
+                @NonNull View anchor);
+
+        void onAddRoomContentToFurnitureBottom(@NonNull RoomContentItem furniture,
+                int position,
                 @NonNull View anchor);
     }
 
@@ -4228,9 +4233,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         columnsRowContainer);
             }
             if (hasBottom) {
+                List<RoomContentItem> bottomItems = collectFurnitureItemsForBottom(children);
                 View section = createFurnitureSection(layoutInflater, container,
-                        context.getString(R.string.furniture_popup_bottom_title), false,
-                        Collections.emptyList(), parentPosition, baseDepth, null, levelToExpand);
+                        context.getString(R.string.furniture_popup_bottom_title), true,
+                        bottomItems, parentPosition, baseDepth, FURNITURE_SECTION_INDEX_BOTTOM,
+                        levelToExpand);
                 container.addView(section);
             }
         }
@@ -4321,8 +4328,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             View indicatorView = section.findViewById(R.id.view_section_indicator);
             ImageView addIcon = section.findViewById(R.id.icon_section_add);
             if (addIcon != null) {
+                boolean isBottomSection = levelIndex != null
+                        && levelIndex == FURNITURE_SECTION_INDEX_BOTTOM;
                 if (interactionListener != null && currentItem != null && levelIndex != null
-                        && (isTopSection || (isLevel && levelIndex > 0))) {
+                        && (isTopSection || isBottomSection || (isLevel && levelIndex > 0))) {
                     addIcon.setVisibility(View.VISIBLE);
                     furnitureAddAnchors.put(levelIndex, addIcon);
                     addIcon.setOnClickListener(view -> {
@@ -4334,6 +4343,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         }
                         if (isTopSection) {
                             interactionListener.onAddRoomContentToFurnitureTop(currentItem,
+                                    adapterPosition,
+                                    view);
+                        } else if (isBottomSection) {
+                            interactionListener.onAddRoomContentToFurnitureBottom(currentItem,
                                     adapterPosition,
                                     view);
                         } else {
@@ -4446,6 +4459,49 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 Integer childLevel = child.getContainerLevel();
                 if (childLevel != null && childLevel == desiredLevel) {
+                    if (selectedColumn != null) {
+                        Integer childColumn = child.getContainerColumn();
+                        if (childColumn == null) {
+                            if (selectedColumn != 1) {
+                                continue;
+                            }
+                        } else if (!childColumn.equals(selectedColumn)) {
+                            continue;
+                        }
+                    }
+                    matches.add(child);
+                }
+            }
+            if (matches.isEmpty()) {
+                return Collections.emptyList();
+            }
+            Collections.sort(matches, (left, right) -> {
+                int columnComparison = compareNullableIntegers(left.getContainerColumn(),
+                        right.getContainerColumn());
+                if (columnComparison != 0) {
+                    return columnComparison;
+                }
+                String leftName = RoomContentAdapter.this.resolveItemName(left);
+                String rightName = RoomContentAdapter.this.resolveItemName(right);
+                return leftName.compareToIgnoreCase(rightName);
+            });
+            return matches;
+        }
+
+        @NonNull
+        private List<RoomContentItem> collectFurnitureItemsForBottom(
+                @Nullable List<RoomContentItem> children) {
+            if (children == null || children.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<RoomContentItem> matches = new ArrayList<>();
+            Integer selectedColumn = selectedFurnitureColumn;
+            for (RoomContentItem child : children) {
+                if (child == null) {
+                    continue;
+                }
+                Integer childLevel = child.getContainerLevel();
+                if (childLevel != null && childLevel == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
                     if (selectedColumn != null) {
                         Integer childColumn = child.getContainerColumn();
                         if (childColumn == null) {

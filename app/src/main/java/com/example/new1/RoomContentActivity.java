@@ -672,6 +672,13 @@ public class RoomContentActivity extends Activity {
                         }
 
                         @Override
+                        public void onAddRoomContentToFurnitureBottom(@NonNull RoomContentItem furniture,
+                                                                        int position,
+                                                                        @NonNull View anchor) {
+                            showFurnitureBottomAddMenu(anchor, furniture);
+                        }
+
+                        @Override
                         public void onRequestSelectionMode(@NonNull RoomContentItem item,
                                                             int position) {
                             enterSelectionMode();
@@ -2937,6 +2944,18 @@ public class RoomContentActivity extends Activity {
                 RoomContentAdapter.FURNITURE_SECTION_INDEX_TOP);
     }
 
+    private void showFurnitureBottomAddMenu(@NonNull View anchor,
+                                            @NonNull RoomContentItem furniture) {
+        int adapterPosition = findAdapterPositionForItem(furniture);
+        Integer resolvedPosition = adapterPosition != RecyclerView.NO_POSITION
+                ? adapterPosition
+                : null;
+        showAddRoomContentMenu(anchor, furniture.getRank(),
+                RoomContentItem.FURNITURE_BOTTOM_LEVEL, false,
+                ADD_MENU_ANCHOR_FURNITURE_LEVEL, resolvedPosition,
+                RoomContentAdapter.FURNITURE_SECTION_INDEX_BOTTOM);
+    }
+
     private void showAddRoomContentMenu(@NonNull View anchor,
                                         @Nullable Long forcedParentRank,
                                         @Nullable Integer forcedFurnitureLevel,
@@ -3185,7 +3204,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
             @Override
             public void afterTextChanged(Editable s) {
-                selectedContainerHolder.desiredLevel = parsePositiveInteger(s);
+                selectedContainerHolder.desiredLevel = parseNonNegativeInteger(s);
                 furnitureLevelInput.setError(null);
             }
         });
@@ -3323,10 +3342,20 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 Integer maxLevels = furniture.getFurnitureLevels();
                 Integer maxColumns = furniture.getFurnitureColumns();
                 if (maxLevels == null || maxLevels > 0) {
-                    Integer parsedLevel = parsePositiveInteger(furnitureLevelInput != null
+                    Integer parsedLevel = parseNonNegativeInteger(furnitureLevelInput != null
                             ? furnitureLevelInput.getText()
                             : null);
-                    if (parsedLevel == null || (maxLevels != null && parsedLevel > maxLevels)) {
+                    boolean acceptsBottom = furniture.hasFurnitureBottom();
+                    boolean levelValid = parsedLevel != null;
+                    if (levelValid) {
+                        if (parsedLevel == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+                            levelValid = acceptsBottom;
+                        } else if (parsedLevel <= 0
+                                || (maxLevels != null && parsedLevel > maxLevels)) {
+                            levelValid = false;
+                        }
+                    }
+                    if (!levelValid) {
                         if (furnitureLevelInput != null) {
                             furnitureLevelInput.setError(getString(
                                     R.string.error_move_room_content_invalid_level));
@@ -3764,8 +3793,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             return;
         }
         if (targetContainer != null && targetContainer.isFurniture()) {
-            Integer appliedLevel = sanitizePlacementValue(targetLevel,
-                    targetContainer.getFurnitureLevels());
+            Integer appliedLevel = normalizeFurnitureLevel(targetLevel, targetContainer);
             Integer appliedColumn = sanitizePlacementValue(targetColumn,
                     targetContainer.getFurnitureColumns());
             item.setContainerLevel(appliedLevel);
@@ -3783,6 +3811,26 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             return null;
         }
         int sanitized = Math.max(1, value);
+        if (maxValue != null && maxValue > 0 && sanitized > maxValue) {
+            sanitized = maxValue;
+        }
+        return sanitized;
+    }
+
+    @Nullable
+    private Integer normalizeFurnitureLevel(@Nullable Integer value,
+            @Nullable RoomContentItem container) {
+        if (value == null) {
+            return null;
+        }
+        int sanitized = value;
+        if (sanitized <= 0) {
+            if (container != null && container.hasFurnitureBottom()) {
+                return RoomContentItem.FURNITURE_BOTTOM_LEVEL;
+            }
+            sanitized = 1;
+        }
+        Integer maxValue = container != null ? container.getFurnitureLevels() : null;
         if (maxValue != null && maxValue > 0 && sanitized > maxValue) {
             sanitized = maxValue;
         }
@@ -3947,6 +3995,26 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     @NonNull
     private String normalizeName(@Nullable String value) {
         return value == null ? "" : value.trim();
+    }
+
+    @Nullable
+    private static Integer parseNonNegativeInteger(@Nullable CharSequence value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.toString().trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        try {
+            int parsed = Integer.parseInt(trimmed);
+            if (parsed < 0) {
+                return null;
+            }
+            return parsed;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     @Nullable
