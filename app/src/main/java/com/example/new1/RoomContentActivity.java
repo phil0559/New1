@@ -356,6 +356,8 @@ public class RoomContentActivity extends Activity {
         @Nullable
         final ImageView barcodePreviewView;
         @Nullable
+        final ImageButton clearBarcodeButton;
+        @Nullable
         final Button selectTypeButton;
         @Nullable
         final View bookFields;
@@ -384,6 +386,7 @@ public class RoomContentActivity extends Activity {
                             @Nullable EditText nameInput,
                             @Nullable TextView barcodeValueView,
                             @Nullable ImageView barcodePreviewView,
+                            @Nullable ImageButton clearBarcodeButton,
                             @Nullable Button selectTypeButton,
                             @Nullable View bookFields,
                             @Nullable View trackFields,
@@ -401,6 +404,7 @@ public class RoomContentActivity extends Activity {
             this.nameInput = nameInput;
             this.barcodeValueView = barcodeValueView;
             this.barcodePreviewView = barcodePreviewView;
+            this.clearBarcodeButton = clearBarcodeButton;
             this.selectTypeButton = selectTypeButton;
             this.bookFields = bookFields;
             this.trackFields = trackFields;
@@ -1241,6 +1245,7 @@ public class RoomContentActivity extends Activity {
         EditText commentInput = dialogView.findViewById(R.id.input_room_content_comment);
         TextView barcodeValueView = dialogView.findViewById(R.id.text_barcode_value);
         ImageView barcodePreviewView = dialogView.findViewById(R.id.image_barcode_preview);
+        ImageButton clearBarcodeButton = dialogView.findViewById(R.id.button_clear_barcode);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel);
         Button addPhotoButton = dialogView.findViewById(R.id.button_add_room_content_photo);
@@ -1448,7 +1453,12 @@ public class RoomContentActivity extends Activity {
             }
         }
 
-        bindBarcodeValue(barcodeValueView, barcodePreviewView, initialBarcode);
+        if (clearBarcodeButton != null) {
+            clearBarcodeButton.setOnClickListener(v ->
+                    clearBarcodeValue(barcodeValueView, barcodePreviewView, clearBarcodeButton));
+        }
+
+        bindBarcodeValue(barcodeValueView, barcodePreviewView, clearBarcodeButton, initialBarcode);
 
         final FormState formState = new FormState();
         formState.photoLabel = dialogView.findViewById(R.id.text_room_content_photos_label);
@@ -1800,7 +1810,7 @@ public class RoomContentActivity extends Activity {
                 if (currentFormState == null || currentFormState != formState) {
                     return;
                 }
-                showBarcodeCreationDialog(barcodeValueView, barcodePreviewView);
+                showBarcodeCreationDialog(barcodeValueView, barcodePreviewView, clearBarcodeButton);
             });
         }
 
@@ -1830,6 +1840,7 @@ public class RoomContentActivity extends Activity {
                         nameInput,
                         barcodeValueView,
                         barcodePreviewView,
+                        clearBarcodeButton,
                         selectTypeButton,
                         bookFields,
                         trackFields,
@@ -2086,6 +2097,7 @@ public class RoomContentActivity extends Activity {
                     nameInput,
                     barcodeValueView,
                     barcodePreviewView,
+                    clearBarcodeButton,
                     selectTypeButton,
                     bookFields,
                     trackFields,
@@ -2752,7 +2764,8 @@ public class RoomContentActivity extends Activity {
     }
 
     private void showBarcodeCreationDialog(@Nullable TextView barcodeValueView,
-                                           @Nullable ImageView barcodePreviewView) {
+                                           @Nullable ImageView barcodePreviewView,
+                                           @Nullable ImageButton clearBarcodeButton) {
         if (barcodeValueView == null && barcodePreviewView == null) {
             return;
         }
@@ -2822,7 +2835,7 @@ public class RoomContentActivity extends Activity {
             if (positive != null) {
                 positive.setTextColor(textColor);
                 positive.setOnClickListener(v -> {
-                    if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView)) {
+                    if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView, clearBarcodeButton)) {
                         dialog.dismiss();
                     }
                 });
@@ -2834,7 +2847,7 @@ public class RoomContentActivity extends Activity {
                     String generated = generateRandomBarcodeValue();
                     input.setText(generated);
                     input.setSelection(generated.length());
-                    if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView)) {
+                    if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView, clearBarcodeButton)) {
                         dialog.dismiss();
                     }
                 });
@@ -2853,7 +2866,8 @@ public class RoomContentActivity extends Activity {
 
     private boolean applyBarcodeValue(@NonNull EditText input,
                                       @Nullable TextView barcodeValueView,
-                                      @Nullable ImageView barcodePreviewView) {
+                                      @Nullable ImageView barcodePreviewView,
+                                      @Nullable ImageButton clearBarcodeButton) {
         CharSequence text = input.getText();
         String value = text != null ? text.toString().trim() : "";
         if (value.isEmpty()) {
@@ -2867,6 +2881,7 @@ public class RoomContentActivity extends Activity {
         if (barcodeValueView != null) {
             barcodeValueView.setText(value);
         }
+        updateBarcodeClearButton(clearBarcodeButton, true);
         input.setError(null);
         return true;
     }
@@ -4801,6 +4816,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             context.barcodeValueView.setText(trimmed);
         }
         updateBarcodePreview(context.barcodePreviewView, trimmed, false);
+        updateBarcodeClearButton(context.clearBarcodeButton, true);
         Toast.makeText(this, R.string.dialog_barcode_lookup_in_progress, Toast.LENGTH_SHORT).show();
         fetchMetadataForBarcode(trimmed, context);
     }
@@ -5431,6 +5447,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             context.barcodeValueView.setText(barcode);
         }
         updateBarcodePreview(context.barcodePreviewView, barcode, false);
+        updateBarcodeClearButton(context.clearBarcodeButton, true);
         if (result.errorMessage != null) {
             Toast.makeText(this, result.errorMessage, Toast.LENGTH_LONG).show();
             barcodeScanContext = null;
@@ -5496,6 +5513,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     private void bindBarcodeValue(@Nullable TextView barcodeValueView,
                                   @Nullable ImageView barcodePreviewView,
+                                  @Nullable ImageButton clearBarcodeButton,
                                   @Nullable String barcode) {
         String trimmed = barcode != null ? barcode.trim() : "";
         if (barcodeValueView != null) {
@@ -5507,9 +5525,34 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         if (trimmed.isEmpty()) {
             updateBarcodePreview(barcodePreviewView, null, false);
+            updateBarcodeClearButton(clearBarcodeButton, false);
         } else {
             updateBarcodePreview(barcodePreviewView, trimmed, false);
+            updateBarcodeClearButton(clearBarcodeButton, true);
         }
+    }
+
+    private void clearBarcodeValue(@Nullable TextView barcodeValueView,
+                                   @Nullable ImageView barcodePreviewView,
+                                   @Nullable ImageButton clearBarcodeButton) {
+        if (barcodeValueView != null) {
+            barcodeValueView.setText(R.string.dialog_label_barcode_placeholder);
+        }
+        updateBarcodePreview(barcodePreviewView, null, false);
+        updateBarcodeClearButton(clearBarcodeButton, false);
+        if (pendingBarcodeResult != null) {
+            pendingBarcodeResult.barcode = null;
+            pendingBarcodeResult.resumeLookup = false;
+        }
+    }
+
+    private void updateBarcodeClearButton(@Nullable ImageButton clearBarcodeButton,
+                                          boolean hasValue) {
+        if (clearBarcodeButton == null) {
+            return;
+        }
+        clearBarcodeButton.setEnabled(hasValue);
+        clearBarcodeButton.setVisibility(hasValue ? View.VISIBLE : View.GONE);
     }
 
     private boolean updateBarcodePreview(@Nullable ImageView previewView,
@@ -5564,6 +5607,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                                                         @Nullable EditText nameInput,
                                                         @Nullable TextView barcodeValueView,
                                                         @Nullable ImageView barcodePreviewView,
+                                                        @Nullable ImageButton clearBarcodeButton,
                                                         @Nullable Button selectTypeButton,
                                                         @Nullable View bookFields,
                                                         @Nullable View trackFields,
@@ -5581,6 +5625,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 nameInput,
                 barcodeValueView,
                 barcodePreviewView,
+                clearBarcodeButton,
                 selectTypeButton,
                 bookFields,
                 trackFields,
