@@ -3671,6 +3671,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (nameTextView != null) {
                 nameTextView.setText(currentItem != null ? currentItem.getName() : null);
             }
+            ImageView closeIcon = popupView.findViewById(R.id.icon_furniture_popup_close);
             ImageView photosIcon = popupView.findViewById(R.id.icon_furniture_popup_photos);
             if (photosIcon != null) {
                 photosIcon.setOnClickListener(view -> showFurniturePhotoMenu(photosIcon));
@@ -3699,6 +3700,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             float elevation = itemView.getResources().getDisplayMetrics().density * 6f;
             popupWindow.setElevation(elevation);
+            if (closeIcon != null) {
+                closeIcon.setOnClickListener(view -> popupWindow.dismiss());
+            }
             furnitureAddAnchors.clear();
             popupWindow.setOnDismissListener(() -> {
                 furniturePopup = null;
