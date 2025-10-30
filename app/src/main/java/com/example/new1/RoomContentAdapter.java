@@ -74,6 +74,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -4414,7 +4415,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return Collections.emptyList();
             }
             List<RoomContentItem> matches = new ArrayList<>();
-            Integer selectedColumn = selectedFurnitureColumn;
+            Set<Long> seenRanks = new LinkedHashSet<>();
             for (RoomContentItem child : children) {
                 if (child == null) {
                     continue;
@@ -4422,15 +4423,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (child.getContainerLevel() != null) {
                     continue;
                 }
-                if (selectedColumn != null) {
-                    Integer childColumn = child.getContainerColumn();
-                    if (childColumn == null) {
-                        if (selectedColumn != 1) {
-                            continue;
-                        }
-                    } else if (!childColumn.equals(selectedColumn)) {
-                        continue;
-                    }
+                long rank = child.getRank();
+                if (!seenRanks.add(rank)) {
+                    continue;
                 }
                 matches.add(child);
             }
@@ -4438,11 +4433,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return Collections.emptyList();
             }
             Collections.sort(matches, (left, right) -> {
-                int columnComparison = compareNullableIntegers(left.getContainerColumn(),
-                        right.getContainerColumn());
-                if (columnComparison != 0) {
-                    return columnComparison;
-                }
                 String leftName = RoomContentAdapter.this.resolveItemName(left);
                 String rightName = RoomContentAdapter.this.resolveItemName(right);
                 return leftName.compareToIgnoreCase(rightName);

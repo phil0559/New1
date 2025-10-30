@@ -27,6 +27,7 @@
     <color name="furniture_popup_section_level_background">#E7DAF7</color>
     <color name="furniture_popup_section_level_border">#809267B9</color>
     <color name="furniture_popup_section_indicator">#3B2A1C</color>
+    <color name="furniture_popup_background">#F0F0F0</color>
     <color name="furniture_popup_column_background">#00FFFFFF</color>
     <color name="furniture_popup_column_border">#80989490</color>
     <color name="furniture_popup_column_selected_background">#FFFFFFFF</color>
