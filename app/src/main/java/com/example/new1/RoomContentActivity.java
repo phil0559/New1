@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -2759,6 +2760,11 @@ public class RoomContentActivity extends Activity {
         input.setHint(R.string.dialog_generate_barcode_hint);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         input.setSingleLine(true);
+        final int backgroundColor = ContextCompat.getColor(this, R.color.barcode_dialog_background);
+        final int textColor = ContextCompat.getColor(this, R.color.barcode_dialog_text);
+        final int hintColor = ContextCompat.getColor(this, R.color.barcode_dialog_hint);
+        input.setTextColor(textColor);
+        input.setHintTextColor(hintColor);
         String existing = extractBarcodeValue(barcodeValueView);
         if (!TextUtils.isEmpty(existing)) {
             input.setText(existing);
@@ -2782,6 +2788,7 @@ public class RoomContentActivity extends Activity {
         LinearLayout container = new LinearLayout(this);
         container.setOrientation(LinearLayout.VERTICAL);
         container.setPadding(padding, padding, padding, 0);
+        container.setBackgroundColor(backgroundColor);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -2796,8 +2803,24 @@ public class RoomContentActivity extends Activity {
                 .create();
 
         dialog.setOnShowListener(dlg -> {
+            TextView titleView = dialog.findViewById(
+                    Resources.getSystem().getIdentifier("alertTitle", "id", "android"));
+            if (titleView != null) {
+                titleView.setTextColor(textColor);
+            }
+            View contentPanel = dialog.findViewById(
+                    Resources.getSystem().getIdentifier("contentPanel", "id", "android"));
+            if (contentPanel != null) {
+                contentPanel.setBackgroundColor(backgroundColor);
+            }
+            View buttonPanel = dialog.findViewById(
+                    Resources.getSystem().getIdentifier("buttonPanel", "id", "android"));
+            if (buttonPanel != null) {
+                buttonPanel.setBackgroundColor(backgroundColor);
+            }
             Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
             if (positive != null) {
+                positive.setTextColor(textColor);
                 positive.setOnClickListener(v -> {
                     if (applyBarcodeValue(input, barcodeValueView, barcodePreviewView)) {
                         dialog.dismiss();
@@ -2806,6 +2829,7 @@ public class RoomContentActivity extends Activity {
             }
             Button neutral = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
             if (neutral != null) {
+                neutral.setTextColor(textColor);
                 neutral.setOnClickListener(v -> {
                     String generated = generateRandomBarcodeValue();
                     input.setText(generated);
@@ -2815,11 +2839,15 @@ public class RoomContentActivity extends Activity {
                     }
                 });
             }
+            Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+            if (negative != null) {
+                negative.setTextColor(textColor);
+            }
         });
 
         dialog.show();
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(backgroundColor));
         }
     }
 
