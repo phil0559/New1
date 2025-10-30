@@ -70,4 +70,7 @@
     <color name="group_background_level2">#F8FAFF</color>
     <color name="group_background_level3">#FBFCFF</color>
     <color name="popup_container_child_selection_overlay">#143B2A1C</color>
+    <color name="barcode_dialog_background">#FF424242</color>
+    <color name="barcode_dialog_text">#FFFFFFFF</color>
+    <color name="barcode_dialog_hint">#80FFFFFF</color>
 </resources>
