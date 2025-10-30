@@ -13,6 +13,8 @@ import java.util.List;
 
 public class RoomContentItem {
 
+    public static final int FURNITURE_BOTTOM_LEVEL = 0;
+
     private static final String KEY_NAME = "name";
     private static final String KEY_COMMENT = "comment";
     private static final String KEY_TYPE = "type";
@@ -396,7 +398,9 @@ public class RoomContentItem {
     }
 
     public void setContainerLevel(@Nullable Integer level) {
-        if (level == null || level <= 0) {
+        if (level == null) {
+            containerLevel = null;
+        } else if (level < FURNITURE_BOTTOM_LEVEL) {
             containerLevel = null;
         } else {
             containerLevel = level;
@@ -600,7 +604,7 @@ public class RoomContentItem {
         }
         if (object.has(KEY_ATTACHED_LEVEL) && !object.isNull(KEY_ATTACHED_LEVEL)) {
             int value = object.optInt(KEY_ATTACHED_LEVEL, 0);
-            if (value > 0) {
+            if (value >= FURNITURE_BOTTOM_LEVEL) {
                 parsedAttachedLevel = value;
             }
         }
