@@ -34,6 +34,8 @@
     <dimen name="furniture_popup_header_icon_spacing">12dp</dimen>
     <dimen name="furniture_popup_section_spacing">12dp</dimen>
     <dimen name="furniture_popup_section_padding">14dp</dimen>
+    <dimen name="furniture_popup_columns_header_margin_top">20dp</dimen>
+    <dimen name="furniture_popup_columns_row_margin_top">12dp</dimen>
     <dimen name="furniture_popup_column_chip_size">42dp</dimen>
     <dimen name="furniture_popup_column_chip_spacing">8dp</dimen>
     <dimen name="furniture_popup_section_indicator_height">4dp</dimen>
