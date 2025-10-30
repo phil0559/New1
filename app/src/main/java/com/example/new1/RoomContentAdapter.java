@@ -4309,7 +4309,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
             boolean isTopSection = levelIndex != null
                     && levelIndex == FURNITURE_SECTION_INDEX_TOP;
-            int backgroundRes = isLevel && !isTopSection
+            boolean isBottomSection = levelIndex != null
+                    && levelIndex == FURNITURE_SECTION_INDEX_BOTTOM;
+            int backgroundRes = isLevel && !isTopSection && !isBottomSection
                     ? R.drawable.bg_furniture_section_level
                     : R.drawable.bg_furniture_section_top;
             section.setBackgroundResource(backgroundRes);
@@ -4328,8 +4330,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             View indicatorView = section.findViewById(R.id.view_section_indicator);
             ImageView addIcon = section.findViewById(R.id.icon_section_add);
             if (addIcon != null) {
-                boolean isBottomSection = levelIndex != null
-                        && levelIndex == FURNITURE_SECTION_INDEX_BOTTOM;
                 if (interactionListener != null && currentItem != null && levelIndex != null
                         && (isTopSection || isBottomSection || (isLevel && levelIndex > 0))) {
                     addIcon.setVisibility(View.VISIBLE);
