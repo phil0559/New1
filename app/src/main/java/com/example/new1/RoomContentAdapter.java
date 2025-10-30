@@ -1796,6 +1796,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 int level,
                 @NonNull View anchor);
 
+        void onAddBookToFurnitureLevel(@NonNull RoomContentItem furniture,
+                int position,
+                int level,
+                @NonNull View anchor);
+
         void onAddRoomContentToFurnitureBottom(@NonNull RoomContentItem furniture,
                 int position,
                 @NonNull View anchor);
@@ -4336,6 +4341,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             LinearLayout contentContainer = section.findViewById(R.id.container_section_content);
             View indicatorView = section.findViewById(R.id.view_section_indicator);
             ImageView addIcon = section.findViewById(R.id.icon_section_add);
+            ImageView barcodeIcon = section.findViewById(R.id.icon_section_barcode);
             if (addIcon != null) {
                 if (interactionListener != null && currentItem != null && levelIndex != null
                         && (isTopSection || isBottomSection || (isLevel && levelIndex > 0))) {
@@ -4369,6 +4375,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     if (levelIndex != null) {
                         furnitureAddAnchors.remove(levelIndex);
                     }
+                }
+            }
+            if (barcodeIcon != null) {
+                if (interactionListener != null && currentItem != null && isLevel
+                        && levelIndex != null && levelIndex > 0) {
+                    barcodeIcon.setVisibility(View.VISIBLE);
+                    barcodeIcon.setOnClickListener(view -> {
+                        int adapterPosition = parentPosition >= 0
+                                ? parentPosition
+                                : getBindingAdapterPosition();
+                        if (adapterPosition == RecyclerView.NO_POSITION) {
+                            return;
+                        }
+                        interactionListener.onAddBookToFurnitureLevel(currentItem,
+                                adapterPosition,
+                                levelIndex,
+                                view);
+                    });
+                } else {
+                    barcodeIcon.setVisibility(View.GONE);
+                    barcodeIcon.setOnClickListener(null);
                 }
             }
             if (isLevel) {

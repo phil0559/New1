@@ -46,6 +46,16 @@
             android:src="@drawable/ic_add"
             android:tint="@color/text_dark" />
 
+        <ImageView
+            android:id="@+id/icon_section_barcode"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:contentDescription="@string/furniture_section_barcode_content_description"
+            android:src="@drawable/ic_barcode"
+            android:tint="@color/text_dark"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <LinearLayout
