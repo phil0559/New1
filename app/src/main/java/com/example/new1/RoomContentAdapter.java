@@ -4257,39 +4257,45 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @Nullable LinearLayout columnsRowContainer) {
             boolean attached = false;
             if (columnsHeaderContainer != null) {
-                ensureLinearLayoutLayoutParams(columnsHeaderContainer);
+                LinearLayout.LayoutParams headerParams = obtainLinearLayoutLayoutParams(
+                        columnsHeaderContainer,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                headerParams.topMargin = columnsHeaderContainer.getResources()
+                        .getDimensionPixelSize(R.dimen.furniture_popup_columns_header_margin_top);
+                columnsHeaderContainer.setLayoutParams(headerParams);
                 container.addView(columnsHeaderContainer);
                 attached = true;
             }
             if (columnsRowContainer != null) {
-                ensureLinearLayoutLayoutParams(columnsRowContainer);
+                LinearLayout.LayoutParams rowParams = obtainLinearLayoutLayoutParams(
+                        columnsRowContainer,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                rowParams.topMargin = columnsRowContainer.getResources()
+                        .getDimensionPixelSize(R.dimen.furniture_popup_columns_row_margin_top);
+                columnsRowContainer.setLayoutParams(rowParams);
                 container.addView(columnsRowContainer);
                 attached = true;
             }
             return attached;
         }
 
-        private void ensureLinearLayoutLayoutParams(@NonNull View view) {
+        @NonNull
+        private LinearLayout.LayoutParams obtainLinearLayoutLayoutParams(@NonNull View view,
+                int fallbackWidth,
+                int fallbackHeight) {
             ViewGroup.LayoutParams params = view.getLayoutParams();
             if (params instanceof LinearLayout.LayoutParams) {
-                return;
+                return (LinearLayout.LayoutParams) params;
             }
-            LinearLayout.LayoutParams layoutParams;
             if (params instanceof ViewGroup.MarginLayoutParams) {
-                ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) params;
-                layoutParams = new LinearLayout.LayoutParams(marginParams.width,
-                        marginParams.height);
-                layoutParams.leftMargin = marginParams.leftMargin;
-                layoutParams.topMargin = marginParams.topMargin;
-                layoutParams.rightMargin = marginParams.rightMargin;
-                layoutParams.bottomMargin = marginParams.bottomMargin;
-            } else if (params != null) {
-                layoutParams = new LinearLayout.LayoutParams(params.width, params.height);
-            } else {
-                layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                return new LinearLayout.LayoutParams((ViewGroup.MarginLayoutParams) params);
             }
-            view.setLayoutParams(layoutParams);
+            if (params != null) {
+                return new LinearLayout.LayoutParams(params.width, params.height);
+            }
+            return new LinearLayout.LayoutParams(fallbackWidth, fallbackHeight);
         }
 
         @NonNull
