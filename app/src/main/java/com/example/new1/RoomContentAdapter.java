@@ -4491,20 +4491,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return Collections.emptyList();
             }
             List<RoomContentItem> matches = new ArrayList<>();
-            Integer selectedColumn = selectedFurnitureColumn;
+            Set<Long> seenRanks = new LinkedHashSet<>();
+            Set<String> seenSignatures = new LinkedHashSet<>();
             for (RoomContentItem child : children) {
                 if (child == null) {
                     continue;
                 }
                 Integer childLevel = child.getContainerLevel();
                 if (childLevel != null && childLevel == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
-                    if (selectedColumn != null) {
-                        Integer childColumn = child.getContainerColumn();
-                        if (childColumn == null) {
-                            if (selectedColumn != 1) {
-                                continue;
-                            }
-                        } else if (!childColumn.equals(selectedColumn)) {
+                    // On ignore la colonne : le dessous est partagé et dédoublé par rang ou par nom.
+                    long childRank = child.getRank();
+                    if (childRank >= 0L) {
+                        if (!seenRanks.add(childRank)) {
+                            continue;
+                        }
+                    } else {
+                        String name = RoomContentAdapter.this.resolveItemName(child);
+                        String comment = child.getComment();
+                        String signature = ((name != null ? name : "") + '\u0000'
+                                + (comment != null ? comment : ""))
+                                .toLowerCase(Locale.ROOT);
+                        if (!seenSignatures.add(signature)) {
                             continue;
                         }
                     }
