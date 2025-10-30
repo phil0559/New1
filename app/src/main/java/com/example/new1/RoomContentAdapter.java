@@ -1863,6 +1863,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @Nullable
         private PopupWindow furniturePhotoMenuPopup;
         @Nullable
+        private LinearLayout furnitureColumnsHeaderContainer;
+        @Nullable
+        private LinearLayout furnitureColumnsRowContainer;
+        @Nullable
         private PopupWindow containerPopup;
         @Nullable
         private ViewGroup activeContainerPopupChildrenContainer;
@@ -3681,15 +3685,23 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 menuIcon.setOnClickListener(view -> showFurnitureOptionsMenu(menuIcon));
             }
             LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
+            LinearLayout columnsHeaderContainer = popupView
+                    .findViewById(R.id.container_furniture_columns_header);
+            LinearLayout columnsRowContainer = popupView
+                    .findViewById(R.id.container_furniture_columns_row);
             LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
             HorizontalScrollView columnsScroll = popupView.findViewById(R.id.scroll_furniture_columns);
             Spinner columnDropdown = popupView.findViewById(R.id.spinner_furniture_columns);
+            furnitureColumnsHeaderContainer = columnsHeaderContainer;
+            furnitureColumnsRowContainer = columnsRowContainer;
             if (columnsContainer != null && currentItem != null) {
-                populateFurniturePopupColumns(columnsContainer, sectionsContainer, currentItem,
+                populateFurniturePopupColumns(columnsContainer, sectionsContainer,
+                        columnsHeaderContainer, columnsRowContainer, currentItem,
                         columnsScroll, columnDropdown);
             }
             if (sectionsContainer != null && currentItem != null) {
-                populateFurnitureSections(sectionsContainer, currentItem, levelToExpand);
+                populateFurnitureSections(sectionsContainer, currentItem, levelToExpand,
+                        columnsHeaderContainer, columnsRowContainer);
             }
             DisplayMetrics displayMetrics = popupView.getResources().getDisplayMetrics();
             int popupWidth = (int) (displayMetrics.widthPixels * 0.9f);
@@ -3709,6 +3721,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 dismissFurniturePhotoMenu();
                 RoomContentAdapter.this.onFurniturePopupDismissed(position);
                 furnitureAddAnchors.clear();
+                furnitureColumnsHeaderContainer = null;
+                furnitureColumnsRowContainer = null;
             });
             furniturePopup = popupWindow;
             RoomContentAdapter.this.setActiveFurniturePopup(position, levelToExpand,
@@ -3949,6 +3963,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         private void populateFurniturePopupColumns(@NonNull LinearLayout container,
                 @Nullable LinearLayout sectionsContainer,
+                @Nullable LinearLayout columnsHeaderContainer,
+                @Nullable LinearLayout columnsRowContainer,
                 @NonNull RoomContentItem item,
                 @Nullable HorizontalScrollView scrollContainer,
                 @Nullable Spinner dropdownView) {
@@ -4051,7 +4067,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         adapter.notifyDataSetChanged();
                         if (sectionsContainer != null) {
                             populateFurnitureSections(sectionsContainer, item,
-                                    RoomContentAdapter.this.activeFurniturePopupExpandedLevel);
+                                    RoomContentAdapter.this.activeFurniturePopupExpandedLevel,
+                                    columnsHeaderContainer, columnsRowContainer);
                         }
                         int adapterPosition = getBindingAdapterPosition();
                         if (adapterPosition != RecyclerView.NO_POSITION) {
@@ -4097,7 +4114,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     updateFurnitureColumnSelection(container, columnIndex);
                     if (sectionsContainer != null) {
                         populateFurnitureSections(sectionsContainer, targetItem,
-                                RoomContentAdapter.this.activeFurniturePopupExpandedLevel);
+                                RoomContentAdapter.this.activeFurniturePopupExpandedLevel,
+                                columnsHeaderContainer, columnsRowContainer);
                     }
                     int adapterPosition = getBindingAdapterPosition();
                     if (adapterPosition != RecyclerView.NO_POSITION) {
@@ -4155,9 +4173,13 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         private void populateFurnitureSections(@NonNull LinearLayout container,
                 @NonNull RoomContentItem item,
-                @Nullable Integer levelToExpand) {
+                @Nullable Integer levelToExpand,
+                @Nullable LinearLayout columnsHeaderContainer,
+                @Nullable LinearLayout columnsRowContainer) {
             container.removeAllViews();
             furnitureAddAnchors.clear();
+            detachFromParent(columnsHeaderContainer);
+            detachFromParent(columnsRowContainer);
             Context context = container.getContext();
             LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
             boolean hasTop = item.hasFurnitureTop();
@@ -4174,18 +4196,29 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return;
             }
             container.setVisibility(View.VISIBLE);
+            boolean columnsInserted = false;
             if (hasTop) {
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_top_title), false,
                         Collections.emptyList(), parentPosition, baseDepth, null, levelToExpand);
                 container.addView(section);
+                columnsInserted = attachFurnitureColumns(container, columnsHeaderContainer,
+                        columnsRowContainer);
             }
             for (int index = 1; index <= levelCount; index++) {
+                if (!columnsInserted) {
+                    columnsInserted = attachFurnitureColumns(container,
+                            columnsHeaderContainer, columnsRowContainer);
+                }
                 String title = context.getString(R.string.furniture_popup_level_title, index);
                 List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children, index);
                 View section = createFurnitureSection(layoutInflater, container, title, true,
                         levelItems, parentPosition, baseDepth, index, levelToExpand);
                 container.addView(section);
+            }
+            if (!columnsInserted && hasBottom) {
+                columnsInserted = attachFurnitureColumns(container, columnsHeaderContainer,
+                        columnsRowContainer);
             }
             if (hasBottom) {
                 View section = createFurnitureSection(layoutInflater, container,
@@ -4193,6 +4226,56 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         Collections.emptyList(), parentPosition, baseDepth, null, levelToExpand);
                 container.addView(section);
             }
+        }
+
+        private void detachFromParent(@Nullable View view) {
+            if (view == null) {
+                return;
+            }
+            ViewParent parent = view.getParent();
+            if (parent instanceof ViewGroup) {
+                ((ViewGroup) parent).removeView(view);
+            }
+        }
+
+        private boolean attachFurnitureColumns(@NonNull LinearLayout container,
+                @Nullable LinearLayout columnsHeaderContainer,
+                @Nullable LinearLayout columnsRowContainer) {
+            boolean attached = false;
+            if (columnsHeaderContainer != null) {
+                ensureLinearLayoutLayoutParams(columnsHeaderContainer);
+                container.addView(columnsHeaderContainer);
+                attached = true;
+            }
+            if (columnsRowContainer != null) {
+                ensureLinearLayoutLayoutParams(columnsRowContainer);
+                container.addView(columnsRowContainer);
+                attached = true;
+            }
+            return attached;
+        }
+
+        private void ensureLinearLayoutLayoutParams(@NonNull View view) {
+            ViewGroup.LayoutParams params = view.getLayoutParams();
+            if (params instanceof LinearLayout.LayoutParams) {
+                return;
+            }
+            LinearLayout.LayoutParams layoutParams;
+            if (params instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams marginParams = (ViewGroup.MarginLayoutParams) params;
+                layoutParams = new LinearLayout.LayoutParams(marginParams.width,
+                        marginParams.height);
+                layoutParams.leftMargin = marginParams.leftMargin;
+                layoutParams.topMargin = marginParams.topMargin;
+                layoutParams.rightMargin = marginParams.rightMargin;
+                layoutParams.bottomMargin = marginParams.bottomMargin;
+            } else if (params != null) {
+                layoutParams = new LinearLayout.LayoutParams(params.width, params.height);
+            } else {
+                layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+            }
+            view.setLayoutParams(layoutParams);
         }
 
         @NonNull

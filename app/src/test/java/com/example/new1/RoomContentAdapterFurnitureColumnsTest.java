@@ -47,13 +47,17 @@ public class RoomContentAdapterFurnitureColumnsTest {
         LayoutInflater inflater = LayoutInflater.from(context);
         FrameLayout parent = new FrameLayout(context);
         View popupView = inflater.inflate(R.layout.popup_furniture_details, parent, false);
+        LinearLayout columnsHeaderContainer = popupView
+                .findViewById(R.id.container_furniture_columns_header);
+        LinearLayout columnsRowContainer = popupView
+                .findViewById(R.id.container_furniture_columns_row);
         LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
         LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
         HorizontalScrollView scrollContainer = popupView.findViewById(R.id.scroll_furniture_columns);
         Spinner dropdownView = popupView.findViewById(R.id.spinner_furniture_columns);
 
-        invokePopulateColumns(holder, columnsContainer, sectionsContainer, item,
-                scrollContainer, dropdownView);
+        invokePopulateColumns(holder, columnsContainer, sectionsContainer,
+                columnsHeaderContainer, columnsRowContainer, item, scrollContainer, dropdownView);
 
         assertEquals(View.VISIBLE, scrollContainer.getVisibility());
         assertEquals(View.GONE, dropdownView.getVisibility());
@@ -87,6 +91,10 @@ public class RoomContentAdapterFurnitureColumnsTest {
         LayoutInflater inflater = LayoutInflater.from(context);
         FrameLayout parent = new FrameLayout(context);
         View popupView = inflater.inflate(R.layout.popup_furniture_details, parent, false);
+        LinearLayout columnsHeaderContainer = popupView
+                .findViewById(R.id.container_furniture_columns_header);
+        LinearLayout columnsRowContainer = popupView
+                .findViewById(R.id.container_furniture_columns_row);
         LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
         LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
         HorizontalScrollView scrollContainer = popupView.findViewById(R.id.scroll_furniture_columns);
@@ -96,8 +104,8 @@ public class RoomContentAdapterFurnitureColumnsTest {
         selectedField.setAccessible(true);
         selectedField.set(holder, 4);
 
-        invokePopulateColumns(holder, columnsContainer, sectionsContainer, item,
-                scrollContainer, dropdownView);
+        invokePopulateColumns(holder, columnsContainer, sectionsContainer,
+                columnsHeaderContainer, columnsRowContainer, item, scrollContainer, dropdownView);
 
         assertEquals(View.GONE, scrollContainer.getVisibility());
         assertEquals(View.VISIBLE, dropdownView.getVisibility());
@@ -123,18 +131,22 @@ public class RoomContentAdapterFurnitureColumnsTest {
     private void invokePopulateColumns(RoomContentAdapter.ViewHolder holder,
             LinearLayout columnsContainer,
             LinearLayout sectionsContainer,
+            LinearLayout columnsHeaderContainer,
+            LinearLayout columnsRowContainer,
             RoomContentItem item,
             HorizontalScrollView scrollContainer,
             Spinner dropdownView) throws Exception {
         Method method = holder.getClass().getDeclaredMethod("populateFurniturePopupColumns",
                 LinearLayout.class,
                 LinearLayout.class,
+                LinearLayout.class,
+                LinearLayout.class,
                 RoomContentItem.class,
                 HorizontalScrollView.class,
                 Spinner.class);
         method.setAccessible(true);
-        method.invoke(holder, columnsContainer, sectionsContainer, item, scrollContainer,
-                dropdownView);
+        method.invoke(holder, columnsContainer, sectionsContainer, columnsHeaderContainer,
+                columnsRowContainer, item, scrollContainer, dropdownView);
     }
 
     private HolderBundle createBoundHolder(RoomContentItem item) {
