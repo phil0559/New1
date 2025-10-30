@@ -3687,6 +3687,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             dismissFurniturePhotoMenu();
             LayoutInflater layoutInflater = RoomContentAdapter.this.inflater;
             View popupView = layoutInflater.inflate(R.layout.popup_furniture_details, null);
+            boolean isStorageTower = currentItem != null && currentItem.isStorageTower();
+            if (isStorageTower) {
+                popupView.setBackgroundResource(R.drawable.bg_storage_tower_popup);
+            }
             TextView nameTextView = popupView.findViewById(R.id.text_furniture_popup_name);
             if (nameTextView != null) {
                 nameTextView.setText(currentItem != null ? currentItem.getName() : null);
@@ -4201,7 +4205,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             boolean hasTop = item.hasFurnitureTop();
             Integer furnitureLevels = item.getFurnitureLevels();
             int levelCount = furnitureLevels != null && furnitureLevels > 0 ? furnitureLevels : 0;
-            boolean hasBottom = item.hasFurnitureBottom();
+            boolean storageTower = item.isStorageTower();
+            boolean hasBottom = storageTower ? false : item.hasFurnitureBottom();
             List<RoomContentItem> children = item.getChildren();
             int parentPosition = RoomContentAdapter.this.findPositionForItem(item);
             int baseDepth = parentPosition >= 0
@@ -4228,7 +4233,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     columnsInserted = attachFurnitureColumns(container,
                             columnsHeaderContainer, columnsRowContainer);
                 }
-                String title = context.getString(R.string.furniture_popup_level_title, index);
+                String title = storageTower
+                        ? context.getString(R.string.storage_tower_popup_drawer_title, index)
+                        : context.getString(R.string.furniture_popup_level_title, index);
                 List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children, index);
                 View section = createFurnitureSection(layoutInflater, container, title, true,
                         levelItems, parentPosition, baseDepth, index, levelToExpand);
@@ -4319,6 +4326,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (titleView != null) {
                 titleView.setText(title);
             }
+            boolean storageTower = currentItem != null && currentItem.isStorageTower();
             boolean isTopSection = levelIndex != null
                     && levelIndex == FURNITURE_SECTION_INDEX_TOP;
             boolean isBottomSection = levelIndex != null
@@ -4378,7 +4386,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
             }
             if (barcodeIcon != null) {
-                if (interactionListener != null && currentItem != null && isLevel
+                if (!storageTower && interactionListener != null && currentItem != null && isLevel
                         && levelIndex != null && levelIndex > 0) {
                     barcodeIcon.setVisibility(View.VISIBLE);
                     barcodeIcon.setOnClickListener(view -> {
@@ -4574,6 +4582,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (items.isEmpty()) {
                 View emptyView = layoutInflater.inflate(R.layout.item_furniture_section_empty,
                         container, false);
+                if (currentItem != null && currentItem.isStorageTower()) {
+                    TextView emptyText = emptyView.findViewById(R.id.text_furniture_section_empty);
+                    if (emptyText != null) {
+                        emptyText.setText(R.string.storage_tower_popup_section_empty);
+                    }
+                }
                 container.addView(emptyView);
                 return;
             }

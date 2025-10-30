@@ -21,4 +21,8 @@
     <string-array name="furniture_type_defaults">
         <item>@string/dialog_furniture_type_shelf</item>
     </string-array>
+
+    <string-array name="storage_tower_type_defaults">
+        <item>@string/dialog_storage_tower_type_default</item>
+    </string-array>
 </resources>
