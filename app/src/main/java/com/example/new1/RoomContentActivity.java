@@ -657,6 +657,13 @@ public class RoomContentActivity extends Activity {
                         }
 
                         @Override
+                        public void onAddRoomContentToFurnitureTop(@NonNull RoomContentItem furniture,
+                                                                      int position,
+                                                                      @NonNull View anchor) {
+                            showFurnitureTopAddMenu(anchor, furniture);
+                        }
+
+                        @Override
                         public void onAddRoomContentToFurnitureLevel(@NonNull RoomContentItem furniture,
                                                                          int position,
                                                                          int level,
@@ -2917,6 +2924,17 @@ public class RoomContentActivity extends Activity {
             return;
         }
         showAddRoomContentMenu(anchor, null, null, true, ADD_MENU_ANCHOR_MAIN, null, null);
+    }
+
+    private void showFurnitureTopAddMenu(@NonNull View anchor,
+                                         @NonNull RoomContentItem furniture) {
+        int adapterPosition = findAdapterPositionForItem(furniture);
+        Integer resolvedPosition = adapterPosition != RecyclerView.NO_POSITION
+                ? adapterPosition
+                : null;
+        showAddRoomContentMenu(anchor, furniture.getRank(), null, false,
+                ADD_MENU_ANCHOR_FURNITURE_LEVEL, resolvedPosition,
+                RoomContentAdapter.FURNITURE_SECTION_INDEX_TOP);
     }
 
     private void showAddRoomContentMenu(@NonNull View anchor,
