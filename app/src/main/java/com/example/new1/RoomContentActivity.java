@@ -679,6 +679,14 @@ public class RoomContentActivity extends Activity {
                         }
 
                         @Override
+                        public void onAddBookToFurnitureLevel(@NonNull RoomContentItem furniture,
+                                                               int position,
+                                                               int level,
+                                                               @NonNull View anchor) {
+                            showFurnitureLevelAddBookDialog(anchor, furniture, level);
+                        }
+
+                        @Override
                         public void onRequestSelectionMode(@NonNull RoomContentItem item,
                                                             int position) {
                             enterSelectionMode();
@@ -3057,6 +3065,32 @@ public class RoomContentActivity extends Activity {
                 : null;
         showAddRoomContentMenu(anchor, furniture.getRank(), level, false,
                 ADD_MENU_ANCHOR_FURNITURE_LEVEL, resolvedPosition, level);
+    }
+
+    private void showFurnitureLevelAddBookDialog(@NonNull View anchor,
+                                                 @NonNull RoomContentItem furniture,
+                                                 int level) {
+        if (addMenuPopup != null && addMenuPopup.isShowing()) {
+            addMenuPopup.dismiss();
+        }
+        RoomContentItem prefillItem = new RoomContentItem(
+                "",
+                "",
+                getString(R.string.dialog_type_book),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false
+        );
+        showRoomContentDialog(prefillItem, -1, false, furniture.getRank(), level);
     }
 
     private void showAddRoomContentDialog() {

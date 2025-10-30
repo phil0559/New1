@@ -198,6 +198,7 @@
     <string name="furniture_popup_bottom_title">Dessous</string>
     <string name="furniture_popup_level_title">Niveau %1$d</string>
     <string name="furniture_popup_section_empty">Aucun élément dans ce niveau.</string>
+    <string name="furniture_section_barcode_content_description">Ajouter un livre par code-barres</string>
     <string name="furniture_popup_photos_menu_manage">Menu photo</string>
     <string name="furniture_popup_photos_menu_view">Visualisation de photo</string>
     <string name="furniture_popup_photos_empty">Aucune photo disponible.</string>
