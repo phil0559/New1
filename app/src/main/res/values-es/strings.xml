@@ -146,6 +146,8 @@
     <string name="dialog_move_room_content_column_hint">p.&#8239;ej. 1</string>
     <string name="error_move_room_content_invalid_level">Ingrese un nivel válido.</string>
     <string name="error_move_room_content_invalid_column">Ingrese una columna válida.</string>
+    <string name="error_move_room_content_storage_tower_forbidden_target">Solo puedes mover una torre de almacenamiento a un mueble.</string>
+    <string name="error_move_room_content_invalid_target">No es posible mover este elemento a ese destino.</string>
     <string name="room_content_furniture_level_short">Nivel %1$d</string>
     <string name="room_content_furniture_column_short">Columna %1$d</string>
     <string name="dialog_label_room_content_name">Nombre del elemento</string>
