@@ -4559,12 +4559,24 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             return;
         }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-        int itemHierarchyDepth = computeHierarchyDepth(item, roomContentItems);
         Long itemParentRank = item.getParentRank();
-        boolean enforceSameDepth = item.isContainer();
+        RoomContentItem parentContainer = null;
+        if (itemParentRank != null) {
+            parentContainer = findContainerByRank(roomContentItems, itemParentRank);
+        }
+        int itemHierarchyDepth;
+        Long referenceParentRank;
+        if (item.isContainer() || parentContainer == null) {
+            itemHierarchyDepth = computeHierarchyDepth(item, roomContentItems);
+            referenceParentRank = itemParentRank;
+        } else {
+            itemHierarchyDepth = computeHierarchyDepth(parentContainer, roomContentItems);
+            referenceParentRank = parentContainer.getParentRank();
+        }
+        boolean enforceSameDepth = true;
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
                 additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower,
-                itemHierarchyDepth, itemParentRank, enforceSameDepth);
+                itemHierarchyDepth, referenceParentRank, enforceSameDepth);
         Context context = containerGroup.getContext();
         containerGroup.setOnCheckedChangeListener(null);
         containerGroup.removeAllViews();
