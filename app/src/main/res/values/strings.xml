@@ -163,6 +163,7 @@
     <string name="dialog_move_room_content_column_hint">Ex. 1</string>
     <string name="error_move_room_content_invalid_level">Veuillez indiquer un niveau valide.</string>
     <string name="error_move_room_content_invalid_column">Veuillez indiquer une colonne valide.</string>
+    <string name="error_move_room_content_storage_tower_forbidden_target">Vous ne pouvez déplacer une tour de rangement que dans un mobilier.</string>
     <string name="room_content_furniture_level_short">Niveau %1$d</string>
     <string name="room_content_furniture_column_short">Colonne %1$d</string>
     <string name="dialog_add_room_content_title">Ajouter un élément</string>
