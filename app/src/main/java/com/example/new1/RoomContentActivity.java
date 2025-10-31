@@ -5345,6 +5345,17 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         if (items.isEmpty()) {
             return modified;
         }
+        Iterator<RoomContentItem> cleanupIterator = items.iterator();
+        while (cleanupIterator.hasNext()) {
+            RoomContentItem item = cleanupIterator.next();
+            if (isIncompleteRoomContentItem(item)) {
+                cleanupIterator.remove();
+                modified = true;
+            }
+        }
+        if (items.isEmpty()) {
+            return modified;
+        }
         LinkedHashMap<Long, RoomContentItem> byRank = new LinkedHashMap<>();
         for (RoomContentItem item : items) {
             byRank.put(item.getRank(), item);
@@ -5367,6 +5378,37 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             }
         }
         return modified;
+    }
+
+    private boolean isIncompleteRoomContentItem(@NonNull RoomContentItem item) {
+        boolean hasName = hasNonEmptyText(item.getName());
+        if (item.isFurniture() || item.isStorageTower() || item.isContainer()) {
+            return !hasName;
+        }
+        if (hasName) {
+            return false;
+        }
+        if (hasNonEmptyText(item.getComment())
+                || hasNonEmptyText(item.getType())
+                || hasNonEmptyText(item.getCategory())
+                || hasNonEmptyText(item.getBarcode())
+                || hasNonEmptyText(item.getSeries())
+                || hasNonEmptyText(item.getNumber())
+                || hasNonEmptyText(item.getAuthor())
+                || hasNonEmptyText(item.getPublisher())
+                || hasNonEmptyText(item.getEdition())
+                || hasNonEmptyText(item.getPublicationDate())
+                || hasNonEmptyText(item.getSummary())) {
+            return false;
+        }
+        if (!item.getTracks().isEmpty() || !item.getPhotos().isEmpty()) {
+            return false;
+        }
+        return true;
+    }
+
+    private boolean hasNonEmptyText(@Nullable String value) {
+        return value != null && !value.trim().isEmpty();
     }
 
     private boolean isHierarchyPathValid(@NonNull RoomContentItem item,
