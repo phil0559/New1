@@ -149,7 +149,7 @@
     <string name="dialog_move_room_content_establishment_label">Établissement</string>
     <string name="dialog_move_room_content_room_label">Choisissez la pièce de destination</string>
     <string name="dialog_move_room_content_container_label">Choisissez le contenant parent ou le mobilier où placer l’élément.</string>
-    <string name="dialog_move_room_content_no_container">Aucun contenant</string>
+    <string name="dialog_move_room_content_no_container">Directement dans la pièce</string>
     <string name="dialog_move_room_content_root_level">Niveau principal de la pièce</string>
     <string name="dialog_move_room_content_back_option">Retour</string>
     <string name="dialog_move_room_content_drop_on_room">Déposer dans la pièce (hors mobilier)</string>

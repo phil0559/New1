@@ -4670,18 +4670,6 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                             establishment, room, item, position, selection, additionalExcludedRanks,
                             restrictContainerSelection, selectionContainsStorageTower));
                     return;
-                case MAIN_LEVEL_ENTRY:
-                    selection.navigation.showMainLevel();
-                    selection.selectedOption = null;
-                    selection.desiredRank = null;
-                    selection.desiredLevel = null;
-                    selection.desiredColumn = null;
-                    group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
-                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
-                            furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
-                            establishment, room, item, position, selection, additionalExcludedRanks,
-                            restrictContainerSelection, selectionContainsStorageTower));
-                    return;
                 case FURNITURE_ENTRY:
                     if (selectedOption.furniture != null) {
                         selection.navigation.enterFurniture(selectedOption.furniture);
@@ -5028,12 +5016,22 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         Collections.sort(allowedFurniture, byNameComparator);
 
         NavigationStep step = navigation.getCurrentStep();
+        if (step.stage == NavigationStage.LEVEL && step.furniture == null) {
+            navigation.resetToRoot();
+            step = navigation.getCurrentStep();
+        }
         if (step.stage == NavigationStage.ROOT) {
-            result.add(ContainerOption.createMainLevelOption(
-                    getString(R.string.dialog_move_room_content_root_level)));
             for (RoomContentItem furniture : allowedFurniture) {
                 result.add(ContainerOption.createFurnitureOption(resolveContainerName(furniture),
                         furniture));
+            }
+            Set<Long> mainLevelParentRanks = findMainLevelParentRanks(targetItems);
+            List<RoomContentItem> mainLevelContainers = filterContainersForLevel(
+                    allowedContainers, null, null, mainLevelParentRanks);
+            Collections.sort(mainLevelContainers, byNameComparator);
+            for (RoomContentItem containerItem : mainLevelContainers) {
+                result.add(ContainerOption.createContainerOption(
+                        resolveContainerName(containerItem), containerItem));
             }
             return result;
         }
@@ -5464,11 +5462,6 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             }
         }
 
-        void showMainLevel() {
-            trimToRoot();
-            history.addLast(NavigationStep.forLevel(null, null));
-        }
-
         void enterFurniture(@NonNull RoomContentItem furniture) {
             trimToRoot();
             history.addLast(NavigationStep.forFurniture(furniture));
@@ -5527,7 +5520,6 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     }
 
     private enum ContainerOptionType {
-        MAIN_LEVEL_ENTRY,
         FURNITURE_ENTRY,
         LEVEL_ENTRY,
         BACK,
@@ -5561,12 +5553,6 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             this.container = container;
             this.furniture = furniture;
             this.level = level;
-        }
-
-        @NonNull
-        static ContainerOption createMainLevelOption(@NonNull String label) {
-            return new ContainerOption(ContainerOptionType.MAIN_LEVEL_ENTRY, label, null, null,
-                    null, null);
         }
 
         @NonNull
