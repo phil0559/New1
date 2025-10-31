@@ -3605,8 +3605,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
 
     final boolean multipleSelection = items.size() > 1;
     final List<RoomContentItem> selection = new ArrayList<>(items);
-    final boolean restrictContainerSelection = containsNonStorageFurniture(selection)
-            || containsStorageTower(selection);
+    final boolean selectionContainsStorageTower = containsStorageTower(selection);
+    final boolean restrictContainerSelection = containsNonStorageFurniture(selection);
     final String[] selectedEstablishmentHolder = new String[1];
     final String[] selectedRoomHolder = new String[1];
     final ContainerSelection selectedContainerHolder = new ContainerSelection();
@@ -3707,7 +3707,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
-                    selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection);
+                    selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection,
+                    selectionContainsStorageTower);
         }
 
         @Override
@@ -3721,7 +3722,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     null, selectedRoomHolder[0], primary, position, selectedContainerHolder,
-                    additionalExcludedRanks, restrictContainerSelection);
+                    additionalExcludedRanks, restrictContainerSelection,
+                    selectionContainsStorageTower);
         }
     };
     establishmentSpinner.setOnItemSelectedListener(establishmentListener);
@@ -3735,7 +3737,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
-                    selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection);
+                    selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection,
+                    selectionContainsStorageTower);
         }
 
         @Override
@@ -3745,7 +3748,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], null, primary, position,
-                    selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection);
+                    selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection,
+                    selectionContainsStorageTower);
         }
     };
     roomSpinner.setOnItemSelectedListener(roomListener);
@@ -3764,7 +3768,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
             furnitureColumnContainer, furnitureColumnInput,
             selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
-            selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection);
+            selectedContainerHolder, additionalExcludedRanks, restrictContainerSelection,
+            selectionContainsStorageTower);
 
     dialog.setOnShowListener(d -> {
         updateMoveButtonState(dialog, roomSpinner);
@@ -4046,6 +4051,18 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         boolean movingWithinSameRoom = normalizedSourceEstablishment
                 .equalsIgnoreCase(normalizedTargetEstablishment)
                 && normalizedSourceRoom.equalsIgnoreCase(normalizedTargetRoom);
+        RoomContentItem targetContainerItem = targetContainer != null
+                ? targetContainer.container
+                : null;
+        if (targetContainerItem == null && targetContainer != null && movingWithinSameRoom) {
+            targetContainerItem = findContainerByRank(roomContentItems, targetContainer.rank);
+        }
+        if (!isMoveAllowedToContainer(item, targetContainerItem)) {
+            Toast.makeText(this,
+                    R.string.error_move_room_content_storage_tower_forbidden_target,
+                    Toast.LENGTH_SHORT).show();
+            return false;
+        }
         if (movingWithinSameRoom) {
             moveWithinCurrentRoom(item, position, targetContainer, targetLevel, targetColumn);
         } else {
@@ -4533,7 +4550,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             int position,
             @NonNull ContainerSelection selection,
             @Nullable Set<Long> additionalExcludedRanks,
-            boolean restrictContainerSelection) {
+            boolean restrictContainerSelection,
+            boolean selectionContainsStorageTower) {
         if (containerGroup == null) {
             refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
                     furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
@@ -4541,7 +4559,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             return;
         }
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
-                additionalExcludedRanks, restrictContainerSelection);
+                additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower);
         Context context = containerGroup.getContext();
         containerGroup.setOnCheckedChangeListener(null);
         containerGroup.removeAllViews();
@@ -4774,7 +4792,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             @NonNull RoomContentItem item,
             int position,
             @Nullable Set<Long> additionalExcludedRanks,
-            boolean restrictContainerSelection) {
+            boolean restrictContainerSelection,
+            boolean selectionContainsStorageTower) {
         List<ContainerOption> result = new ArrayList<>();
         if (restrictContainerSelection) {
             return result;
@@ -4798,6 +4817,13 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 if (excludedRanks.contains(candidate.getRank())) {
                     continue;
                 }
+                if (!isMoveAllowedToContainer(item, candidate)) {
+                    continue;
+                }
+                if (selectionContainsStorageTower
+                        && (!candidate.isFurniture() || candidate.isStorageTower())) {
+                    continue;
+                }
                 String label = candidate.getName();
                 if (label == null || label.trim().isEmpty()) {
                     label = getString(R.string.dialog_room_content_item_placeholder);
@@ -4811,6 +4837,13 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 if (!candidate.isContainer()) {
                     continue;
                 }
+                if (!isMoveAllowedToContainer(item, candidate)) {
+                    continue;
+                }
+                if (selectionContainsStorageTower
+                        && (!candidate.isFurniture() || candidate.isStorageTower())) {
+                    continue;
+                }
                 String label = candidate.getName();
                 if (label == null || label.trim().isEmpty()) {
                     label = getString(R.string.dialog_room_content_item_placeholder);
@@ -4819,6 +4852,22 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             }
         }
         return result;
+    }
+
+    private boolean isMoveAllowedToContainer(@NonNull RoomContentItem item,
+            @Nullable RoomContentItem container) {
+        if (container == null) {
+            return true;
+        }
+        if (item.isStorageTower()) {
+            if (!container.isFurniture()) {
+                return false;
+            }
+            if (container.isStorageTower()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @NonNull
