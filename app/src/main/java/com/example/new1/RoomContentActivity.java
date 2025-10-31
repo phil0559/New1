@@ -3605,6 +3605,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     final boolean multipleSelection = items.size() > 1;
     final List<RoomContentItem> selection = new ArrayList<>(items);
+    final boolean movingAnyFurniture = containsFurniture(selection);
     final String[] selectedEstablishmentHolder = new String[1];
     final String[] selectedRoomHolder = new String[1];
     final ContainerSelection selectedContainerHolder = new ContainerSelection();
@@ -3698,7 +3699,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
-                    selectedContainerHolder, additionalExcludedRanks);
+                    selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
         }
 
         @Override
@@ -3712,7 +3713,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     null, selectedRoomHolder[0], primary, position, selectedContainerHolder,
-                    additionalExcludedRanks);
+                    additionalExcludedRanks, movingAnyFurniture);
         }
     };
     establishmentSpinner.setOnItemSelectedListener(establishmentListener);
@@ -3726,7 +3727,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
-                    selectedContainerHolder, additionalExcludedRanks);
+                    selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
         }
 
         @Override
@@ -3736,7 +3737,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], null, primary, position,
-                    selectedContainerHolder, additionalExcludedRanks);
+                    selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
         }
     };
     roomSpinner.setOnItemSelectedListener(roomListener);
@@ -3755,7 +3756,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
             furnitureColumnContainer, furnitureColumnInput,
             selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
-            selectedContainerHolder, additionalExcludedRanks);
+            selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
 
     dialog.setOnShowListener(d -> {
         updateMoveButtonState(dialog, roomSpinner);
@@ -4514,7 +4515,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @NonNull RoomContentItem item,
             int position,
             @NonNull ContainerSelection selection,
-            @Nullable Set<Long> additionalExcludedRanks) {
+            @Nullable Set<Long> additionalExcludedRanks,
+            boolean movingFurniture) {
         if (containerGroup == null) {
             refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
                     furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
@@ -4522,7 +4524,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             return;
         }
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
-                additionalExcludedRanks);
+                additionalExcludedRanks, movingFurniture);
         Context context = containerGroup.getContext();
         containerGroup.setOnCheckedChangeListener(null);
         containerGroup.removeAllViews();
@@ -4731,12 +4733,22 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         positiveButton.setEnabled(hasRooms);
     }
 
+    private static boolean containsFurniture(@NonNull List<RoomContentItem> items) {
+        for (RoomContentItem current : items) {
+            if (current.isFurniture()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @NonNull
     private List<ContainerOption> buildContainerOptions(@Nullable String establishment,
             @Nullable String room,
             @NonNull RoomContentItem item,
             int position,
-            @Nullable Set<Long> additionalExcludedRanks) {
+            @Nullable Set<Long> additionalExcludedRanks,
+            boolean movingFurniture) {
         List<ContainerOption> result = new ArrayList<>();
         String normalizedEstablishment = normalizeName(establishment);
         String normalizedCurrentEstablishment = normalizeName(establishmentName);
@@ -4754,6 +4766,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 if (!candidate.isContainer()) {
                     continue;
                 }
+                if (movingFurniture && candidate.isStorageTower()) {
+                    continue;
+                }
                 if (excludedRanks.contains(candidate.getRank())) {
                     continue;
                 }
@@ -4768,6 +4783,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
             for (RoomContentItem candidate : targetItems) {
                 if (!candidate.isContainer()) {
+                    continue;
+                }
+                if (movingFurniture && candidate.isStorageTower()) {
                     continue;
                 }
                 String label = candidate.getName();
