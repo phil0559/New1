@@ -147,6 +147,8 @@
     <string name="dialog_move_room_content_column_hint">z.&#8239;B. 1</string>
     <string name="error_move_room_content_invalid_level">Bitte eine gültige Ebene angeben.</string>
     <string name="error_move_room_content_invalid_column">Bitte eine gültige Spalte angeben.</string>
+    <string name="error_move_room_content_storage_tower_forbidden_target">Ein Ordnungsturm kann nur in einem Möbel platziert werden.</string>
+    <string name="error_move_room_content_invalid_target">Dieses Element kann nicht an dieses Ziel verschoben werden.</string>
     <string name="room_content_furniture_level_short">Ebene %1$d</string>
     <string name="room_content_furniture_column_short">Spalte %1$d</string>
     <string name="dialog_label_room_content_name">Name des Elements</string>

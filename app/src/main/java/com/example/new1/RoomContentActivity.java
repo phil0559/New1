@@ -4071,10 +4071,9 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 targetContainerItem = findContainerByRank(roomContentItems, targetRank);
             }
         }
-        if (!isMoveAllowedToContainer(item, targetContainerItem)) {
-            Toast.makeText(this,
-                    R.string.error_move_room_content_storage_tower_forbidden_target,
-                    Toast.LENGTH_SHORT).show();
+        Integer restrictionMessage = findMoveRestrictionMessage(item, targetContainerItem);
+        if (restrictionMessage != null) {
+            Toast.makeText(this, restrictionMessage, Toast.LENGTH_SHORT).show();
             return false;
         }
         if (movingWithinSameRoom) {
@@ -5235,20 +5234,34 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         return maxLevels == null || maxLevels <= 0 || level <= maxLevels;
     }
 
-    private boolean isMoveAllowedToContainer(@NonNull RoomContentItem item,
+    @Nullable
+    @StringRes
+    private Integer findMoveRestrictionMessage(@NonNull RoomContentItem item,
             @Nullable RoomContentItem container) {
         if (container == null) {
-            return true;
+            return null;
         }
         if (item.isStorageTower()) {
-            if (!container.isFurniture()) {
-                return false;
+            if (!container.isFurniture() || container.isStorageTower()) {
+                return R.string.error_move_room_content_storage_tower_forbidden_target;
             }
-            if (container.isStorageTower()) {
-                return false;
-            }
+            return null;
         }
-        return true;
+        if (item.isFurniture()) {
+            return R.string.error_move_room_content_invalid_target;
+        }
+        if (container.isStorageTower()) {
+            return null;
+        }
+        if (!container.isFurniture()) {
+            return null;
+        }
+        return null;
+    }
+
+    private boolean isMoveAllowedToContainer(@NonNull RoomContentItem item,
+            @Nullable RoomContentItem container) {
+        return findMoveRestrictionMessage(item, container) == null;
     }
 
     @NonNull
