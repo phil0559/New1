@@ -4453,6 +4453,11 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             preferences.edit().remove(key).apply();
         }
         RoomContentHierarchyHelper.normalizeHierarchy(result);
+        boolean sanitized = sanitizeRoomContent(result);
+        if (sanitized) {
+            RoomContentHierarchyHelper.normalizeHierarchy(result);
+            saveRoomContentFor(establishment, room, result);
+        }
         return result;
     }
 
@@ -4460,6 +4465,9 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             @Nullable String room,
             @NonNull List<RoomContentItem> items) {
         RoomContentHierarchyHelper.normalizeHierarchy(items);
+        if (sanitizeRoomContent(items)) {
+            RoomContentHierarchyHelper.normalizeHierarchy(items);
+        }
         JSONArray array = new JSONArray();
         for (RoomContentItem item : items) {
             array.put(item.toJson());
@@ -5307,6 +5315,98 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         }
     }
 
+    private boolean sanitizeRoomContent(@NonNull List<RoomContentItem> items) {
+        if (items.isEmpty()) {
+            return false;
+        }
+        boolean modified = false;
+        LinkedHashMap<Long, RoomContentItem> deduplicated = new LinkedHashMap<>();
+        List<RoomContentItem> ordered = new ArrayList<>(items.size());
+        for (RoomContentItem item : items) {
+            long rank = item.getRank();
+            RoomContentItem previous = deduplicated.put(rank, item);
+            if (previous == null) {
+                ordered.add(item);
+            } else if (previous != item) {
+                modified = true;
+                int replaceIndex = ordered.indexOf(previous);
+                if (replaceIndex >= 0) {
+                    ordered.set(replaceIndex, item);
+                } else {
+                    ordered.add(item);
+                }
+            }
+        }
+        if (ordered.size() != items.size() || modified) {
+            items.clear();
+            items.addAll(ordered);
+            modified = true;
+        }
+        if (items.isEmpty()) {
+            return modified;
+        }
+        LinkedHashMap<Long, RoomContentItem> byRank = new LinkedHashMap<>();
+        for (RoomContentItem item : items) {
+            byRank.put(item.getRank(), item);
+        }
+        Set<Long> validRanks = new HashSet<>();
+        Set<Long> invalidRanks = new HashSet<>();
+        for (RoomContentItem item : items) {
+            if (!isHierarchyPathValid(item, byRank, validRanks, invalidRanks, new HashSet<>())) {
+                invalidRanks.add(item.getRank());
+            }
+        }
+        if (!invalidRanks.isEmpty()) {
+            Iterator<RoomContentItem> iterator = items.iterator();
+            while (iterator.hasNext()) {
+                RoomContentItem item = iterator.next();
+                if (invalidRanks.contains(item.getRank())) {
+                    iterator.remove();
+                    modified = true;
+                }
+            }
+        }
+        return modified;
+    }
+
+    private boolean isHierarchyPathValid(@NonNull RoomContentItem item,
+            @NonNull Map<Long, RoomContentItem> byRank,
+            @NonNull Set<Long> validRanks,
+            @NonNull Set<Long> invalidRanks,
+            @NonNull Set<Long> visiting) {
+        long rank = item.getRank();
+        if (validRanks.contains(rank)) {
+            return true;
+        }
+        if (invalidRanks.contains(rank)) {
+            return false;
+        }
+        if (!visiting.add(rank)) {
+            invalidRanks.add(rank);
+            return false;
+        }
+        Long parentRank = item.getParentRank();
+        if (parentRank == null) {
+            visiting.remove(rank);
+            validRanks.add(rank);
+            return true;
+        }
+        RoomContentItem parent = byRank.get(parentRank);
+        if (parent == null) {
+            visiting.remove(rank);
+            invalidRanks.add(rank);
+            return false;
+        }
+        boolean parentValid = isHierarchyPathValid(parent, byRank, validRanks, invalidRanks, visiting);
+        visiting.remove(rank);
+        if (parentValid) {
+            validRanks.add(rank);
+            return true;
+        }
+        invalidRanks.add(rank);
+        return false;
+    }
+
     @Nullable
     private static RoomContentItem findContainerByRank(@NonNull List<RoomContentItem> items, long rank) {
         for (RoomContentItem candidate : items) {
@@ -5344,11 +5444,18 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             preferences.edit().remove(resolvedKey).apply();
         }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        boolean sanitized = sanitizeRoomContent(roomContentItems);
+        if (sanitized) {
+            RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        }
         sortRoomContentItems();
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         if (roomContentAdapter != null) {
             roomContentAdapter.collapseAllContainers();
             roomContentAdapter.notifyDataSetChanged();
+        }
+        if (sanitized) {
+            saveRoomContent();
         }
     }
 
@@ -5365,6 +5472,9 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
 
     private void saveRoomContent() {
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        if (sanitizeRoomContent(roomContentItems)) {
+            RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        }
         JSONArray array = new JSONArray();
         for (RoomContentItem item : roomContentItems) {
             array.put(item.toJson());
