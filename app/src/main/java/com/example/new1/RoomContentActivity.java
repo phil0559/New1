@@ -4558,8 +4558,13 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     furnitureColumnInput, selection);
             return;
         }
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        int itemHierarchyDepth = computeHierarchyDepth(item, roomContentItems);
+        Long itemParentRank = item.getParentRank();
+        boolean enforceSameDepth = item.isContainer();
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
-                additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower);
+                additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower,
+                itemHierarchyDepth, itemParentRank, enforceSameDepth);
         Context context = containerGroup.getContext();
         containerGroup.setOnCheckedChangeListener(null);
         containerGroup.removeAllViews();
@@ -4793,7 +4798,10 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             int position,
             @Nullable Set<Long> additionalExcludedRanks,
             boolean restrictContainerSelection,
-            boolean selectionContainsStorageTower) {
+            boolean selectionContainsStorageTower,
+            int referenceDepth,
+            @Nullable Long referenceParentRank,
+            boolean enforceSameDepth) {
         List<ContainerOption> result = new ArrayList<>();
         if (restrictContainerSelection) {
             return result;
@@ -4820,6 +4828,10 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 if (!isMoveAllowedToContainer(item, candidate)) {
                     continue;
                 }
+                if (!hasCompatibleDepth(candidate, roomContentItems, referenceDepth,
+                        referenceParentRank, enforceSameDepth)) {
+                    continue;
+                }
                 if (selectionContainsStorageTower
                         && (!candidate.isFurniture() || candidate.isStorageTower())) {
                     continue;
@@ -4838,6 +4850,10 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     continue;
                 }
                 if (!isMoveAllowedToContainer(item, candidate)) {
+                    continue;
+                }
+                if (!hasCompatibleDepth(candidate, targetItems, referenceDepth,
+                        referenceParentRank, enforceSameDepth)) {
                     continue;
                 }
                 if (selectionContainsStorageTower
@@ -4904,6 +4920,41 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             }
             parentRank = parent.getParentRank();
         }
+    }
+
+    private static int computeHierarchyDepth(@NonNull RoomContentItem item,
+            @NonNull List<RoomContentItem> items) {
+        int depth = 0;
+        Long parentRank = item.getParentRank();
+        Set<Long> visitedParents = new HashSet<>();
+        while (parentRank != null && visitedParents.add(parentRank)) {
+            depth++;
+            RoomContentItem parent = findContainerByRank(items, parentRank);
+            if (parent == null) {
+                break;
+            }
+            parentRank = parent.getParentRank();
+        }
+        return depth;
+    }
+
+    private static boolean hasCompatibleDepth(@NonNull RoomContentItem candidate,
+            @NonNull List<RoomContentItem> items,
+            int referenceDepth,
+            @Nullable Long referenceParentRank,
+            boolean enforceSameDepth) {
+        if (!enforceSameDepth) {
+            return true;
+        }
+        int candidateDepth = computeHierarchyDepth(candidate, items);
+        if (candidateDepth == referenceDepth) {
+            return true;
+        }
+        Long candidateParentRank = candidate.getParentRank();
+        if (referenceParentRank == null) {
+            return candidateParentRank == null;
+        }
+        return referenceParentRank.equals(candidateParentRank);
     }
 
     @Nullable
