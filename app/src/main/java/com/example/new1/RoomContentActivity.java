@@ -6411,6 +6411,18 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private long[] toLongArray(@Nullable List<Long> values) {
+        if (values == null || values.isEmpty()) {
+            return new long[0];
+        }
+        long[] result = new long[values.size()];
+        for (int i = 0; i < values.size(); i++) {
+            Long value = values.get(i);
+            result[i] = value != null ? value : 0L;
+        }
+        return result;
+    }
+
     private boolean containsIgnoreCase(@NonNull List<String> values,
                                        @Nullable String candidate) {
         return containsIgnoreCase(values, candidate, -1);
