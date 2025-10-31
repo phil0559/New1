@@ -75,10 +75,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -3805,27 +3807,30 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 selectedContainerHolder.desiredLevel = null;
                 selectedContainerHolder.desiredColumn = null;
             }
+            if (targetOption != null) {
+                selectedContainerHolder.desiredRank = targetOption.targetRank;
+            }
             if (targetOption != null && targetOption.container != null
                     && targetOption.container.isFurniture()) {
                 RoomContentItem furniture = targetOption.container;
                 Integer maxLevels = furniture.getFurnitureLevels();
                 Integer maxColumns = furniture.getFurnitureColumns();
+                boolean levelFromNavigation = targetOption.type == ContainerOptionType.DROP_ON_LEVEL;
                 if (maxLevels == null || maxLevels > 0) {
-                    Integer parsedLevel = parseNonNegativeInteger(furnitureLevelInput != null
-                            ? furnitureLevelInput.getText()
-                            : null);
-                    boolean acceptsBottom = furniture.hasFurnitureBottom();
-                    boolean levelValid = parsedLevel != null;
-                    if (levelValid) {
-                        if (parsedLevel == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
-                            levelValid = acceptsBottom;
-                        } else if (parsedLevel <= 0
-                                || (maxLevels != null && parsedLevel > maxLevels)) {
-                            levelValid = false;
-                        }
+                    Integer parsedLevel;
+                    if (levelFromNavigation) {
+                        parsedLevel = targetOption.level;
+                    } else {
+                        parsedLevel = parseNonNegativeInteger(furnitureLevelInput != null
+                                ? furnitureLevelInput.getText()
+                                : null);
                     }
+                    boolean levelValid = levelFromNavigation
+                            ? isLevelSelectionValid(furniture, parsedLevel, maxLevels)
+                            : (parsedLevel != null
+                                    && isLevelSelectionValid(furniture, parsedLevel, maxLevels));
                     if (!levelValid) {
-                        if (furnitureLevelInput != null) {
+                        if (!levelFromNavigation && furnitureLevelInput != null) {
                             furnitureLevelInput.setError(getString(
                                     R.string.error_move_room_content_invalid_level));
                             furnitureLevelInput.requestFocus();
@@ -3857,6 +3862,12 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     columnValue = null;
                     selectedContainerHolder.desiredColumn = null;
                 }
+            } else if (targetOption != null
+                    && targetOption.type == ContainerOptionType.DROP_ON_LEVEL) {
+                levelValue = targetOption.level;
+                columnValue = null;
+                selectedContainerHolder.desiredLevel = targetOption.level;
+                selectedContainerHolder.desiredColumn = null;
             } else {
                 levelValue = null;
                 columnValue = null;
@@ -4055,7 +4066,10 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 ? targetContainer.container
                 : null;
         if (targetContainerItem == null && targetContainer != null && movingWithinSameRoom) {
-            targetContainerItem = findContainerByRank(roomContentItems, targetContainer.rank);
+            Long targetRank = targetContainer.targetRank;
+            if (targetRank != null) {
+                targetContainerItem = findContainerByRank(roomContentItems, targetRank);
+            }
         }
         if (!isMoveAllowedToContainer(item, targetContainerItem)) {
             Toast.makeText(this,
@@ -4131,7 +4145,10 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             if (targetContainer.container != null) {
                 target = targetContainer.container;
             } else {
-                target = findContainerByRank(roomContentItems, targetContainer.rank);
+                Long targetRank = targetContainer.targetRank;
+                if (targetRank != null) {
+                    target = findContainerByRank(roomContentItems, targetRank);
+                }
             }
         }
         if (target != null) {
@@ -4191,7 +4208,10 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
         RoomContentItem target = null;
         if (targetContainer != null) {
-            target = findContainerByRank(targetItems, targetContainer.rank);
+            Long targetRank = targetContainer.targetRank;
+            if (targetRank != null) {
+                target = findContainerByRank(targetItems, targetRank);
+            }
         }
         if (target != null) {
             int containerIndex = targetItems.indexOf(target);
@@ -4558,8 +4578,17 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     furnitureColumnInput, selection);
             return;
         }
+        ContainerNavigationState navigation = selection.navigation;
+        boolean contextChanged = navigation.applyContext(establishment, room);
+        if (contextChanged) {
+            selection.selectedOption = null;
+            selection.desiredRank = null;
+            selection.desiredLevel = null;
+            selection.desiredColumn = null;
+        }
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
-                additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower);
+                additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower,
+                navigation);
         Context context = containerGroup.getContext();
         containerGroup.setOnCheckedChangeListener(null);
         containerGroup.removeAllViews();
@@ -4578,15 +4607,13 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         noneParams.topMargin = 0;
         containerGroup.addView(noContainerButton, noneParams);
+        final int noContainerId = noContainerButton.getId();
 
-        Long desiredRank = selection.desiredRank != null
-                ? selection.desiredRank
-                : item.getParentRank();
+        ContainerOption currentSelection = selection.selectedOption;
         int checkedId = View.NO_ID;
-        if (desiredRank == null) {
-            checkedId = noContainerButton.getId();
-            selection.selectedOption = null;
-            selection.desiredRank = null;
+        if (currentSelection == null && selection.desiredRank == null
+                && item.getParentRank() == null) {
+            checkedId = noContainerId;
         }
 
         for (ContainerOption option : options) {
@@ -4599,20 +4626,21 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             params.topMargin = topMargin;
             containerGroup.addView(optionButton, params);
             optionMap.put(optionButton.getId(), option);
-            if (desiredRank != null && option.rank == desiredRank) {
+            if (currentSelection != null && currentSelection.isEquivalentTo(option)) {
                 checkedId = optionButton.getId();
                 selection.selectedOption = option;
-                selection.desiredRank = desiredRank;
+                selection.desiredRank = option.targetRank;
+                if (option.type == ContainerOptionType.DROP_ON_LEVEL
+                        || option.type == ContainerOptionType.CONTAINER) {
+                    selection.desiredLevel = option.level;
+                }
             }
         }
 
-        final int noContainerId = noContainerButton.getId();
         if (checkedId == View.NO_ID) {
-            checkedId = noContainerId;
-            selection.selectedOption = null;
-            selection.desiredRank = null;
-            selection.desiredLevel = null;
-            selection.desiredColumn = null;
+            if (selection.selectedOption == null && selection.desiredRank == null) {
+                checkedId = noContainerId;
+            }
         }
 
         containerGroup.setOnCheckedChangeListener((group, checkedRadioButtonId) -> {
@@ -4621,21 +4649,90 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 selection.desiredRank = null;
                 selection.desiredLevel = null;
                 selection.desiredColumn = null;
-            } else {
-                ContainerOption selected = optionMap.get(checkedRadioButtonId);
-                if (selected != null) {
-                    selection.selectedOption = selected;
-                    selection.desiredRank = selected.rank;
-                }
+                refreshFurniturePlacementInputs(null, item, furnitureDetailsContainer,
+                        furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
+                        furnitureColumnInput, selection);
+                return;
+            }
+            ContainerOption selectedOption = optionMap.get(checkedRadioButtonId);
+            if (selectedOption == null) {
+                return;
+            }
+            switch (selectedOption.type) {
+                case BACK:
+                    selection.navigation.navigateBack();
+                    selection.selectedOption = null;
+                    selection.desiredRank = null;
+                    selection.desiredLevel = null;
+                    selection.desiredColumn = null;
+                    group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
+                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
+                            establishment, room, item, position, selection, additionalExcludedRanks,
+                            restrictContainerSelection, selectionContainsStorageTower));
+                    return;
+                case MAIN_LEVEL_ENTRY:
+                    selection.navigation.showMainLevel();
+                    selection.selectedOption = null;
+                    selection.desiredRank = null;
+                    selection.desiredLevel = null;
+                    selection.desiredColumn = null;
+                    group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
+                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
+                            establishment, room, item, position, selection, additionalExcludedRanks,
+                            restrictContainerSelection, selectionContainsStorageTower));
+                    return;
+                case FURNITURE_ENTRY:
+                    if (selectedOption.furniture != null) {
+                        selection.navigation.enterFurniture(selectedOption.furniture);
+                    }
+                    selection.selectedOption = null;
+                    selection.desiredRank = null;
+                    selection.desiredLevel = null;
+                    selection.desiredColumn = null;
+                    group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
+                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
+                            establishment, room, item, position, selection, additionalExcludedRanks,
+                            restrictContainerSelection, selectionContainsStorageTower));
+                    return;
+                case LEVEL_ENTRY:
+                    selection.navigation.enterLevel(selectedOption.furniture,
+                            selectedOption.level);
+                    selection.selectedOption = null;
+                    selection.desiredRank = null;
+                    selection.desiredLevel = null;
+                    selection.desiredColumn = null;
+                    group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
+                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
+                            establishment, room, item, position, selection, additionalExcludedRanks,
+                            restrictContainerSelection, selectionContainsStorageTower));
+                    return;
+                case DROP_ON_LEVEL:
+                case CONTAINER:
+                    selection.selectedOption = selectedOption;
+                    selection.desiredRank = selectedOption.targetRank;
+                    selection.desiredLevel = selectedOption.level;
+                    break;
             }
             refreshFurniturePlacementInputs(selection.selectedOption, item,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput, selection);
         });
-        containerGroup.check(checkedId);
-        refreshFurniturePlacementInputs(selection.selectedOption, item,
-                furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
-                furnitureColumnContainer, furnitureColumnInput, selection);
+
+        int resolvedId = checkedId != View.NO_ID ? checkedId : noContainerId;
+        containerGroup.check(resolvedId);
+        if (resolvedId == noContainerId) {
+            selection.selectedOption = null;
+            selection.desiredRank = null;
+            selection.desiredLevel = null;
+            selection.desiredColumn = null;
+        }
+        refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
+                furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
+                furnitureColumnInput, selection);
     }
 
     private void refreshFurniturePlacementInputs(@Nullable ContainerOption option,
@@ -4649,7 +4746,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         if (detailsContainer == null) {
             return;
         }
-        if (option == null || option.container == null || !option.container.isFurniture()) {
+        if (option == null) {
             detailsContainer.setVisibility(View.GONE);
             if (levelContainer != null) {
                 levelContainer.setVisibility(View.GONE);
@@ -4669,12 +4766,55 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             selection.desiredColumn = null;
             return;
         }
-        RoomContentItem furniture = option.container;
+        if (option.type == ContainerOptionType.DROP_ON_LEVEL && option.container == null) {
+            detailsContainer.setVisibility(View.GONE);
+            if (levelContainer != null) {
+                levelContainer.setVisibility(View.GONE);
+            }
+            if (columnContainer != null) {
+                columnContainer.setVisibility(View.GONE);
+            }
+            if (levelInput != null) {
+                levelInput.setText(null);
+                levelInput.setError(null);
+            }
+            if (columnInput != null) {
+                columnInput.setText(null);
+                columnInput.setError(null);
+            }
+            selection.desiredLevel = option.level;
+            selection.desiredColumn = null;
+            return;
+        }
+        RoomContentItem container = option.container;
+        if (container == null || !container.isFurniture()) {
+            detailsContainer.setVisibility(View.GONE);
+            if (levelContainer != null) {
+                levelContainer.setVisibility(View.GONE);
+            }
+            if (columnContainer != null) {
+                columnContainer.setVisibility(View.GONE);
+            }
+            if (levelInput != null) {
+                levelInput.setText(null);
+                levelInput.setError(null);
+            }
+            if (columnInput != null) {
+                columnInput.setText(null);
+                columnInput.setError(null);
+            }
+            selection.desiredLevel = null;
+            selection.desiredColumn = null;
+            return;
+        }
+        RoomContentItem furniture = container;
         Integer maxLevels = furniture.getFurnitureLevels();
         Integer maxColumns = furniture.getFurnitureColumns();
-        boolean showLevel = maxLevels == null || maxLevels > 0;
+        boolean autoLevelSelection = option.type == ContainerOptionType.DROP_ON_LEVEL;
+        boolean showLevel = !autoLevelSelection && (maxLevels == null || maxLevels > 0);
         boolean showColumn = maxColumns != null && maxColumns > 0;
-        if (!showLevel && !showColumn) {
+
+        if (!showLevel && !showColumn && !autoLevelSelection) {
             detailsContainer.setVisibility(View.GONE);
             if (levelContainer != null) {
                 levelContainer.setVisibility(View.GONE);
@@ -4694,6 +4834,28 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             selection.desiredColumn = null;
             return;
         }
+
+        if (!showLevel && !showColumn && autoLevelSelection) {
+            detailsContainer.setVisibility(View.GONE);
+            if (levelContainer != null) {
+                levelContainer.setVisibility(View.GONE);
+            }
+            if (columnContainer != null) {
+                columnContainer.setVisibility(View.GONE);
+            }
+            if (levelInput != null) {
+                levelInput.setText(null);
+                levelInput.setError(null);
+            }
+            if (columnInput != null) {
+                columnInput.setText(null);
+                columnInput.setError(null);
+            }
+            selection.desiredLevel = option.level;
+            selection.desiredColumn = null;
+            return;
+        }
+
         detailsContainer.setVisibility(View.VISIBLE);
         if (levelContainer != null) {
             levelContainer.setVisibility(showLevel ? View.VISIBLE : View.GONE);
@@ -4701,16 +4863,27 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         if (columnContainer != null) {
             columnContainer.setVisibility(showColumn ? View.VISIBLE : View.GONE);
         }
-        if (showLevel) {
+
+        if (autoLevelSelection) {
+            selection.desiredLevel = option.level;
+            if (levelInput != null) {
+                levelInput.setText(null);
+                levelInput.setError(null);
+            }
+        } else if (showLevel) {
             Integer levelValue = selection.desiredLevel;
             if (levelValue == null) {
-                boolean sameContainer = item.getParentRank() != null
-                        && item.getParentRank().equals(option.rank);
-                if (sameContainer && item.getContainerLevel() != null) {
-                    levelValue = item.getContainerLevel();
-                }
-                if (levelValue == null) {
-                    levelValue = 1;
+                if (option.level != null) {
+                    levelValue = option.level;
+                } else {
+                    Long parentRank = option.targetRank;
+                    boolean sameContainer = parentRank != null && item.getParentRank() != null
+                            && parentRank.equals(item.getParentRank());
+                    if (sameContainer && item.getContainerLevel() != null) {
+                        levelValue = item.getContainerLevel();
+                    } else {
+                        levelValue = 1;
+                    }
                 }
             }
             if (maxLevels != null && maxLevels > 0 && levelValue != null && levelValue > maxLevels) {
@@ -4728,15 +4901,16 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 levelInput.setError(null);
             }
         }
+
         if (showColumn) {
             Integer columnValue = selection.desiredColumn;
             if (columnValue == null) {
-                boolean sameContainer = item.getParentRank() != null
-                        && item.getParentRank().equals(option.rank);
+                Long parentRank = option.targetRank;
+                boolean sameContainer = parentRank != null && item.getParentRank() != null
+                        && parentRank.equals(item.getParentRank());
                 if (sameContainer && item.getContainerColumn() != null) {
                     columnValue = item.getContainerColumn();
-                }
-                if (columnValue == null) {
+                } else {
                     columnValue = 1;
                 }
             }
@@ -4793,9 +4967,11 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             int position,
             @Nullable Set<Long> additionalExcludedRanks,
             boolean restrictContainerSelection,
-            boolean selectionContainsStorageTower) {
+            boolean selectionContainsStorageTower,
+            @NonNull ContainerNavigationState navigation) {
         List<ContainerOption> result = new ArrayList<>();
         if (restrictContainerSelection) {
+            navigation.resetToRoot();
             return result;
         }
         String normalizedEstablishment = normalizeName(establishment);
@@ -4804,54 +4980,210 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         String normalizedCurrentRoom = normalizeName(roomName);
         boolean sameEstablishment = normalizedEstablishment.equalsIgnoreCase(normalizedCurrentEstablishment);
         boolean sameRoom = sameEstablishment && normalizedRoom.equalsIgnoreCase(normalizedCurrentRoom);
+
+        List<RoomContentItem> targetItems;
+        Set<Long> excludedRanks = new HashSet<>();
         if (sameRoom) {
             RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-            Set<Long> excludedRanks = collectExcludedContainerRanks(roomContentItems, item, position);
+            excludedRanks.addAll(collectExcludedContainerRanks(roomContentItems, item, position));
             if (additionalExcludedRanks != null && !additionalExcludedRanks.isEmpty()) {
                 excludedRanks.addAll(additionalExcludedRanks);
             }
-            for (RoomContentItem candidate : roomContentItems) {
-                if (!candidate.isContainer()) {
-                    continue;
-                }
-                if (excludedRanks.contains(candidate.getRank())) {
-                    continue;
-                }
-                if (!isMoveAllowedToContainer(item, candidate)) {
-                    continue;
-                }
-                if (selectionContainsStorageTower
-                        && (!candidate.isFurniture() || candidate.isStorageTower())) {
-                    continue;
-                }
-                String label = candidate.getName();
-                if (label == null || label.trim().isEmpty()) {
-                    label = getString(R.string.dialog_room_content_item_placeholder);
-                }
-                result.add(new ContainerOption(label, candidate.getRank(), candidate));
-            }
+            targetItems = roomContentItems;
         } else {
-            List<RoomContentItem> targetItems = loadRoomContentFor(establishment, room);
+            targetItems = loadRoomContentFor(establishment, room);
             RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
-            for (RoomContentItem candidate : targetItems) {
-                if (!candidate.isContainer()) {
-                    continue;
-                }
-                if (!isMoveAllowedToContainer(item, candidate)) {
-                    continue;
-                }
-                if (selectionContainsStorageTower
-                        && (!candidate.isFurniture() || candidate.isStorageTower())) {
-                    continue;
-                }
-                String label = candidate.getName();
-                if (label == null || label.trim().isEmpty()) {
-                    label = getString(R.string.dialog_room_content_item_placeholder);
-                }
-                result.add(new ContainerOption(label, candidate.getRank(), candidate));
+            if (additionalExcludedRanks != null && !additionalExcludedRanks.isEmpty()) {
+                excludedRanks.addAll(additionalExcludedRanks);
             }
         }
+
+        List<RoomContentItem> allowedFurniture = new ArrayList<>();
+        List<RoomContentItem> allowedContainers = new ArrayList<>();
+        for (RoomContentItem candidate : targetItems) {
+            if (!candidate.isContainer()) {
+                continue;
+            }
+            if (excludedRanks.contains(candidate.getRank())) {
+                continue;
+            }
+            if (!isMoveAllowedToContainer(item, candidate)) {
+                continue;
+            }
+            if (selectionContainsStorageTower
+                    && (!candidate.isFurniture() || candidate.isStorageTower())) {
+                continue;
+            }
+            if (candidate.isFurniture()) {
+                allowedFurniture.add(candidate);
+            } else {
+                allowedContainers.add(candidate);
+            }
+        }
+
+        Comparator<RoomContentItem> byNameComparator = (left, right) -> {
+            String leftName = normalizeForSort(left.getName());
+            String rightName = normalizeForSort(right.getName());
+            return leftName.compareToIgnoreCase(rightName);
+        };
+        Collections.sort(allowedFurniture, byNameComparator);
+
+        NavigationStep step = navigation.getCurrentStep();
+        if (step.stage == NavigationStage.ROOT) {
+            result.add(ContainerOption.createMainLevelOption(
+                    getString(R.string.dialog_move_room_content_root_level)));
+            for (RoomContentItem furniture : allowedFurniture) {
+                result.add(ContainerOption.createFurnitureOption(resolveContainerName(furniture),
+                        furniture));
+            }
+            return result;
+        }
+
+        if (step.stage == NavigationStage.FURNITURE) {
+            RoomContentItem furniture = step.furniture;
+            if (furniture == null || !allowedFurniture.contains(furniture)) {
+                navigation.resetToRoot();
+                return buildContainerOptions(establishment, room, item, position,
+                        additionalExcludedRanks, restrictContainerSelection,
+                        selectionContainsStorageTower, navigation);
+            }
+            result.add(ContainerOption.createBackOption(
+                    getString(R.string.dialog_move_room_content_back_option)));
+            if (furniture.hasFurnitureTop()) {
+                result.add(ContainerOption.createLevelOption(
+                        getString(R.string.furniture_popup_top_title), furniture, null));
+            }
+            Integer maxLevels = furniture.getFurnitureLevels();
+            if (maxLevels != null && maxLevels > 0) {
+                for (int index = 1; index <= maxLevels; index++) {
+                    result.add(ContainerOption.createLevelOption(
+                            getString(R.string.furniture_popup_level_title, index), furniture,
+                            index));
+                }
+            }
+            if (furniture.hasFurnitureBottom()) {
+                result.add(ContainerOption.createLevelOption(
+                        getString(R.string.furniture_popup_bottom_title), furniture,
+                        RoomContentItem.FURNITURE_BOTTOM_LEVEL));
+            }
+            return result;
+        }
+
+        if (step.stage == NavigationStage.LEVEL) {
+            RoomContentItem furniture = step.furniture;
+            result.add(ContainerOption.createBackOption(
+                    getString(R.string.dialog_move_room_content_back_option)));
+            if (furniture == null) {
+                result.add(ContainerOption.createDropOnLevelOption(
+                        getString(R.string.dialog_move_room_content_drop_on_room), null, null));
+                List<RoomContentItem> mainLevelContainers = filterContainersForLevel(
+                        allowedContainers, null, null);
+                Collections.sort(mainLevelContainers, byNameComparator);
+                for (RoomContentItem containerItem : mainLevelContainers) {
+                    result.add(ContainerOption.createContainerOption(
+                            resolveContainerName(containerItem), containerItem));
+                }
+                return result;
+            }
+            if (!allowedFurniture.contains(furniture)) {
+                navigation.resetToRoot();
+                return buildContainerOptions(establishment, room, item, position,
+                        additionalExcludedRanks, restrictContainerSelection,
+                        selectionContainsStorageTower, navigation);
+            }
+            String levelLabel = formatFurnitureLevelLabel(furniture, step.level);
+            result.add(ContainerOption.createDropOnLevelOption(
+                    getString(R.string.dialog_move_room_content_drop_on_level, levelLabel),
+                    furniture, step.level));
+            List<RoomContentItem> levelContainers = filterContainersForLevel(allowedContainers,
+                    furniture, step.level);
+            Collections.sort(levelContainers, byNameComparator);
+            for (RoomContentItem containerItem : levelContainers) {
+                result.add(ContainerOption.createContainerOption(
+                        resolveContainerName(containerItem), containerItem));
+            }
+            return result;
+        }
+
         return result;
+    }
+
+    @NonNull
+    private String resolveContainerName(@Nullable RoomContentItem item) {
+        if (item == null) {
+            return getString(R.string.dialog_room_content_item_placeholder);
+        }
+        String label = item.getName();
+        if (label == null || label.trim().isEmpty()) {
+            return getString(R.string.dialog_room_content_item_placeholder);
+        }
+        return label;
+    }
+
+    @NonNull
+    private String formatFurnitureLevelLabel(@NonNull RoomContentItem furniture,
+            @Nullable Integer level) {
+        if (level == null) {
+            return getString(R.string.furniture_popup_top_title);
+        }
+        if (level == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+            return getString(R.string.furniture_popup_bottom_title);
+        }
+        return getString(R.string.furniture_popup_level_title, level);
+    }
+
+    @NonNull
+    static List<RoomContentItem> filterContainersForLevel(
+            @NonNull List<RoomContentItem> containers,
+            @Nullable RoomContentItem furniture,
+            @Nullable Integer level) {
+        List<RoomContentItem> matches = new ArrayList<>();
+        for (RoomContentItem candidate : containers) {
+            if (candidate == null) {
+                continue;
+            }
+            if (candidate.isFurniture()) {
+                continue;
+            }
+            Long parentRank = candidate.getParentRank();
+            if (furniture == null) {
+                if (parentRank != null) {
+                    continue;
+                }
+                matches.add(candidate);
+            } else {
+                if (parentRank == null || parentRank.longValue() != furniture.getRank()) {
+                    continue;
+                }
+                Integer containerLevel = candidate.getContainerLevel();
+                if (level == null) {
+                    if (containerLevel != null) {
+                        continue;
+                    }
+                } else {
+                    if (containerLevel == null || !containerLevel.equals(level)) {
+                        continue;
+                    }
+                }
+                matches.add(candidate);
+            }
+        }
+        return matches;
+    }
+
+    private boolean isLevelSelectionValid(@NonNull RoomContentItem furniture,
+            @Nullable Integer level,
+            @Nullable Integer maxLevels) {
+        if (level == null) {
+            return furniture.hasFurnitureTop();
+        }
+        if (level == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+            return furniture.hasFurnitureBottom();
+        }
+        if (level <= 0) {
+            return false;
+        }
+        return maxLevels == null || maxLevels <= 0 || level <= maxLevels;
     }
 
     private boolean isMoveAllowedToContainer(@NonNull RoomContentItem item,
@@ -5020,17 +5352,219 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         }
     }
 
+    static final class ContainerNavigationState {
+        @Nullable
+        private String establishment;
+        @Nullable
+        private String room;
+        @NonNull
+        private final Deque<NavigationStep> history = new ArrayDeque<>();
+
+        ContainerNavigationState() {
+            resetToRoot();
+        }
+
+        boolean applyContext(@Nullable String establishment, @Nullable String room) {
+            String normalizedEstablishment = establishment != null ? establishment.trim() : null;
+            String normalizedRoom = room != null ? room.trim() : null;
+            if (!TextUtils.equals(this.establishment, normalizedEstablishment)
+                    || !TextUtils.equals(this.room, normalizedRoom)) {
+                this.establishment = normalizedEstablishment;
+                this.room = normalizedRoom;
+                resetToRoot();
+                return true;
+            }
+            if (history.isEmpty()) {
+                resetToRoot();
+                return true;
+            }
+            return false;
+        }
+
+        void resetToRoot() {
+            history.clear();
+            history.addLast(NavigationStep.root());
+        }
+
+        @NonNull
+        NavigationStep getCurrentStep() {
+            NavigationStep step = history.peekLast();
+            if (step == null) {
+                resetToRoot();
+                step = history.peekLast();
+            }
+            return step;
+        }
+
+        void navigateBack() {
+            if (history.size() > 1) {
+                history.removeLast();
+            }
+        }
+
+        void showMainLevel() {
+            trimToRoot();
+            history.addLast(NavigationStep.forLevel(null, null));
+        }
+
+        void enterFurniture(@NonNull RoomContentItem furniture) {
+            trimToRoot();
+            history.addLast(NavigationStep.forFurniture(furniture));
+        }
+
+        void enterLevel(@Nullable RoomContentItem furniture, @Nullable Integer level) {
+            while (!history.isEmpty() && history.peekLast().stage == NavigationStage.LEVEL) {
+                history.removeLast();
+            }
+            history.addLast(NavigationStep.forLevel(furniture, level));
+        }
+
+        private void trimToRoot() {
+            while (history.size() > 1) {
+                history.removeLast();
+            }
+        }
+    }
+
+    enum NavigationStage {
+        ROOT,
+        FURNITURE,
+        LEVEL
+    }
+
+    static final class NavigationStep {
+        final NavigationStage stage;
+        @Nullable
+        final RoomContentItem furniture;
+        @Nullable
+        final Integer level;
+
+        private NavigationStep(@NonNull NavigationStage stage,
+                @Nullable RoomContentItem furniture,
+                @Nullable Integer level) {
+            this.stage = stage;
+            this.furniture = furniture;
+            this.level = level;
+        }
+
+        @NonNull
+        static NavigationStep root() {
+            return new NavigationStep(NavigationStage.ROOT, null, null);
+        }
+
+        @NonNull
+        static NavigationStep forFurniture(@NonNull RoomContentItem furniture) {
+            return new NavigationStep(NavigationStage.FURNITURE, furniture, null);
+        }
+
+        @NonNull
+        static NavigationStep forLevel(@Nullable RoomContentItem furniture,
+                @Nullable Integer level) {
+            return new NavigationStep(NavigationStage.LEVEL, furniture, level);
+        }
+    }
+
+    private enum ContainerOptionType {
+        MAIN_LEVEL_ENTRY,
+        FURNITURE_ENTRY,
+        LEVEL_ENTRY,
+        BACK,
+        DROP_ON_LEVEL,
+        CONTAINER
+    }
+
     private static final class ContainerOption {
         @NonNull
+        final ContainerOptionType type;
+        @NonNull
         final String label;
-        final long rank;
+        @Nullable
+        final Long targetRank;
         @Nullable
         final RoomContentItem container;
+        @Nullable
+        final RoomContentItem furniture;
+        @Nullable
+        final Integer level;
 
-        ContainerOption(@NonNull String label, long rank, @Nullable RoomContentItem container) {
+        private ContainerOption(@NonNull ContainerOptionType type,
+                @NonNull String label,
+                @Nullable Long targetRank,
+                @Nullable RoomContentItem container,
+                @Nullable RoomContentItem furniture,
+                @Nullable Integer level) {
+            this.type = type;
             this.label = label;
-            this.rank = rank;
+            this.targetRank = targetRank;
             this.container = container;
+            this.furniture = furniture;
+            this.level = level;
+        }
+
+        @NonNull
+        static ContainerOption createMainLevelOption(@NonNull String label) {
+            return new ContainerOption(ContainerOptionType.MAIN_LEVEL_ENTRY, label, null, null,
+                    null, null);
+        }
+
+        @NonNull
+        static ContainerOption createBackOption(@NonNull String label) {
+            return new ContainerOption(ContainerOptionType.BACK, label, null, null, null, null);
+        }
+
+        @NonNull
+        static ContainerOption createFurnitureOption(@NonNull String label,
+                @NonNull RoomContentItem furniture) {
+            return new ContainerOption(ContainerOptionType.FURNITURE_ENTRY, label, null, null,
+                    furniture, null);
+        }
+
+        @NonNull
+        static ContainerOption createLevelOption(@NonNull String label,
+                @NonNull RoomContentItem furniture,
+                @Nullable Integer level) {
+            return new ContainerOption(ContainerOptionType.LEVEL_ENTRY, label, null, null,
+                    furniture, level);
+        }
+
+        @NonNull
+        static ContainerOption createDropOnLevelOption(@NonNull String label,
+                @Nullable RoomContentItem furniture,
+                @Nullable Integer level) {
+            Long targetRank = furniture != null ? furniture.getRank() : null;
+            RoomContentItem container = furniture;
+            return new ContainerOption(ContainerOptionType.DROP_ON_LEVEL, label, targetRank,
+                    container, furniture, level);
+        }
+
+        @NonNull
+        static ContainerOption createContainerOption(@NonNull String label,
+                @NonNull RoomContentItem container) {
+            Long targetRank = container.getRank();
+            return new ContainerOption(ContainerOptionType.CONTAINER, label, targetRank, container,
+                    null, container.getContainerLevel());
+        }
+
+        boolean isEquivalentTo(@NonNull ContainerOption other) {
+            if (type != other.type) {
+                return false;
+            }
+            switch (type) {
+                case DROP_ON_LEVEL:
+                    return safeEquals(targetRank, other.targetRank)
+                            && safeEquals(level, other.level);
+                case CONTAINER:
+                    return safeEquals(targetRank, other.targetRank);
+                default:
+                    return false;
+            }
+        }
+
+        private boolean safeEquals(@Nullable Object first, @Nullable Object second) {
+            if (first == null) {
+                return second == null;
+            }
+            return first.equals(second);
         }
     }
 
@@ -5043,6 +5577,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         Integer desiredLevel;
         @Nullable
         Integer desiredColumn;
+        @NonNull
+        final ContainerNavigationState navigation = new ContainerNavigationState();
     }
 
     private void markItemsAsDisplayed(@NonNull List<RoomContentItem> items) {

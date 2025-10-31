@@ -150,6 +150,10 @@
     <string name="dialog_move_room_content_room_label">Choisissez la pièce de destination</string>
     <string name="dialog_move_room_content_container_label">Choisissez le contenant parent ou le mobilier où placer l’élément.</string>
     <string name="dialog_move_room_content_no_container">Aucun contenant</string>
+    <string name="dialog_move_room_content_root_level">Niveau principal de la pièce</string>
+    <string name="dialog_move_room_content_back_option">Retour</string>
+    <string name="dialog_move_room_content_drop_on_room">Déposer dans la pièce (hors mobilier)</string>
+    <string name="dialog_move_room_content_drop_on_level">Déposer sur %1$s</string>
     <string name="dialog_move_room_content_move_button">Déplacer</string>
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[Aucun établissement disponible pour déplacer cet élément.]]></string>
     <string name="dialog_move_room_content_missing_items">Impossible de préparer le déplacement : élément introuvable.</string>
