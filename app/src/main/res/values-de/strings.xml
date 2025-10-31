@@ -134,6 +134,7 @@
     <string name="dialog_move_room_content_room_label">Zielraum auswählen</string>
     <string name="dialog_move_room_content_container_label">Wählen Sie den übergeordneten Behälter oder das Möbelstück zum Ablegen des Elements.</string>
     <string name="dialog_move_room_content_no_container">Direkt im Raum</string>
+    <string name="dialog_move_room_content_drop_in_container">In %1$s ablegen</string>
     <string name="dialog_move_room_content_move_button">Verschieben</string>
     <string name="dialog_move_room_content_empty_establishments"><![CDATA[Keine Einrichtung verfügbar, um dieses Element zu verschieben.]]></string>
     <string name="dialog_move_room_content_missing_items">Verschieben nicht möglich: Element wurde nicht gefunden.</string>

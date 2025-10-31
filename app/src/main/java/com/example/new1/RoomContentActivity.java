@@ -4684,6 +4684,20 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                             establishment, room, item, position, selection, additionalExcludedRanks,
                             restrictContainerSelection, selectionContainsStorageTower));
                     return;
+                case CONTAINER_ENTRY:
+                    if (selectedOption.container != null) {
+                        selection.navigation.enterContainer(selectedOption.container);
+                    }
+                    selection.selectedOption = null;
+                    selection.desiredRank = null;
+                    selection.desiredLevel = null;
+                    selection.desiredColumn = null;
+                    group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
+                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
+                            establishment, room, item, position, selection, additionalExcludedRanks,
+                            restrictContainerSelection, selectionContainsStorageTower));
+                    return;
                 case LEVEL_ENTRY:
                     selection.navigation.enterLevel(selectedOption.furniture,
                             selectedOption.level);
@@ -5020,17 +5034,43 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             navigation.resetToRoot();
             step = navigation.getCurrentStep();
         }
+        if (step.stage == NavigationStage.CONTAINER && step.container == null) {
+            navigation.resetToRoot();
+            step = navigation.getCurrentStep();
+        }
         if (step.stage == NavigationStage.ROOT) {
             for (RoomContentItem furniture : allowedFurniture) {
                 result.add(ContainerOption.createFurnitureOption(resolveContainerName(furniture),
                         furniture));
             }
-            Set<Long> mainLevelParentRanks = findMainLevelParentRanks(targetItems);
-            List<RoomContentItem> mainLevelContainers = filterContainersForLevel(
-                    allowedContainers, null, null, mainLevelParentRanks);
+            List<RoomContentItem> mainLevelContainers = filterContainersForParent(
+                    allowedContainers, null);
             Collections.sort(mainLevelContainers, byNameComparator);
             for (RoomContentItem containerItem : mainLevelContainers) {
-                result.add(ContainerOption.createContainerOption(
+                result.add(ContainerOption.createContainerEntryOption(
+                        resolveContainerName(containerItem), containerItem));
+            }
+            return result;
+        }
+
+        if (step.stage == NavigationStage.CONTAINER) {
+            result.add(ContainerOption.createBackOption(
+                    getString(R.string.dialog_move_room_content_back_option)));
+            RoomContentItem currentContainer = step.container;
+            if (currentContainer == null || !allowedContainers.contains(currentContainer)) {
+                navigation.resetToRoot();
+                return buildContainerOptions(establishment, room, item, position,
+                        additionalExcludedRanks, restrictContainerSelection,
+                        selectionContainsStorageTower, navigation);
+            }
+            String dropLabel = getString(R.string.dialog_move_room_content_drop_in_container,
+                    resolveContainerName(currentContainer));
+            result.add(ContainerOption.createContainerOption(dropLabel, currentContainer));
+            List<RoomContentItem> childContainers = filterContainersForParent(
+                    allowedContainers, currentContainer);
+            Collections.sort(childContainers, byNameComparator);
+            for (RoomContentItem containerItem : childContainers) {
+                result.add(ContainerOption.createContainerEntryOption(
                         resolveContainerName(containerItem), containerItem));
             }
             return result;
@@ -5073,12 +5113,11 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             if (furniture == null) {
                 result.add(ContainerOption.createDropOnLevelOption(
                         getString(R.string.dialog_move_room_content_drop_on_room), null, null));
-                Set<Long> mainLevelParentRanks = findMainLevelParentRanks(targetItems);
-                List<RoomContentItem> mainLevelContainers = filterContainersForLevel(
-                        allowedContainers, null, null, mainLevelParentRanks);
+                List<RoomContentItem> mainLevelContainers = filterContainersForParent(
+                        allowedContainers, null);
                 Collections.sort(mainLevelContainers, byNameComparator);
                 for (RoomContentItem containerItem : mainLevelContainers) {
-                    result.add(ContainerOption.createContainerOption(
+                    result.add(ContainerOption.createContainerEntryOption(
                             resolveContainerName(containerItem), containerItem));
                 }
                 return result;
@@ -5093,8 +5132,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             result.add(ContainerOption.createDropOnLevelOption(
                     getString(R.string.dialog_move_room_content_drop_on_level, levelLabel),
                     furniture, step.level));
-            List<RoomContentItem> levelContainers = filterContainersForLevel(allowedContainers,
-                    furniture, step.level, null);
+            List<RoomContentItem> levelContainers = filterContainersForFurnitureLevel(
+                    allowedContainers, furniture, step.level);
             Collections.sort(levelContainers, byNameComparator);
             for (RoomContentItem containerItem : levelContainers) {
                 result.add(ContainerOption.createContainerOption(
@@ -5131,12 +5170,11 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     }
 
     @NonNull
-    static List<RoomContentItem> filterContainersForLevel(
+    static List<RoomContentItem> filterContainersForParent(
             @NonNull List<RoomContentItem> containers,
-            @Nullable RoomContentItem furniture,
-            @Nullable Integer level,
-            @Nullable Set<Long> mainLevelParentRanks) {
+            @Nullable RoomContentItem parentContainer) {
         List<RoomContentItem> matches = new ArrayList<>();
+        Long expectedParentRank = parentContainer != null ? parentContainer.getRank() : null;
         for (RoomContentItem candidate : containers) {
             if (candidate == null) {
                 continue;
@@ -5145,76 +5183,47 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 continue;
             }
             Long parentRank = candidate.getParentRank();
-            if (furniture == null) {
+            if (expectedParentRank == null) {
                 if (parentRank == null) {
                     matches.add(candidate);
-                    continue;
                 }
-                if (mainLevelParentRanks != null
-                        && mainLevelParentRanks.contains(parentRank)) {
-                    matches.add(candidate);
-                }
-                continue;
-            } else {
-                if (parentRank == null || parentRank.longValue() != furniture.getRank()) {
-                    continue;
-                }
-                Integer containerLevel = candidate.getContainerLevel();
-                if (level == null) {
-                    if (containerLevel != null) {
-                        continue;
-                    }
-                } else {
-                    if (containerLevel == null || !containerLevel.equals(level)) {
-                        continue;
-                    }
-                }
+            } else if (parentRank != null && parentRank.equals(expectedParentRank)) {
                 matches.add(candidate);
             }
         }
         return matches;
     }
 
-    @NonNull
-    private Set<Long> findMainLevelParentRanks(@NonNull List<RoomContentItem> items) {
-        Set<Long> result = new HashSet<>();
-        if (items.isEmpty()) {
-            return result;
+    static List<RoomContentItem> filterContainersForFurnitureLevel(
+            @NonNull List<RoomContentItem> containers,
+            @NonNull RoomContentItem furniture,
+            @Nullable Integer level) {
+        List<RoomContentItem> matches = new ArrayList<>();
+        long furnitureRank = furniture.getRank();
+        for (RoomContentItem candidate : containers) {
+            if (candidate == null) {
+                continue;
+            }
+            if (candidate.isFurniture()) {
+                continue;
+            }
+            Long parentRank = candidate.getParentRank();
+            if (parentRank == null || parentRank.longValue() != furnitureRank) {
+                continue;
+            }
+            Integer containerLevel = candidate.getContainerLevel();
+            if (level == null) {
+                if (containerLevel != null) {
+                    continue;
+                }
+            } else {
+                if (containerLevel == null || !containerLevel.equals(level)) {
+                    continue;
+                }
+            }
+            matches.add(candidate);
         }
-        Map<Long, RoomContentItem> byRank = new HashMap<>();
-        for (RoomContentItem item : items) {
-            if (item == null) {
-                continue;
-            }
-            byRank.put(item.getRank(), item);
-        }
-        for (RoomContentItem item : items) {
-            if (item == null) {
-                continue;
-            }
-            Long parentRank = item.getParentRank();
-            if (parentRank == null) {
-                continue;
-            }
-            RoomContentItem parent = byRank.get(parentRank);
-            if (parent == null) {
-                continue;
-            }
-            if (parent.isFurniture()) {
-                continue;
-            }
-            if (parent.getParentRank() != null) {
-                continue;
-            }
-            result.add(parentRank);
-            if (result.size() > 1) {
-                break;
-            }
-        }
-        if (result.size() != 1) {
-            result.clear();
-        }
-        return result;
+        return matches;
     }
 
     private boolean isLevelSelectionValid(@NonNull RoomContentItem furniture,
@@ -5467,6 +5476,13 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             history.addLast(NavigationStep.forFurniture(furniture));
         }
 
+        void enterContainer(@NonNull RoomContentItem container) {
+            while (!history.isEmpty() && history.peekLast().stage == NavigationStage.LEVEL) {
+                history.removeLast();
+            }
+            history.addLast(NavigationStep.forContainer(container));
+        }
+
         void enterLevel(@Nullable RoomContentItem furniture, @Nullable Integer level) {
             while (!history.isEmpty() && history.peekLast().stage == NavigationStage.LEVEL) {
                 history.removeLast();
@@ -5484,6 +5500,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     enum NavigationStage {
         ROOT,
         FURNITURE,
+        CONTAINER,
         LEVEL
     }
 
@@ -5492,36 +5509,46 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         @Nullable
         final RoomContentItem furniture;
         @Nullable
+        final RoomContentItem container;
+        @Nullable
         final Integer level;
 
         private NavigationStep(@NonNull NavigationStage stage,
                 @Nullable RoomContentItem furniture,
+                @Nullable RoomContentItem container,
                 @Nullable Integer level) {
             this.stage = stage;
             this.furniture = furniture;
+            this.container = container;
             this.level = level;
         }
 
         @NonNull
         static NavigationStep root() {
-            return new NavigationStep(NavigationStage.ROOT, null, null);
+            return new NavigationStep(NavigationStage.ROOT, null, null, null);
         }
 
         @NonNull
         static NavigationStep forFurniture(@NonNull RoomContentItem furniture) {
-            return new NavigationStep(NavigationStage.FURNITURE, furniture, null);
+            return new NavigationStep(NavigationStage.FURNITURE, furniture, null, null);
+        }
+
+        @NonNull
+        static NavigationStep forContainer(@NonNull RoomContentItem container) {
+            return new NavigationStep(NavigationStage.CONTAINER, null, container, null);
         }
 
         @NonNull
         static NavigationStep forLevel(@Nullable RoomContentItem furniture,
                 @Nullable Integer level) {
-            return new NavigationStep(NavigationStage.LEVEL, furniture, level);
+            return new NavigationStep(NavigationStage.LEVEL, furniture, null, level);
         }
     }
 
     private enum ContainerOptionType {
         FURNITURE_ENTRY,
         LEVEL_ENTRY,
+        CONTAINER_ENTRY,
         BACK,
         DROP_ON_LEVEL,
         CONTAINER
@@ -5576,6 +5603,13 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         }
 
         @NonNull
+        static ContainerOption createContainerEntryOption(@NonNull String label,
+                @NonNull RoomContentItem container) {
+            return new ContainerOption(ContainerOptionType.CONTAINER_ENTRY, label, null,
+                    container, null, null);
+        }
+
+        @NonNull
         static ContainerOption createDropOnLevelOption(@NonNull String label,
                 @Nullable RoomContentItem furniture,
                 @Nullable Integer level) {
@@ -5603,6 +5637,9 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                             && safeEquals(level, other.level);
                 case CONTAINER:
                     return safeEquals(targetRank, other.targetRank);
+                case CONTAINER_ENTRY:
+                    return safeEquals(container != null ? container.getRank() : null,
+                            other.container != null ? other.container.getRank() : null);
                 default:
                     return false;
             }
