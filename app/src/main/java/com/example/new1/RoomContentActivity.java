@@ -5076,8 +5076,9 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             if (furniture == null) {
                 result.add(ContainerOption.createDropOnLevelOption(
                         getString(R.string.dialog_move_room_content_drop_on_room), null, null));
+                Set<Long> mainLevelParentRanks = findMainLevelParentRanks(targetItems);
                 List<RoomContentItem> mainLevelContainers = filterContainersForLevel(
-                        allowedContainers, null, null);
+                        allowedContainers, null, null, mainLevelParentRanks);
                 Collections.sort(mainLevelContainers, byNameComparator);
                 for (RoomContentItem containerItem : mainLevelContainers) {
                     result.add(ContainerOption.createContainerOption(
@@ -5096,7 +5097,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     getString(R.string.dialog_move_room_content_drop_on_level, levelLabel),
                     furniture, step.level));
             List<RoomContentItem> levelContainers = filterContainersForLevel(allowedContainers,
-                    furniture, step.level);
+                    furniture, step.level, null);
             Collections.sort(levelContainers, byNameComparator);
             for (RoomContentItem containerItem : levelContainers) {
                 result.add(ContainerOption.createContainerOption(
@@ -5136,7 +5137,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     static List<RoomContentItem> filterContainersForLevel(
             @NonNull List<RoomContentItem> containers,
             @Nullable RoomContentItem furniture,
-            @Nullable Integer level) {
+            @Nullable Integer level,
+            @Nullable Set<Long> mainLevelParentRanks) {
         List<RoomContentItem> matches = new ArrayList<>();
         for (RoomContentItem candidate : containers) {
             if (candidate == null) {
@@ -5147,10 +5149,15 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             }
             Long parentRank = candidate.getParentRank();
             if (furniture == null) {
-                if (parentRank != null) {
+                if (parentRank == null) {
+                    matches.add(candidate);
                     continue;
                 }
-                matches.add(candidate);
+                if (mainLevelParentRanks != null
+                        && mainLevelParentRanks.contains(parentRank)) {
+                    matches.add(candidate);
+                }
+                continue;
             } else {
                 if (parentRank == null || parentRank.longValue() != furniture.getRank()) {
                     continue;
@@ -5169,6 +5176,48 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             }
         }
         return matches;
+    }
+
+    @NonNull
+    private Set<Long> findMainLevelParentRanks(@NonNull List<RoomContentItem> items) {
+        Set<Long> result = new HashSet<>();
+        if (items.isEmpty()) {
+            return result;
+        }
+        Map<Long, RoomContentItem> byRank = new HashMap<>();
+        for (RoomContentItem item : items) {
+            if (item == null) {
+                continue;
+            }
+            byRank.put(item.getRank(), item);
+        }
+        for (RoomContentItem item : items) {
+            if (item == null) {
+                continue;
+            }
+            Long parentRank = item.getParentRank();
+            if (parentRank == null) {
+                continue;
+            }
+            RoomContentItem parent = byRank.get(parentRank);
+            if (parent == null) {
+                continue;
+            }
+            if (parent.isFurniture()) {
+                continue;
+            }
+            if (parent.getParentRank() != null) {
+                continue;
+            }
+            result.add(parentRank);
+            if (result.size() > 1) {
+                break;
+            }
+        }
+        if (result.size() != 1) {
+            result.clear();
+        }
+        return result;
     }
 
     private boolean isLevelSelectionValid(@NonNull RoomContentItem furniture,

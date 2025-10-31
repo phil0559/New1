@@ -53,22 +53,22 @@ public class RoomContentActivityMoveDialogTest {
         containers.add(roomContainer);
 
         List<RoomContentItem> topMatches = RoomContentActivity.filterContainersForLevel(containers,
-                furniture, null);
+                furniture, null, null);
         assertEquals(1, topMatches.size());
         assertTrue(topMatches.contains(topBox));
 
         List<RoomContentItem> levelMatches = RoomContentActivity.filterContainersForLevel(containers,
-                furniture, 1);
+                furniture, 1, null);
         assertEquals(1, levelMatches.size());
         assertTrue(levelMatches.contains(levelOneBox));
 
         List<RoomContentItem> bottomMatches = RoomContentActivity.filterContainersForLevel(
-                containers, furniture, RoomContentItem.FURNITURE_BOTTOM_LEVEL);
+                containers, furniture, RoomContentItem.FURNITURE_BOTTOM_LEVEL, null);
         assertEquals(1, bottomMatches.size());
         assertTrue(bottomMatches.contains(bottomBox));
 
         List<RoomContentItem> roomMatches = RoomContentActivity.filterContainersForLevel(containers,
-                null, null);
+                null, null, null);
         assertEquals(1, roomMatches.size());
         assertTrue(roomMatches.contains(roomContainer));
         assertFalse(roomMatches.contains(topBox));
