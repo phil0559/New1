@@ -51,6 +51,10 @@ final class RoomContentHierarchyHelper {
             byRank.put(item.getRank(), item);
         }
         for (RoomContentItem item : items) {
+            if (item.isStorageTower()) {
+                item.setParentRank(null);
+                continue;
+            }
             Long parentRank = item.getParentRank();
             if (parentRank == null) {
                 continue;
@@ -102,6 +106,11 @@ final class RoomContentHierarchyHelper {
 
     static void attachToContainer(@NonNull RoomContentItem item,
             @Nullable RoomContentItem container) {
+        if (item.isStorageTower()) {
+            // Les tours de rangement restent toujours au niveau principal.
+            item.setParentRank(null);
+            return;
+        }
         if (container == null) {
             item.setParentRank(null);
             return;

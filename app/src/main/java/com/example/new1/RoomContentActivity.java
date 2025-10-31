@@ -3563,12 +3563,12 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     showMoveRoomContentDialogInternal(new ArrayList<>(items));
 }
 
-private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> items) {
-    if (items.isEmpty()) {
-        return;
-    }
-    RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-    RoomContentItem primary = items.get(0);
+    private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> items) {
+        if (items.isEmpty()) {
+            return;
+        }
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        RoomContentItem primary = items.get(0);
     int position = roomContentItems.indexOf(primary);
     if (position < 0) {
         Toast.makeText(this, R.string.dialog_move_room_content_missing_items,
@@ -3605,7 +3605,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     final boolean multipleSelection = items.size() > 1;
     final List<RoomContentItem> selection = new ArrayList<>(items);
-    final boolean restrictContainerSelection = containsNonStorageFurniture(selection);
+    final boolean restrictContainerSelection = containsNonStorageFurniture(selection)
+            || containsStorageTower(selection);
     final String[] selectedEstablishmentHolder = new String[1];
     final String[] selectedRoomHolder = new String[1];
     final ContainerSelection selectedContainerHolder = new ContainerSelection();
@@ -4752,6 +4753,15 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     private static boolean containsNonStorageFurniture(@NonNull List<RoomContentItem> items) {
         for (RoomContentItem current : items) {
             if (current.isFurniture() && !current.isStorageTower()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsStorageTower(@NonNull List<RoomContentItem> items) {
+        for (RoomContentItem current : items) {
+            if (current.isStorageTower()) {
                 return true;
             }
         }
