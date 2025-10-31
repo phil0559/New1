@@ -1794,13 +1794,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         void onCopyRoomContent(@NonNull RoomContentItem item, int position);
 
-        void onMoveRoomContent(@NonNull RoomContentItem item, int position);
-
         void onEditRoomContent(@NonNull RoomContentItem item, int position);
 
         void onDeleteRoomContent(@NonNull RoomContentItem item, int position);
-
-        void onMoveRoomContentSelection(@NonNull List<RoomContentItem> items);
 
         void onDeleteRoomContentSelection(@NonNull List<RoomContentItem> items);
 
@@ -3539,6 +3535,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (selectedItems.isEmpty()) {
                 return;
             }
+            if (moveAction) {
+                if (containerPopup != null) {
+                    containerPopup.dismiss();
+                }
+                Toast.makeText(itemView.getContext(), R.string.feature_coming_soon,
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (interactionListener == null) {
                 Toast.makeText(itemView.getContext(), R.string.feature_coming_soon,
                         Toast.LENGTH_SHORT).show();
@@ -3551,11 +3555,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (containerPopup != null) {
                 containerPopup.dismiss();
             }
-            if (moveAction) {
-                interactionListener.onMoveRoomContentSelection(selectedItems);
-            } else {
-                interactionListener.onDeleteRoomContentSelection(selectedItems);
-            }
+            interactionListener.onDeleteRoomContentSelection(selectedItems);
         }
 
         @NonNull
@@ -3825,16 +3825,12 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
             View moveButton = popupView.findViewById(R.id.button_furniture_menu_move);
             if (moveButton != null) {
-                if (interactionListener != null) {
-                    moveButton.setOnClickListener(view -> {
-                        popupWindow.dismiss();
-                        notifyMove();
-                    });
-                    moveButton.setEnabled(true);
-                } else {
-                    moveButton.setOnClickListener(null);
-                    moveButton.setEnabled(false);
-                }
+                moveButton.setOnClickListener(view -> {
+                    popupWindow.dismiss();
+                    Toast.makeText(view.getContext(), R.string.feature_coming_soon,
+                            Toast.LENGTH_SHORT).show();
+                });
+                moveButton.setEnabled(interactionListener != null);
             }
 
             View deleteButton = popupView.findViewById(R.id.button_furniture_menu_delete);
@@ -4937,24 +4933,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             interactionListener.onCopyRoomContent(targetItem, resolvedPosition);
         }
 
-        private void notifyMove() {
-            notifyMove(currentItem, getBindingAdapterPosition());
-        }
-
-        private void notifyMove(@Nullable RoomContentItem targetItem, int targetPosition) {
-            if (interactionListener == null || targetItem == null) {
-                return;
-            }
-            dismissOptionsMenu();
-            dismissFurniturePopup();
-            dismissContainerPopup();
-            int resolvedPosition = resolveAdapterPosition(targetItem, targetPosition);
-            if (resolvedPosition == RecyclerView.NO_POSITION) {
-                return;
-            }
-            interactionListener.onMoveRoomContent(targetItem, resolvedPosition);
-        }
-
         private int resolveAdapterPosition(@Nullable RoomContentItem targetItem, int providedPosition) {
             if (providedPosition != RecyclerView.NO_POSITION) {
                 return providedPosition;
@@ -5147,7 +5125,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 if (targetItem != null) {
                     moveButton.setOnClickListener(view -> {
                         popupWindow.dismiss();
-                        notifyMove(targetItem, targetPosition);
+                        Toast.makeText(view.getContext(), R.string.feature_coming_soon,
+                                Toast.LENGTH_SHORT).show();
                     });
                     moveButton.setEnabled(true);
                 } else {
