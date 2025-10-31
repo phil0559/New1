@@ -3583,6 +3583,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     Spinner roomSpinner = dialogView.findViewById(R.id.spinner_move_room);
     RadioGroup containerRadioGroup = dialogView.findViewById(R.id.radio_group_move_container);
     TextView containerLabel = dialogView.findViewById(R.id.label_move_container);
+    TextView sameLevelLabel = dialogView.findViewById(R.id.label_move_same_level);
+    TextView sameLevelList = dialogView.findViewById(R.id.text_move_same_level);
     View furnitureDetailsContainer = dialogView.findViewById(R.id.container_move_furniture_details);
     View furnitureLevelContainer = dialogView.findViewById(R.id.container_move_furniture_level);
     EditText furnitureLevelInput = dialogView.findViewById(R.id.input_move_furniture_level);
@@ -3706,6 +3708,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     ? roomSpinner.getSelectedItem().toString()
                     : null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    sameLevelLabel, sameLevelList,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
@@ -3721,6 +3724,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     ? roomSpinner.getSelectedItem().toString()
                     : null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    sameLevelLabel, sameLevelList,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     null, selectedRoomHolder[0], primary, position, selectedContainerHolder,
@@ -3736,6 +3740,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             Object value = parent.getItemAtPosition(spinnerPosition);
             selectedRoomHolder[0] = value != null ? value.toString() : null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    sameLevelLabel, sameLevelList,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
@@ -3747,6 +3752,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         public void onNothingSelected(AdapterView<?> parent) {
             selectedRoomHolder[0] = null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+                    sameLevelLabel, sameLevelList,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput,
                     selectedEstablishmentHolder[0], null, primary, position,
@@ -3767,6 +3773,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             ? roomSpinner.getSelectedItem().toString()
             : selectedRoomHolder[0];
     updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
+            sameLevelLabel, sameLevelList,
             furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
             furnitureColumnContainer, furnitureColumnInput,
             selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
@@ -4566,6 +4573,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
     private void updateMoveDialogContainers(@NonNull AlertDialog dialog,
             @Nullable RadioGroup containerGroup,
             @Nullable TextView containerLabel,
+            @Nullable TextView sameLevelLabel,
+            @Nullable TextView sameLevelList,
             @Nullable View furnitureDetailsContainer,
             @Nullable View furnitureLevelContainer,
             @Nullable EditText furnitureLevelInput,
@@ -4583,6 +4592,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
                     furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
                     furnitureColumnInput, selection);
+            updateSameLevelList(null, sameLevelLabel, sameLevelList);
             return;
         }
         ContainerNavigationState navigation = selection.navigation;
@@ -4593,6 +4603,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             selection.desiredLevel = null;
             selection.desiredColumn = null;
         }
+        List<RoomContentItem> previewItems = obtainMoveTargetItems(establishment, room);
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
                 additionalExcludedRanks, restrictContainerSelection, selectionContainsStorageTower,
                 navigation);
@@ -4659,6 +4670,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 refreshFurniturePlacementInputs(null, item, furnitureDetailsContainer,
                         furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
                         furnitureColumnInput, selection);
+                updateSameLevelList(computeSameLevelNames(previewItems, selection),
+                        sameLevelLabel, sameLevelList);
                 return;
             }
             ContainerOption selectedOption = optionMap.get(checkedRadioButtonId);
@@ -4673,7 +4686,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     selection.desiredLevel = null;
                     selection.desiredColumn = null;
                     group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
-                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            containerLabel, sameLevelLabel, sameLevelList,
+                            furnitureDetailsContainer, furnitureLevelContainer,
                             furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
                             establishment, room, item, position, selection, additionalExcludedRanks,
                             restrictContainerSelection, selectionContainsStorageTower));
@@ -4687,7 +4701,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     selection.desiredLevel = null;
                     selection.desiredColumn = null;
                     group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
-                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            containerLabel, sameLevelLabel, sameLevelList,
+                            furnitureDetailsContainer, furnitureLevelContainer,
                             furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
                             establishment, room, item, position, selection, additionalExcludedRanks,
                             restrictContainerSelection, selectionContainsStorageTower));
@@ -4701,7 +4716,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     selection.desiredLevel = null;
                     selection.desiredColumn = null;
                     group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
-                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            containerLabel, sameLevelLabel, sameLevelList,
+                            furnitureDetailsContainer, furnitureLevelContainer,
                             furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
                             establishment, room, item, position, selection, additionalExcludedRanks,
                             restrictContainerSelection, selectionContainsStorageTower));
@@ -4714,7 +4730,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                     selection.desiredLevel = null;
                     selection.desiredColumn = null;
                     group.post(() -> updateMoveDialogContainers(dialog, containerGroup,
-                            containerLabel, furnitureDetailsContainer, furnitureLevelContainer,
+                            containerLabel, sameLevelLabel, sameLevelList,
+                            furnitureDetailsContainer, furnitureLevelContainer,
                             furnitureLevelInput, furnitureColumnContainer, furnitureColumnInput,
                             establishment, room, item, position, selection, additionalExcludedRanks,
                             restrictContainerSelection, selectionContainsStorageTower));
@@ -4729,6 +4746,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             refreshFurniturePlacementInputs(selection.selectedOption, item,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelInput,
                     furnitureColumnContainer, furnitureColumnInput, selection);
+            updateSameLevelList(computeSameLevelNames(previewItems, selection),
+                    sameLevelLabel, sameLevelList);
         });
 
         int resolvedId = checkedId != View.NO_ID ? checkedId : noContainerId;
@@ -4742,6 +4761,8 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
                 furnitureLevelContainer, furnitureLevelInput, furnitureColumnContainer,
                 furnitureColumnInput, selection);
+        updateSameLevelList(computeSameLevelNames(previewItems, selection), sameLevelLabel,
+                sameLevelList);
     }
 
     private void refreshFurniturePlacementInputs(@Nullable ContainerOption option,
@@ -5151,6 +5172,111 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         }
 
         return result;
+    }
+
+    @NonNull
+    private List<RoomContentItem> obtainMoveTargetItems(@Nullable String establishment,
+            @Nullable String room) {
+        String normalizedEstablishment = normalizeName(establishment);
+        String normalizedCurrentEstablishment = normalizeName(establishmentName);
+        String normalizedRoom = normalizeName(room);
+        String normalizedCurrentRoom = normalizeName(roomName);
+        if (normalizedEstablishment.equalsIgnoreCase(normalizedCurrentEstablishment)
+                && normalizedRoom.equalsIgnoreCase(normalizedCurrentRoom)) {
+            RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+            return roomContentItems;
+        }
+        List<RoomContentItem> loaded = loadRoomContentFor(establishment, room);
+        RoomContentHierarchyHelper.normalizeHierarchy(loaded);
+        return loaded;
+    }
+
+    @NonNull
+    private List<String> computeSameLevelNames(@NonNull List<RoomContentItem> targetItems,
+            @NonNull ContainerSelection selection) {
+        List<String> names = new ArrayList<>();
+        Long parentRank = null;
+        Integer targetLevel = null;
+        ContainerOption currentSelection = selection.selectedOption;
+        if (currentSelection != null) {
+            if (currentSelection.type == ContainerOptionType.CONTAINER
+                    || currentSelection.type == ContainerOptionType.DROP_ON_LEVEL) {
+                parentRank = currentSelection.targetRank;
+                targetLevel = currentSelection.level;
+            }
+        } else {
+            parentRank = selection.desiredRank;
+            targetLevel = selection.desiredLevel;
+        }
+        if (parentRank == null) {
+            NavigationStep step = selection.navigation.getCurrentStep();
+            switch (step.stage) {
+                case CONTAINER:
+                    if (step.container != null) {
+                        parentRank = Long.valueOf(step.container.getRank());
+                    }
+                    break;
+                case LEVEL:
+                    if (step.furniture != null) {
+                        parentRank = Long.valueOf(step.furniture.getRank());
+                        if (targetLevel == null) {
+                            targetLevel = step.level;
+                        }
+                    }
+                    break;
+                case FURNITURE:
+                    if (step.furniture != null) {
+                        parentRank = Long.valueOf(step.furniture.getRank());
+                    }
+                    break;
+                case ROOT:
+                    break;
+            }
+        }
+        for (RoomContentItem candidate : targetItems) {
+            if (candidate == null) {
+                continue;
+            }
+            Long candidateParent = candidate.getParentRank();
+            if (parentRank == null) {
+                if (candidateParent != null) {
+                    continue;
+                }
+            } else {
+                if (candidateParent == null || !parentRank.equals(candidateParent)) {
+                    continue;
+                }
+                if (targetLevel != null) {
+                    Integer candidateLevel = candidate.getContainerLevel();
+                    if (candidateLevel == null || !targetLevel.equals(candidateLevel)) {
+                        continue;
+                    }
+                }
+            }
+            names.add(resolveContainerName(candidate));
+        }
+        return names;
+    }
+
+    private void updateSameLevelList(@Nullable List<String> names,
+            @Nullable TextView label,
+            @Nullable TextView listView) {
+        if (label == null || listView == null) {
+            return;
+        }
+        if (names == null) {
+            label.setVisibility(View.GONE);
+            listView.setVisibility(View.GONE);
+            listView.setText(null);
+            return;
+        }
+        label.setVisibility(View.VISIBLE);
+        listView.setVisibility(View.VISIBLE);
+        if (names.isEmpty()) {
+            listView.setText(R.string.dialog_move_room_content_same_level_empty);
+            return;
+        }
+        listView.setText(TextUtils.join("\n", names));
     }
 
     @NonNull

@@ -161,6 +161,8 @@
     <string name="dialog_move_room_content_empty_rooms">Aucune pièce disponible dans cet établissement.</string>
     <string name="dialog_move_room_content_success">Élément déplacé avec succès.</string>
     <string name="dialog_move_room_content_success_multiple">Sélection déplacée avec succès.</string>
+    <string name="dialog_move_room_content_same_level_label">Éléments présents à ce niveau</string>
+    <string name="dialog_move_room_content_same_level_empty">Aucun élément enregistré à ce niveau.</string>
     <string name="dialog_move_room_content_furniture_section_label">Position dans le mobilier</string>
     <string name="dialog_move_room_content_level_label">Niveau</string>
     <string name="dialog_move_room_content_column_label">Colonne</string>
