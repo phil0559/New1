@@ -1544,6 +1544,25 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 activeContainerPopupVisibilityMask);
     }
 
+    public void dismissActiveContainerPopup() {
+        if (activeContainerPopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return;
+        }
+        if (attachedRecyclerView == null) {
+            activeContainerPopupAdapterPosition = RecyclerView.NO_POSITION;
+            activeContainerPopupVisibilityMask = VISIBILITY_DEFAULT_MASK;
+            return;
+        }
+        RecyclerView.ViewHolder holder = attachedRecyclerView
+                .findViewHolderForAdapterPosition(activeContainerPopupAdapterPosition);
+        if (holder instanceof ViewHolder) {
+            ((ViewHolder) holder).dismissContainerPopup();
+        } else {
+            activeContainerPopupAdapterPosition = RecyclerView.NO_POSITION;
+            activeContainerPopupVisibilityMask = VISIBILITY_DEFAULT_MASK;
+        }
+    }
+
     private void preparePendingContainerPopupRestore(
             @Nullable ContainerPopupRestoreState restoreState,
             int targetPosition,
@@ -1785,7 +1804,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         void onDeleteRoomContentSelection(@NonNull List<RoomContentItem> items);
 
-        void onAddRoomContentToContainer(@NonNull RoomContentItem container, int position);
+        void onAddRoomContentToContainer(@NonNull RoomContentItem container,
+                int position,
+                @NonNull View anchor);
 
         void onAddRoomContentToFurnitureTop(@NonNull RoomContentItem furniture,
                 int position,
@@ -2663,11 +2684,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         if (adapterPosition == RecyclerView.NO_POSITION) {
                             return;
                         }
-                        RoomContentAdapter.this.preparePendingContainerPopupRestore(adapterPosition);
-                        if (containerPopup != null) {
-                            containerPopup.dismiss();
-                        }
-                        interactionListener.onAddRoomContentToContainer(currentItem, adapterPosition);
+                        interactionListener.onAddRoomContentToContainer(currentItem, adapterPosition,
+                                view);
                     });
                 }
             }
@@ -2843,6 +2861,11 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 return null;
             }
             return furnitureAddAnchors.get(levelIndex);
+        }
+
+        @Nullable
+        View findContainerPopupAddAnchor() {
+            return popupAddActionView;
         }
 
         private void updateContainerPopupGroupPreview(@Nullable ImageView previewView) {
