@@ -133,8 +133,8 @@ public class RoomContentActivity extends Activity {
     private static final String STATE_ADD_MENU_INCLUDE_FURNITURE = "state_add_menu_include_furniture";
     private static final String STATE_ADD_MENU_INCLUDE_STORAGE_TOWER =
             "state_add_menu_include_storage_tower";
-    private static final String STATE_ADD_MENU_HAS_FURNITURE_POSITION = "state_add_menu_has_furniture_position";
-    private static final String STATE_ADD_MENU_FURNITURE_POSITION = "state_add_menu_furniture_position";
+    private static final String STATE_ADD_MENU_HAS_TARGET_POSITION = "state_add_menu_has_target_position";
+    private static final String STATE_ADD_MENU_TARGET_POSITION = "state_add_menu_target_position";
     private static final String STATE_ADD_MENU_HAS_FURNITURE_LEVEL = "state_add_menu_has_furniture_level";
     private static final String STATE_ADD_MENU_FURNITURE_LEVEL = "state_add_menu_furniture_level";
     private static final String STATE_CONTAINER_POPUP_POSITION = "state_container_popup_position";
@@ -147,6 +147,7 @@ public class RoomContentActivity extends Activity {
     private static final String STATE_OPTIONS_POPUP_POSITION = "state_options_popup_position";
     private static final int ADD_MENU_ANCHOR_MAIN = 0;
     private static final int ADD_MENU_ANCHOR_FURNITURE_LEVEL = 1;
+    private static final int ADD_MENU_ANCHOR_CONTAINER = 2;
     private static final float ACTION_DISABLED_ALPHA = 0.4f;
 
     private static class FormState {
@@ -248,7 +249,7 @@ public class RoomContentActivity extends Activity {
         final boolean includeFurnitureOption;
         final boolean includeStorageTowerOption;
         @Nullable
-        final Integer furnitureAdapterPosition;
+        final Integer targetAdapterPosition;
         @Nullable
         final Integer furnitureLevelIndex;
 
@@ -257,14 +258,14 @@ public class RoomContentActivity extends Activity {
                 @Nullable Integer forcedFurnitureLevel,
                 boolean includeFurnitureOption,
                 boolean includeStorageTowerOption,
-                @Nullable Integer furnitureAdapterPosition,
+                @Nullable Integer targetAdapterPosition,
                 @Nullable Integer furnitureLevelIndex) {
             this.anchorType = anchorType;
             this.forcedParentRank = forcedParentRank;
             this.forcedFurnitureLevel = forcedFurnitureLevel;
             this.includeFurnitureOption = includeFurnitureOption;
             this.includeStorageTowerOption = includeStorageTowerOption;
-            this.furnitureAdapterPosition = furnitureAdapterPosition;
+            this.targetAdapterPosition = targetAdapterPosition;
             this.furnitureLevelIndex = furnitureLevelIndex;
         }
     }
@@ -657,8 +658,9 @@ public class RoomContentActivity extends Activity {
 
                         @Override
                         public void onAddRoomContentToContainer(@NonNull RoomContentItem container,
-                                                                  int position) {
-                            showAddRoomContentDialog(container.getRank());
+                                                                  int position,
+                                                                  @NonNull View anchor) {
+                            showContainerAddMenu(anchor, container, position);
                         }
 
                         @Override
@@ -807,8 +809,8 @@ public class RoomContentActivity extends Activity {
             boolean includeStorageTower = savedInstanceState
                     .getBoolean(STATE_ADD_MENU_INCLUDE_STORAGE_TOWER, true);
             Integer storedPosition = null;
-            if (savedInstanceState.getBoolean(STATE_ADD_MENU_HAS_FURNITURE_POSITION, false)) {
-                storedPosition = savedInstanceState.getInt(STATE_ADD_MENU_FURNITURE_POSITION);
+            if (savedInstanceState.getBoolean(STATE_ADD_MENU_HAS_TARGET_POSITION, false)) {
+                storedPosition = savedInstanceState.getInt(STATE_ADD_MENU_TARGET_POSITION);
             }
             Integer storedLevel = null;
             if (savedInstanceState.getBoolean(STATE_ADD_MENU_HAS_FURNITURE_LEVEL, false)) {
@@ -905,6 +907,10 @@ public class RoomContentActivity extends Activity {
                     state.furnitureLevelIndex));
             return;
         }
+        if (state.anchorType == ADD_MENU_ANCHOR_CONTAINER) {
+            attemptRestoreContainerAddMenu(state, 0);
+            return;
+        }
         attemptRestoreFurnitureAddMenu(state, 0);
     }
 
@@ -914,8 +920,8 @@ public class RoomContentActivity extends Activity {
             schedulePendingPopupRestores();
             return;
         }
-        int adapterPosition = state.furnitureAdapterPosition != null
-                ? state.furnitureAdapterPosition
+        int adapterPosition = state.targetAdapterPosition != null
+                ? state.targetAdapterPosition
                 : (state.forcedParentRank != null
                         ? findAdapterPositionForRank(state.forcedParentRank)
                         : RecyclerView.NO_POSITION);
@@ -945,6 +951,42 @@ public class RoomContentActivity extends Activity {
                 attemptRestoreFurnitureAddMenu(state, attempt + 1);
             }
         }, 100);
+    }
+
+    private void attemptRestoreContainerAddMenu(@NonNull AddMenuRestoreState state, int attempt) {
+        if (roomContentAdapter == null || contentList == null) {
+            pendingAddMenuRestoreState = state;
+            schedulePendingPopupRestores();
+            return;
+        }
+        int adapterPosition = state.targetAdapterPosition != null
+                ? state.targetAdapterPosition
+                : (state.forcedParentRank != null
+                        ? findAdapterPositionForRank(state.forcedParentRank)
+                        : RecyclerView.NO_POSITION);
+        if (adapterPosition == RecyclerView.NO_POSITION) {
+            return;
+        }
+        RecyclerView.ViewHolder holder = contentList
+                .findViewHolderForAdapterPosition(adapterPosition);
+        if (!(holder instanceof RoomContentAdapter.ViewHolder)) {
+            if (attempt >= 5) {
+                return;
+            }
+            contentList.scrollToPosition(adapterPosition);
+            contentList.postDelayed(() -> attemptRestoreContainerAddMenu(state, attempt + 1), 50);
+            return;
+        }
+        RoomContentAdapter.ViewHolder viewHolder = (RoomContentAdapter.ViewHolder) holder;
+        View anchor = viewHolder.findContainerPopupAddAnchor();
+        if (anchor != null) {
+            showAddRoomContentMenu(anchor, state.forcedParentRank,
+                    state.forcedFurnitureLevel, state.includeFurnitureOption,
+                    state.includeStorageTowerOption, state.anchorType,
+                    adapterPosition, state.furnitureLevelIndex);
+        } else if (attempt < 5) {
+            contentList.postDelayed(() -> attemptRestoreContainerAddMenu(state, attempt + 1), 50);
+        }
     }
 
     private void enterSelectionMode() {
@@ -1160,12 +1202,12 @@ public class RoomContentActivity extends Activity {
                     currentAddMenuState.includeFurnitureOption);
             outState.putBoolean(STATE_ADD_MENU_INCLUDE_STORAGE_TOWER,
                     currentAddMenuState.includeStorageTowerOption);
-            if (currentAddMenuState.furnitureAdapterPosition != null) {
-                outState.putBoolean(STATE_ADD_MENU_HAS_FURNITURE_POSITION, true);
-                outState.putInt(STATE_ADD_MENU_FURNITURE_POSITION,
-                        currentAddMenuState.furnitureAdapterPosition);
+            if (currentAddMenuState.targetAdapterPosition != null) {
+                outState.putBoolean(STATE_ADD_MENU_HAS_TARGET_POSITION, true);
+                outState.putInt(STATE_ADD_MENU_TARGET_POSITION,
+                        currentAddMenuState.targetAdapterPosition);
             } else {
-                outState.putBoolean(STATE_ADD_MENU_HAS_FURNITURE_POSITION, false);
+                outState.putBoolean(STATE_ADD_MENU_HAS_TARGET_POSITION, false);
             }
             if (currentAddMenuState.furnitureLevelIndex != null) {
                 outState.putBoolean(STATE_ADD_MENU_HAS_FURNITURE_LEVEL, true);
@@ -3257,6 +3299,13 @@ public class RoomContentActivity extends Activity {
         showAddRoomContentMenu(anchor, null, null, true, true, ADD_MENU_ANCHOR_MAIN, null, null);
     }
 
+    private void showContainerAddMenu(@NonNull View anchor,
+                                      @NonNull RoomContentItem container,
+                                      int adapterPosition) {
+        showAddRoomContentMenu(anchor, container.getRank(), null, false, false,
+                ADD_MENU_ANCHOR_CONTAINER, adapterPosition, null);
+    }
+
     private void showFurnitureTopAddMenu(@NonNull View anchor,
                                          @NonNull RoomContentItem furniture) {
         int adapterPosition = findAdapterPositionForItem(furniture);
@@ -3290,7 +3339,7 @@ public class RoomContentActivity extends Activity {
                                         boolean includeFurnitureOption,
                                         boolean includeStorageTowerOption,
                                         int anchorType,
-                                        @Nullable Integer furnitureAdapterPosition,
+                                        @Nullable Integer targetAdapterPosition,
                                         @Nullable Integer furnitureLevelIndex) {
         if (addMenuPopup != null && addMenuPopup.isShowing()) {
             addMenuPopup.dismiss();
@@ -3299,7 +3348,7 @@ public class RoomContentActivity extends Activity {
         View popupContent = inflateDialogView(R.layout.popup_add_room_content_menu);
         currentAddMenuState = new AddMenuRestoreState(anchorType, forcedParentRank,
                 forcedFurnitureLevel, includeFurnitureOption, includeStorageTowerOption,
-                furnitureAdapterPosition, furnitureLevelIndex);
+                targetAdapterPosition, furnitureLevelIndex);
         TextView titleView = popupContent.findViewById(R.id.text_popup_add_room_content_title);
         if (titleView != null) {
             titleView.setText(R.string.popup_add_room_content_title);
@@ -3311,6 +3360,13 @@ public class RoomContentActivity extends Activity {
                 if (addMenuPopup != null) {
                     addMenuPopup.dismiss();
                 }
+                if (anchorType == ADD_MENU_ANCHOR_CONTAINER && roomContentAdapter != null) {
+                    if (targetAdapterPosition != null) {
+                        roomContentAdapter.preparePendingContainerPopupRestore(
+                                targetAdapterPosition);
+                    }
+                    roomContentAdapter.dismissActiveContainerPopup();
+                }
                 showAddRoomContentDialog(forcedParentRank, forcedFurnitureLevel);
             });
         }
@@ -3320,6 +3376,13 @@ public class RoomContentActivity extends Activity {
             containerButton.setOnClickListener(view -> {
                 if (addMenuPopup != null) {
                     addMenuPopup.dismiss();
+                }
+                if (anchorType == ADD_MENU_ANCHOR_CONTAINER && roomContentAdapter != null) {
+                    if (targetAdapterPosition != null) {
+                        roomContentAdapter.preparePendingContainerPopupRestore(
+                                targetAdapterPosition);
+                    }
+                    roomContentAdapter.dismissActiveContainerPopup();
                 }
                 showAddContainerDialog(forcedParentRank, forcedFurnitureLevel);
             });
