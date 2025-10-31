@@ -1272,6 +1272,156 @@ public class RoomContentActivity extends Activity {
         }
     }
 
+    private void loadRoomContent() {
+        roomContentItems.clear();
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        String resolvedKey = RoomContentStorage.resolveKey(preferences, establishmentName, roomName);
+        String storedValue = preferences.getString(resolvedKey, null);
+        if (storedValue != null && !storedValue.trim().isEmpty()) {
+            try {
+                JSONArray array = new JSONArray(storedValue);
+                for (int index = 0; index < array.length(); index++) {
+                    JSONObject object = array.optJSONObject(index);
+                    if (object == null) {
+                        continue;
+                    }
+                    try {
+                        RoomContentItem item = RoomContentItem.fromJson(object);
+                        roomContentItems.add(item);
+                    } catch (JSONException ignored) {
+                    }
+                }
+            } catch (JSONException ignored) {
+                roomContentItems.clear();
+            }
+        }
+        RoomContentStorage.ensureCanonicalKey(preferences, establishmentName, roomName, resolvedKey);
+        sortRoomContentItems(roomContentItems);
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+    }
+
+    private void saveRoomContent() {
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        String key = buildRoomContentKey();
+        JSONArray array = new JSONArray();
+        for (RoomContentItem item : roomContentItems) {
+            if (item == null) {
+                continue;
+            }
+            array.put(item.toJson());
+        }
+        SharedPreferences.Editor editor = preferences.edit();
+        if (array.length() > 0) {
+            editor.putString(key, array.toString());
+        } else {
+            editor.remove(key);
+        }
+        editor.apply();
+    }
+
+    private void updateEmptyState() {
+        if (placeholderView == null || contentList == null) {
+            return;
+        }
+        if (roomContentItems.isEmpty()) {
+            placeholderView.setVisibility(View.VISIBLE);
+            contentList.setVisibility(View.GONE);
+        } else {
+            placeholderView.setVisibility(View.GONE);
+            contentList.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void showEditRoomContentDialog(@NonNull RoomContentItem item, int position) {
+        showRoomContentDialog(item, position, true, null, null);
+    }
+
+    private void showDeleteRoomContentConfirmation(@NonNull RoomContentItem item, int position) {
+        if (position < 0 || position >= roomContentItems.size()) {
+            return;
+        }
+        int messageRes = item.isFurniture()
+                ? R.string.dialog_delete_room_furniture_message
+                : (item.isContainer()
+                ? R.string.dialog_delete_room_container_message
+                : R.string.dialog_delete_room_content_message);
+        String name = item.getName();
+        if (TextUtils.isEmpty(name)) {
+            name = getString(R.string.dialog_room_content_item_placeholder);
+        }
+        final int adapterPosition = position;
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_delete_room_content_title)
+                .setMessage(getString(messageRes, name))
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_delete, (dialog, which) -> {
+                    List<RoomContentItem> group = RoomContentGroupingManager
+                            .extractGroup(roomContentItems, adapterPosition);
+                    LinkedHashSet<Long> ranksToRemove = new LinkedHashSet<>();
+                    for (RoomContentItem groupItem : group) {
+                        if (groupItem == null) {
+                            continue;
+                        }
+                        ranksToRemove.add(groupItem.getRank());
+                    }
+                    if (!removeRoomContentByRanks(ranksToRemove)) {
+                        return;
+                    }
+                    int toastRes = item.isContainer()
+                            ? R.string.room_container_deleted_confirmation
+                            : R.string.room_content_deleted_confirmation;
+                    Toast.makeText(this, toastRes, Toast.LENGTH_SHORT).show();
+                })
+                .show();
+    }
+
+    private void showDeleteRoomContentSelectionConfirmation(@NonNull List<RoomContentItem> items) {
+        if (items.isEmpty()) {
+            return;
+        }
+        int count = items.size();
+        String message = getResources().getQuantityString(
+                R.plurals.dialog_delete_room_content_selection_message,
+                count,
+                count);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_delete_room_content_selection_title)
+                .setMessage(message)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton(R.string.action_delete, (dialog, which) -> {
+                    LinkedHashSet<Long> ranksToRemove = new LinkedHashSet<>();
+                    for (RoomContentItem selected : items) {
+                        if (selected == null) {
+                            continue;
+                        }
+                        int positionToRemove = findAdapterPositionForItem(selected);
+                        if (positionToRemove == RecyclerView.NO_POSITION) {
+                            continue;
+                        }
+                        List<RoomContentItem> group = RoomContentGroupingManager
+                                .extractGroup(roomContentItems, positionToRemove);
+                        for (RoomContentItem groupItem : group) {
+                            if (groupItem == null) {
+                                continue;
+                            }
+                            ranksToRemove.add(groupItem.getRank());
+                        }
+                    }
+                    if (!removeRoomContentByRanks(ranksToRemove)) {
+                        return;
+                    }
+                    if (roomContentAdapter != null) {
+                        roomContentAdapter.clearSelection();
+                    }
+                    exitSelectionMode();
+                    Toast.makeText(this, R.string.room_content_deleted_confirmation,
+                            Toast.LENGTH_SHORT).show();
+                })
+                .show();
+    }
+
     private void showRoomContentDialog(@Nullable RoomContentItem initialItem,
             int positionToEdit,
             boolean shouldEditExisting,
@@ -3555,6 +3705,19 @@ public class RoomContentActivity extends Activity {
         return RecyclerView.NO_POSITION;
     }
 
+    @Nullable
+    private RoomContentItem findContainerByRank(@NonNull List<RoomContentItem> items, long rank) {
+        for (RoomContentItem candidate : items) {
+            if (candidate == null || !candidate.isContainer()) {
+                continue;
+            }
+            if (candidate.getRank() == rank) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
 
     private void showTrackListDialog(@NonNull FormState formState) {
         View dialogView = inflateDialogView(R.layout.dialog_track_list_input);
@@ -3766,6 +3929,197 @@ public class RoomContentActivity extends Activity {
 
     private String buildRoomContentKey() {
         return RoomContentStorage.buildKey(establishmentName, roomName);
+    }
+
+    private void preserveHierarchyMetadata(@NonNull RoomContentItem source,
+                                            @NonNull RoomContentItem target) {
+        target.setRank(source.getRank());
+        target.setParentRank(source.getParentRank());
+        target.setContainerLevel(source.getContainerLevel());
+        target.setContainerColumn(source.getContainerColumn());
+        target.setAttachedItemCount(source.getAttachedItemCount());
+        target.setDisplayRank(source.getDisplayRank());
+        target.setDisplayed(source.isDisplayed());
+        target.setChildren(source.getChildren());
+    }
+
+    private void updateFurniturePlacement(@NonNull RoomContentItem item,
+                                          @Nullable RoomContentItem container,
+                                          @Nullable Integer forcedLevel,
+                                          @Nullable Integer forcedColumn) {
+        if (container == null || !container.isFurniture()) {
+            item.setContainerLevel(null);
+            item.setContainerColumn(null);
+            return;
+        }
+        item.setContainerLevel(forcedLevel);
+        item.setContainerColumn(forcedColumn);
+    }
+
+    private void sortRoomContentItems() {
+        sortRoomContentItems(roomContentItems);
+    }
+
+    private void sortRoomContentItems(@NonNull List<RoomContentItem> items) {
+        if (items.size() <= 1) {
+            RoomContentHierarchyHelper.normalizeHierarchy(items);
+            return;
+        }
+        Comparator<RoomContentItem> comparator = (left, right) -> {
+            int containerComparison = Boolean.compare(right.isContainer(), left.isContainer());
+            if (containerComparison != 0) {
+                return containerComparison;
+            }
+            String leftName = resolveItemName(left);
+            String rightName = resolveItemName(right);
+            int nameComparison = leftName.compareToIgnoreCase(rightName);
+            if (nameComparison != 0) {
+                return nameComparison;
+            }
+            return Long.compare(left.getRank(), right.getRank());
+        };
+        RoomContentGroupingManager.sortWithComparator(items, comparator);
+        RoomContentHierarchyHelper.normalizeHierarchy(items);
+    }
+
+    @NonNull
+    private String resolveItemName(@NonNull RoomContentItem item) {
+        String name = item.getName();
+        if (TextUtils.isEmpty(name)) {
+            return getString(R.string.dialog_room_content_item_placeholder);
+        }
+        return name.trim();
+    }
+
+    private boolean removeRoomContentByRanks(@NonNull Set<Long> ranksToRemove) {
+        if (ranksToRemove.isEmpty()) {
+            return false;
+        }
+        boolean removed = false;
+        for (int index = roomContentItems.size() - 1; index >= 0; index--) {
+            RoomContentItem candidate = roomContentItems.get(index);
+            if (candidate == null) {
+                continue;
+            }
+            long candidateRank = candidate.getRank();
+            if (ranksToRemove.contains(candidateRank)) {
+                roomContentItems.remove(index);
+                removed = true;
+            }
+        }
+        if (!removed) {
+            return false;
+        }
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        sortRoomContentItems();
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        if (roomContentAdapter != null) {
+            roomContentAdapter.notifyDataSetChanged();
+        }
+        saveRoomContent();
+        updateEmptyState();
+        return true;
+    }
+
+    private void refreshTrackInputs(@NonNull FormState formState) {
+        if (formState.trackContainer == null) {
+            return;
+        }
+        formState.trackContainer.removeAllViews();
+        if (formState.tracks.isEmpty()) {
+            formState.trackContainer.setVisibility(View.GONE);
+            return;
+        }
+        formState.trackContainer.setVisibility(View.VISIBLE);
+        for (int index = 0; index < formState.tracks.size(); index++) {
+            appendTrackInput(formState, index, false);
+        }
+    }
+
+    private void appendTrackInput(@NonNull FormState formState, int index, boolean requestFocus) {
+        if (formState.trackContainer == null) {
+            return;
+        }
+        LayoutInflater inflater = LayoutInflater.from(this);
+        View entryView = inflater.inflate(R.layout.item_track_input, formState.trackContainer, false);
+        TextView numberView = entryView.findViewById(R.id.text_track_number);
+        EditText trackInput = entryView.findViewById(R.id.edit_track_name);
+        if (numberView != null) {
+            numberView.setText(String.format(Locale.ROOT, "%d.", index + 1));
+        }
+        if (trackInput != null) {
+            String existing = null;
+            if (index >= 0 && index < formState.tracks.size()) {
+                existing = formState.tracks.get(index);
+            }
+            if (!TextUtils.isEmpty(existing)) {
+                trackInput.setText(existing);
+                trackInput.setSelection(existing.length());
+            }
+            final int trackIndex = index;
+            trackInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    if (trackIndex < 0 || trackIndex >= formState.tracks.size()) {
+                        return;
+                    }
+                    String value = s != null ? s.toString() : "";
+                    formState.tracks.set(trackIndex, value);
+                }
+            });
+            if (requestFocus) {
+                trackInput.requestFocus();
+                trackInput.setSelection(trackInput.length());
+            }
+        }
+        formState.trackContainer.addView(entryView);
+    }
+
+    private void refreshPhotoSection(@NonNull FormState formState) {
+        if (formState.photoLabel != null) {
+            formState.photoLabel.setText(getString(formState.photoLabelTemplateRes,
+                    formState.photos.size()));
+        }
+        if (formState.addPhotoButton != null) {
+            formState.addPhotoButton.setEnabled(formState.photos.size() < MAX_FORM_PHOTOS);
+        }
+        if (formState.photoContainer == null) {
+            return;
+        }
+        formState.photoContainer.removeAllViews();
+        if (formState.photos.isEmpty()) {
+            formState.photoContainer.setVisibility(View.GONE);
+            return;
+        }
+        formState.photoContainer.setVisibility(View.VISIBLE);
+        int size = getResources().getDimensionPixelSize(R.dimen.dialog_photo_thumbnail_size);
+        int margin = getResources().getDimensionPixelSize(R.dimen.dialog_photo_thumbnail_spacing);
+        for (int index = 0; index < formState.photos.size(); index++) {
+            String encoded = formState.photos.get(index);
+            Bitmap bitmap = decodePhoto(encoded);
+            if (bitmap == null) {
+                continue;
+            }
+            ImageView thumbnail = new ImageView(this);
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(size, size);
+            if (index > 0) {
+                params.setMarginStart(margin);
+            }
+            thumbnail.setLayoutParams(params);
+            thumbnail.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            thumbnail.setImageBitmap(bitmap);
+            final int photoIndex = index;
+            thumbnail.setOnClickListener(view -> showPhotoPreview(formState, photoIndex));
+            formState.photoContainer.addView(thumbnail);
+        }
     }
 
     private void launchBarcodeScanner() {
