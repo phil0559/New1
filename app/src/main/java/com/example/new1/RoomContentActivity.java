@@ -3628,6 +3628,13 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         selectedContainerHolder.desiredColumn = primary.getContainerColumn();
     }
 
+    if (movingAnyFurniture) {
+        selectedContainerHolder.selectedOption = null;
+        selectedContainerHolder.desiredRank = null;
+        selectedContainerHolder.desiredLevel = null;
+        selectedContainerHolder.desiredColumn = null;
+    }
+
     final Set<Long> additionalExcludedRanks = multipleSelection ? new HashSet<>() : null;
     if (multipleSelection && additionalExcludedRanks != null) {
         for (int index = 1; index < selection.size(); index++) {
@@ -3783,6 +3790,15 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             ContainerOption targetOption = selectedContainerHolder.selectedOption;
             Integer levelValue = selectedContainerHolder.desiredLevel;
             Integer columnValue = selectedContainerHolder.desiredColumn;
+            if (movingAnyFurniture) {
+                targetOption = null;
+                levelValue = null;
+                columnValue = null;
+                selectedContainerHolder.selectedOption = null;
+                selectedContainerHolder.desiredRank = null;
+                selectedContainerHolder.desiredLevel = null;
+                selectedContainerHolder.desiredColumn = null;
+            }
             if (targetOption != null && targetOption.container != null
                     && targetOption.container.isFurniture()) {
                 RoomContentItem furniture = targetOption.container;
@@ -4750,6 +4766,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @Nullable Set<Long> additionalExcludedRanks,
             boolean movingFurniture) {
         List<ContainerOption> result = new ArrayList<>();
+        if (movingFurniture) {
+            return result;
+        }
         String normalizedEstablishment = normalizeName(establishment);
         String normalizedCurrentEstablishment = normalizeName(establishmentName);
         String normalizedRoom = normalizeName(room);
