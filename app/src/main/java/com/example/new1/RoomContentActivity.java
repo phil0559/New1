@@ -2564,11 +2564,16 @@ public class RoomContentActivity extends Activity {
         CheckBox topCheckBox = dialogView.findViewById(R.id.checkbox_storage_tower_has_top);
         Button cancelButton = dialogView.findViewById(R.id.button_cancel_storage_tower);
         Button confirmButton = dialogView.findViewById(R.id.button_confirm_storage_tower);
+        ImageButton closeDialogButton = dialogView.findViewById(R.id.button_close_storage_tower_dialog);
 
         if (titleView != null) {
             titleView.setText(isEditing
                     ? R.string.dialog_edit_storage_tower_title
                     : R.string.dialog_add_storage_tower_title);
+        }
+
+        if (closeDialogButton != null) {
+            closeDialogButton.setOnClickListener(v -> dialog.dismiss());
         }
 
         if (typeSpinner != null) {
