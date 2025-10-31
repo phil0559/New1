@@ -3506,6 +3506,28 @@ public class RoomContentActivity extends Activity {
         showContainerDialog(null, -1, forcedParentRank, forcedFurnitureLevel);
     }
 
+    private void showCopyRoomContentDialog(@NonNull RoomContentItem item) {
+        if (item.isFurniture()) {
+            showFurnitureDialog(item, -1);
+            return;
+        }
+
+        Long parentRank = item.getParentRank();
+        RoomContentItem parentContainer = parentRank != null
+                ? findContainerByRank(roomContentItems, parentRank)
+                : null;
+        Integer forcedFurnitureLevel = null;
+        if (parentContainer != null && parentContainer.isFurniture()) {
+            forcedFurnitureLevel = item.getContainerLevel();
+        }
+
+        if (item.isContainer()) {
+            showContainerDialog(item, -1, parentRank, forcedFurnitureLevel);
+        } else {
+            showRoomContentDialog(item, -1, false, parentRank, forcedFurnitureLevel);
+        }
+    }
+
     private int findAdapterPositionForItem(@NonNull RoomContentItem item) {
         int directIndex = roomContentItems.indexOf(item);
         if (directIndex >= 0) {
