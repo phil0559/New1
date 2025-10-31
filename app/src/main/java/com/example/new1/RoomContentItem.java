@@ -617,8 +617,8 @@ public class RoomContentItem {
                 }
             }
         }
-        boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
-        boolean isFurniture = object.optBoolean(KEY_FURNITURE, false);
+        boolean isContainer = parseBooleanCompat(object, KEY_CONTAINER, false);
+        boolean isFurniture = parseBooleanCompat(object, KEY_FURNITURE, false);
         String parsedFurnitureType = null;
         String parsedFurnitureCustomType = null;
         Integer parsedFurnitureLevels = null;
@@ -648,9 +648,9 @@ public class RoomContentItem {
                     parsedFurnitureColumns = value;
                 }
             }
-            parsedHasTop = object.optBoolean(KEY_FURNITURE_HAS_TOP, false);
-            parsedHasBottom = object.optBoolean(KEY_FURNITURE_HAS_BOTTOM, false);
-            parsedStorageTower = object.optBoolean(KEY_FURNITURE_STORAGE_TOWER, false);
+            parsedHasTop = parseBooleanCompat(object, KEY_FURNITURE_HAS_TOP, false);
+            parsedHasBottom = parseBooleanCompat(object, KEY_FURNITURE_HAS_BOTTOM, false);
+            parsedStorageTower = parseBooleanCompat(object, KEY_FURNITURE_STORAGE_TOWER, false);
         }
         if (object.has(KEY_ATTACHED_LEVEL) && !object.isNull(KEY_ATTACHED_LEVEL)) {
             int value = object.optInt(KEY_ATTACHED_LEVEL, 0);
@@ -728,6 +728,42 @@ public class RoomContentItem {
 
     private static boolean isNullOrEmpty(@Nullable String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private static boolean parseBooleanCompat(@NonNull JSONObject object,
+            @NonNull String key, boolean defaultValue) {
+        if (!object.has(key) || object.isNull(key)) {
+            return defaultValue;
+        }
+        Object rawValue = object.opt(key);
+        if (rawValue instanceof Boolean) {
+            return (Boolean) rawValue;
+        }
+        if (rawValue instanceof Number) {
+            return ((Number) rawValue).intValue() != 0;
+        }
+        if (rawValue instanceof String) {
+            String normalized = ((String) rawValue).trim();
+            if (normalized.isEmpty()) {
+                return defaultValue;
+            }
+            if ("true".equalsIgnoreCase(normalized)
+                    || "yes".equalsIgnoreCase(normalized)
+                    || "1".equals(normalized)) {
+                return true;
+            }
+            if ("false".equalsIgnoreCase(normalized)
+                    || "no".equalsIgnoreCase(normalized)
+                    || "0".equals(normalized)) {
+                return false;
+            }
+            try {
+                return Double.parseDouble(normalized) != 0d;
+            } catch (NumberFormatException ignored) {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
     }
 
     public long getRank() {
