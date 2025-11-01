@@ -151,32 +151,38 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 @Override
                 public void onChanged() {
                     invalidateHierarchyCache();
+                    refreshActiveContainerPopupSelection();
                 }
 
                 @Override
                 public void onItemRangeChanged(int positionStart, int itemCount) {
                     invalidateHierarchyCache();
+                    refreshActiveContainerPopupSelection();
                 }
 
                 @Override
                 public void onItemRangeChanged(int positionStart, int itemCount,
                         @Nullable Object payload) {
                     invalidateHierarchyCache();
+                    refreshActiveContainerPopupSelection();
                 }
 
                 @Override
                 public void onItemRangeInserted(int positionStart, int itemCount) {
                     invalidateHierarchyCache();
+                    refreshActiveContainerPopupSelection();
                 }
 
                 @Override
                 public void onItemRangeRemoved(int positionStart, int itemCount) {
                     invalidateHierarchyCache();
+                    refreshActiveContainerPopupSelection();
                 }
 
                 @Override
                 public void onItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
                     invalidateHierarchyCache();
+                    refreshActiveContainerPopupSelection();
                 }
             };
 
