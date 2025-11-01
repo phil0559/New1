@@ -1762,6 +1762,8 @@ public class RoomContentActivity extends Activity {
                         ? new ArrayList<>(formState.photos)
                         : new ArrayList<>();
 
+                Set<RoomContentItem> containersToRefresh = new LinkedHashSet<>();
+
                 RoomContentItem item = new RoomContentItem(trimmedName,
                         trimmedComment,
                         selectedTypeHolder[0],
@@ -1785,6 +1787,9 @@ public class RoomContentActivity extends Activity {
                     RoomContentHierarchyHelper.attachToContainer(item, targetContainer);
                     updateFurniturePlacement(item, targetContainer, appliedForcedFurnitureLevel,
                             null);
+                    if (targetContainer != null) {
+                        containersToRefresh.add(targetContainer);
+                    }
                 }
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
@@ -1817,6 +1822,7 @@ public class RoomContentActivity extends Activity {
                 }
                 saveRoomContent();
                 updateEmptyState();
+                scheduleContainerIndicatorRefresh(containersToRefresh);
                 int messageRes = isEditing
                         ? R.string.room_content_updated_confirmation
                         : R.string.room_content_added_confirmation;
@@ -3969,6 +3975,16 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         RoomContentItem removedItem = roomContentItems.remove(position);
         boolean wasContainer = removedItem != null && removedItem.isContainer();
+        Set<RoomContentItem> containersToRefresh = new LinkedHashSet<>();
+        if (removedItem != null) {
+            Long parentRank = removedItem.getParentRank();
+            if (parentRank != null) {
+                RoomContentItem parent = findContainerByRank(roomContentItems, parentRank);
+                if (parent != null) {
+                    containersToRefresh.add(parent);
+                }
+            }
+        }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -3977,6 +3993,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         saveRoomContent();
         updateEmptyState();
+        scheduleContainerIndicatorRefresh(containersToRefresh);
         int messageRes = wasContainer
                 ? R.string.room_container_deleted_confirmation
                 : R.string.room_content_deleted_confirmation;
@@ -3992,6 +4009,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         boolean removedAny = false;
         int removedContainers = 0;
         int removedItems = 0;
+        Set<RoomContentItem> containersToRefresh = new LinkedHashSet<>();
         Iterator<RoomContentItem> iterator = roomContentItems.iterator();
         while (iterator.hasNext()) {
             RoomContentItem current = iterator.next();
@@ -4001,6 +4019,13 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     removedContainers++;
                 } else {
                     removedItems++;
+                }
+                Long parentRank = current.getParentRank();
+                if (parentRank != null) {
+                    RoomContentItem parent = findContainerByRank(roomContentItems, parentRank);
+                    if (parent != null && !selection.contains(parent)) {
+                        containersToRefresh.add(parent);
+                    }
                 }
                 iterator.remove();
             }
@@ -4016,6 +4041,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         saveRoomContent();
         updateEmptyState();
+        scheduleContainerIndicatorRefresh(containersToRefresh);
         int messageRes;
         if (removedContainers > 0 && removedItems == 0) {
             messageRes = R.string.room_content_deleted_selection_confirmation_containers;
@@ -5033,6 +5059,33 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         if (contentList != null) {
             contentList.setVisibility(isEmpty ? View.GONE : View.VISIBLE);
         }
+    }
+
+    private void scheduleContainerIndicatorRefresh(@NonNull Set<RoomContentItem> containers) {
+        if (containers.isEmpty()) {
+            return;
+        }
+        RecyclerView list = contentList;
+        RoomContentAdapter adapter = roomContentAdapter;
+        if (list == null || adapter == null) {
+            return;
+        }
+        list.post(() -> {
+            RoomContentAdapter currentAdapter = roomContentAdapter;
+            if (currentAdapter == null) {
+                return;
+            }
+            for (RoomContentItem container : containers) {
+                if (container == null) {
+                    continue;
+                }
+                int position = findAdapterPositionForItem(container);
+                if (position == RecyclerView.NO_POSITION) {
+                    continue;
+                }
+                currentAdapter.notifyItemChanged(position);
+            }
+        });
     }
 
     private void refreshPhotoSection(@NonNull FormState formState) {
