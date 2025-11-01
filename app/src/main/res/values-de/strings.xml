@@ -111,6 +111,7 @@
     <string name="dialog_add_room_content_title">Element hinzufügen</string>
     <string name="dialog_edit_room_content_title">Element bearbeiten</string>
     <string name="dialog_delete_room_container_message">Möchten Sie den Behälter %1$s löschen?</string>
+    <string name="dialog_delete_room_container_delete_children_message">Möchten Sie auch den gesamten Inhalt löschen? (j/n)</string>
     <string name="dialog_delete_room_furniture_message">Möchten Sie das Möbelstück %1$s löschen?</string>
     <string name="dialog_delete_room_content_selection_title">Auswahl löschen</string>
     <plurals name="dialog_delete_room_content_selection_message">
@@ -140,6 +141,7 @@
     <string name="dialog_move_room_content_empty_rooms">In dieser Einrichtung ist kein Raum verfügbar.</string>
     <string name="dialog_move_room_content_success">Element erfolgreich verschoben.</string>
     <string name="dialog_move_room_content_success_multiple">Auswahl erfolgreich verschoben.</string>
+    <string name="room_container_deleted_with_content_confirmation">Der Behälter und sein gesamter Inhalt wurden gelöscht.</string>
     <string name="dialog_move_room_content_furniture_section_label">Position im Möbel</string>
     <string name="dialog_move_room_content_level_label">Ebene</string>
     <string name="dialog_move_room_content_column_label">Spalte</string>
@@ -297,6 +299,8 @@
     <string name="action_cancel">Abbrechen</string>
     <string name="action_confirm">Bestätigen</string>
     <string name="action_delete">Löschen</string>
+    <string name="action_yes">Ja</string>
+    <string name="action_no">Nein</string>
     <string name="error_establishment_name_required">Der Name der Einrichtung ist erforderlich</string>
     <string name="error_room_name_required">Der Name des Raums ist erforderlich</string>
     <string name="rooms_empty_state">Fügen Sie einen Raum hinzu, um zu beginnen</string>

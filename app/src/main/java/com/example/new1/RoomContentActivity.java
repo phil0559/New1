@@ -3929,7 +3929,7 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 .setMessage(getString(messageRes, name))
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton(R.string.action_delete, (dialogInterface, which) ->
-                        deleteRoomContent(targetPosition))
+                        handleDeleteRoomContent(targetPosition))
                 .create();
         dialog.setOnDismissListener(dismissDialog -> {
             if (roomContentAdapter == null) {
@@ -3959,12 +3959,45 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
                 .show();
     }
 
+    private void handleDeleteRoomContent(int position) {
+        if (position < 0 || position >= roomContentItems.size()) {
+            return;
+        }
+        RoomContentItem item = roomContentItems.get(position);
+        if (item != null && item.isContainer() && item.hasAttachedItems()) {
+            showDeleteContainerContentChoice(position);
+        } else {
+            deleteRoomContent(position, false);
+        }
+    }
+
+    private void showDeleteContainerContentChoice(int position) {
+        if (position < 0 || position >= roomContentItems.size()) {
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.dialog_delete_room_content_title)
+                .setMessage(R.string.dialog_delete_room_container_delete_children_message)
+                .setNegativeButton(R.string.action_no, (dialog, which) ->
+                        deleteRoomContent(position, false))
+                .setPositiveButton(R.string.action_yes, (dialog, which) ->
+                        deleteRoomContent(position, true))
+                .show();
+    }
+
     private void deleteRoomContent(int position) {
+        deleteRoomContent(position, false);
+    }
+
+    private void deleteRoomContent(int position, boolean deleteChildren) {
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
         RoomContentItem removedItem = roomContentItems.remove(position);
         boolean wasContainer = removedItem != null && removedItem.isContainer();
+        if (deleteChildren && removedItem != null && removedItem.isContainer()) {
+            removeContainerDescendants(removedItem.getRank());
+        }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -3973,10 +4006,48 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         }
         saveRoomContent();
         updateEmptyState();
-        int messageRes = wasContainer
-                ? R.string.room_container_deleted_confirmation
-                : R.string.room_content_deleted_confirmation;
+        int messageRes;
+        if (wasContainer && deleteChildren) {
+            messageRes = R.string.room_container_deleted_with_content_confirmation;
+        } else if (wasContainer) {
+            messageRes = R.string.room_container_deleted_confirmation;
+        } else {
+            messageRes = R.string.room_content_deleted_confirmation;
+        }
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Supprime récursivement tous les descendants du contenant dont le rang est fourni.
+     */
+    private void removeContainerDescendants(long containerRank) {
+        if (roomContentItems.isEmpty()) {
+            return;
+        }
+        Set<Long> ranksToRemove = new HashSet<>();
+        ranksToRemove.add(containerRank);
+        boolean updated;
+        do {
+            updated = false;
+            for (RoomContentItem item : roomContentItems) {
+                Long parentRank = item.getParentRank();
+                if (parentRank != null && ranksToRemove.contains(parentRank)
+                        && ranksToRemove.add(item.getRank())) {
+                    updated = true;
+                }
+            }
+        } while (updated);
+        ranksToRemove.remove(containerRank);
+        if (ranksToRemove.isEmpty()) {
+            return;
+        }
+        Iterator<RoomContentItem> iterator = roomContentItems.iterator();
+        while (iterator.hasNext()) {
+            RoomContentItem current = iterator.next();
+            if (ranksToRemove.contains(current.getRank())) {
+                iterator.remove();
+            }
+        }
     }
 
     private void deleteRoomContentSelection(@NonNull List<RoomContentItem> items) {

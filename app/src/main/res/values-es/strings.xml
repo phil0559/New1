@@ -111,6 +111,7 @@
     <string name="dialog_add_room_content_title">Añadir un elemento</string>
     <string name="dialog_edit_room_content_title">Editar elemento</string>
     <string name="dialog_delete_room_container_message">¿Desea eliminar el contenedor %1$s?</string>
+    <string name="dialog_delete_room_container_delete_children_message">¿Desea eliminar también todo su contenido? (s/n)</string>
     <string name="dialog_delete_room_furniture_message">¿Desea eliminar el mueble %1$s?</string>
     <string name="dialog_delete_room_content_selection_title">Eliminar selección</string>
     <plurals name="dialog_delete_room_content_selection_message">
@@ -139,6 +140,7 @@
     <string name="dialog_move_room_content_empty_rooms">No hay ninguna habitación disponible en este establecimiento.</string>
     <string name="dialog_move_room_content_success">Elemento movido correctamente.</string>
     <string name="dialog_move_room_content_success_multiple">Selección movida correctamente.</string>
+    <string name="room_container_deleted_with_content_confirmation">El contenedor y todo su contenido se han eliminado.</string>
     <string name="dialog_move_room_content_furniture_section_label">Posición en el mueble</string>
     <string name="dialog_move_room_content_level_label">Nivel</string>
     <string name="dialog_move_room_content_column_label">Columna</string>
@@ -296,6 +298,8 @@
     <string name="action_cancel">Cancelar</string>
     <string name="action_confirm">Confirmar</string>
     <string name="action_delete">Eliminar</string>
+    <string name="action_yes">Sí</string>
+    <string name="action_no">No</string>
     <string name="error_establishment_name_required">El nombre del establecimiento es obligatorio</string>
     <string name="error_room_name_required">El nombre de la habitación es obligatorio</string>
     <string name="rooms_empty_state">Agregue una habitación para comenzar</string>

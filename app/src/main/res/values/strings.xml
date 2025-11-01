@@ -73,6 +73,8 @@
     <string name="action_cancel">Annuler</string>
     <string name="action_confirm">Valider</string>
     <string name="action_delete">Supprimer</string>
+    <string name="action_yes">Oui</string>
+    <string name="action_no">Non</string>
     <string name="error_establishment_name_required">Le nom de l’établissement est obligatoire</string>
     <string name="dialog_add_room_title">Ajouter une pièce</string>
     <string name="dialog_label_room_name">Nom de la pièce</string>
@@ -127,6 +129,7 @@
     <string name="dialog_delete_room_content_title">Supprimer l’élément</string>
     <string name="dialog_delete_room_content_message">Voulez-vous supprimer l’élément %1$s ?</string>
     <string name="dialog_delete_room_container_message">Voulez-vous supprimer le contenant %1$s ?</string>
+    <string name="dialog_delete_room_container_delete_children_message">Souhaitez-vous aussi effacer tout le contenu ? (o/n)</string>
     <string name="dialog_delete_room_furniture_message">Voulez-vous supprimer le mobilier %1$s ?</string>
     <string name="dialog_delete_room_content_selection_title">Supprimer la sélection</string>
     <plurals name="dialog_delete_room_content_selection_message">
@@ -156,6 +159,7 @@
     <string name="dialog_move_room_content_empty_rooms">Aucune pièce disponible dans cet établissement.</string>
     <string name="dialog_move_room_content_success">Élément déplacé avec succès.</string>
     <string name="dialog_move_room_content_success_multiple">Sélection déplacée avec succès.</string>
+    <string name="room_container_deleted_with_content_confirmation">Le contenant et tout son contenu ont été supprimés.</string>
     <string name="dialog_move_room_content_furniture_section_label">Position dans le mobilier</string>
     <string name="dialog_move_room_content_level_label">Niveau</string>
     <string name="dialog_move_room_content_column_label">Colonne</string>
