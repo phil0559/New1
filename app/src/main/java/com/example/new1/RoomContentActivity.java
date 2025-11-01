@@ -26,6 +26,7 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.CompoundButton;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -52,6 +53,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -1319,9 +1322,29 @@ public class RoomContentActivity extends Activity {
                 : null;
 
         dialog.show();
-        Window dialogWindow = dialog.getWindow();
-        if (dialogWindow != null) {
-            dialogWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
+
+        ScrollView dialogScrollView = dialogView.findViewById(R.id.scroll_container_dialog);
+        if (dialogScrollView != null) {
+            final int initialPaddingBottom = dialogScrollView.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(dialogScrollView, (view, insets) -> {
+                int imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+                int systemInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+                int targetPaddingBottom = initialPaddingBottom + Math.max(imeInset, systemInset);
+                if (view.getPaddingBottom() != targetPaddingBottom) {
+                    view.setPadding(view.getPaddingLeft(),
+                            view.getPaddingTop(),
+                            view.getPaddingRight(),
+                            targetPaddingBottom);
+                }
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(dialogScrollView);
+        }
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
         }
 
         EditText nameInput = dialogView.findViewById(R.id.input_room_content_name);
@@ -2181,11 +2204,12 @@ public class RoomContentActivity extends Activity {
                 appliedForcedParentRank,
                 appliedForcedFurnitureLevel);
 
-        if (dialogWindow != null) {
-            dialogWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialogWindow.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            dialogWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+Window dialogWindow = dialog.getWindow();
+if (dialogWindow != null) {
+    dialogWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+    dialogWindow.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    dialogWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+}
         }
 
         if (restoreData != null && restoreData.resumeLookup
@@ -2238,6 +2262,24 @@ public class RoomContentActivity extends Activity {
                 : null;
 
         dialog.show();
+
+        ScrollView containerScrollView = dialogView.findViewById(R.id.scroll_container_dialog);
+        if (containerScrollView != null) {
+            final int initialPaddingBottom = containerScrollView.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(containerScrollView, (view, insets) -> {
+                int imeInset = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+                int systemInset = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom;
+                int targetPaddingBottom = initialPaddingBottom + Math.max(imeInset, systemInset);
+                if (view.getPaddingBottom() != targetPaddingBottom) {
+                    view.setPadding(view.getPaddingLeft(),
+                            view.getPaddingTop(),
+                            view.getPaddingRight(),
+                            targetPaddingBottom);
+                }
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(containerScrollView);
+        }
 
         TextView titleView = dialogView.findViewById(R.id.text_dialog_container_title);
         TextView nameLabel = dialogView.findViewById(R.id.label_container_name);
@@ -2554,10 +2596,13 @@ public class RoomContentActivity extends Activity {
             }
         });
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
+                    | WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN);
         }
     }
 
