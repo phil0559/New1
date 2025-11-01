@@ -53,6 +53,7 @@ import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.radiobutton.MaterialRadioButton;
 import com.google.zxing.BarcodeFormat;
@@ -1992,6 +1993,7 @@ public class RoomContentActivity extends Activity {
 
         View.OnClickListener typeDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+            prepareBottomSheetDialog(bottomSheetDialog);
             View sheetView = inflateDialogView(R.layout.dialog_type_selector);
             bottomSheetDialog.setContentView(sheetView);
 
@@ -2075,6 +2077,7 @@ public class RoomContentActivity extends Activity {
 
         View.OnClickListener categoryDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+            prepareBottomSheetDialog(bottomSheetDialog);
             View sheetView = inflateDialogView(R.layout.dialog_category_selector);
             bottomSheetDialog.setContentView(sheetView);
 
@@ -2178,10 +2181,12 @@ public class RoomContentActivity extends Activity {
                 appliedForcedParentRank,
                 appliedForcedFurnitureLevel);
 
-        if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
 
         if (restoreData != null && restoreData.resumeLookup
@@ -2347,6 +2352,7 @@ public class RoomContentActivity extends Activity {
 
         View.OnClickListener typeDialogLauncher = v -> {
             BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(this);
+            prepareBottomSheetDialog(bottomSheetDialog);
             View sheetView = inflateDialogView(R.layout.dialog_type_selector);
             bottomSheetDialog.setContentView(sheetView);
 
@@ -7576,6 +7582,24 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     ? View.VISIBLE
                     : View.GONE);
         }
+    }
+
+    private void prepareBottomSheetDialog(@NonNull BottomSheetDialog bottomSheetDialog) {
+        Window window = bottomSheetDialog.getWindow();
+        if (window != null) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
+        bottomSheetDialog.setOnShowListener(dialog -> {
+            BottomSheetDialog sheetDialog = (BottomSheetDialog) dialog;
+            FrameLayout bottomSheet = sheetDialog
+                    .findViewById(com.google.android.material.R.id.design_bottom_sheet);
+            if (bottomSheet != null) {
+                BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
+                behavior.setSkipCollapsed(true);
+                behavior.setFitToContents(true);
+                behavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            }
+        });
     }
 
     @NonNull
