@@ -81,6 +81,7 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -98,6 +99,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 public class RoomContentActivity extends Activity {
     private static final int REQUEST_TAKE_PHOTO = 2001;
@@ -155,6 +157,8 @@ public class RoomContentActivity extends Activity {
     private static final int ADD_MENU_ANCHOR_FURNITURE_LEVEL = 1;
     private static final int ADD_MENU_ANCHOR_CONTAINER = 2;
     private static final float ACTION_DISABLED_ALPHA = 0.4f;
+    private static final Pattern DIACRITICS_PATTERN =
+            Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
 
     private static class FormState {
         @Nullable
@@ -4982,6 +4986,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             preferences.edit().remove(resolvedKey).apply();
         }
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        removeKitchenBiblioFurnitureIfNeeded();
         sortRoomContentItems();
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         if (roomContentAdapter != null) {
@@ -5963,6 +5968,46 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             return sanitizeDescription((String) descriptionValue);
         }
         return null;
+    }
+
+    private void removeKitchenBiblioFurnitureIfNeeded() {
+        if (roomContentItems.isEmpty()) {
+            return;
+        }
+        String normalizedRoomName = normalizeLabel(roomName);
+        if (!"cuisine".equals(normalizedRoomName)
+                && !"cuisines".equals(normalizedRoomName)) {
+            return;
+        }
+        boolean removedAny = false;
+        for (int index = roomContentItems.size() - 1; index >= 0; index--) {
+            RoomContentItem candidate = roomContentItems.get(index);
+            if (candidate == null || !candidate.isFurniture()) {
+                continue;
+            }
+            String normalizedFurnitureName = normalizeLabel(candidate.getName());
+            if (normalizedFurnitureName.isEmpty()) {
+                continue;
+            }
+            if (normalizedFurnitureName.contains("biblio")
+                    || normalizedFurnitureName.contains("bibliotheque")) {
+                RoomContentGroupingManager.removeGroup(roomContentItems, index);
+                removedAny = true;
+            }
+        }
+        if (removedAny) {
+            RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        }
+    }
+
+    @NonNull
+    private String normalizeLabel(@Nullable String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD);
+        normalized = DIACRITICS_PATTERN.matcher(normalized).replaceAll("");
+        return normalized.trim().toLowerCase(Locale.ROOT);
     }
 
     @Nullable
