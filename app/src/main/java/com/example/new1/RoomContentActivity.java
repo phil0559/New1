@@ -1795,7 +1795,8 @@ public class RoomContentActivity extends Activity {
                     preserveHierarchyMetadata(existingItem, item);
                     roomContentItems.set(positionToEdit, item);
                 } else {
-                    roomContentItems.add(item);
+                    int insertionIndex = resolveHierarchyInsertionIndex(targetContainer);
+                    roomContentItems.add(insertionIndex, item);
                 }
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
@@ -2479,7 +2480,8 @@ public class RoomContentActivity extends Activity {
                             : null;
                     RoomContentHierarchyHelper.attachToContainer(newItem, targetContainer);
                     updateFurniturePlacement(newItem, targetContainer, forcedFurnitureLevel, null);
-                    roomContentItems.add(newItem);
+                    int insertionIndex = resolveHierarchyInsertionIndex(targetContainer);
+                    roomContentItems.add(insertionIndex, newItem);
                 }
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
@@ -5111,6 +5113,62 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
             return;
         }
         roomContentAdapter.ensureItemsVisibleForContainer(container);
+    }
+
+    /**
+     * Calcule l'indice d'insertion à la fin de la hiérarchie du conteneur cible.
+     */
+    private int resolveHierarchyInsertionIndex(@Nullable RoomContentItem container) {
+        if (container == null) {
+            return roomContentItems.size();
+        }
+        int containerIndex = roomContentItems.indexOf(container);
+        if (containerIndex < 0) {
+            return roomContentItems.size();
+        }
+        long containerRank = container.getRank();
+        if (containerRank < 0) {
+            return Math.min(containerIndex + 1, roomContentItems.size());
+        }
+        Map<Long, RoomContentItem> itemsByRank = new HashMap<>();
+        for (RoomContentItem item : roomContentItems) {
+            itemsByRank.put(item.getRank(), item);
+        }
+        int insertionIndex = containerIndex + 1;
+        for (int i = containerIndex + 1; i < roomContentItems.size(); i++) {
+            RoomContentItem candidate = roomContentItems.get(i);
+            if (candidate == null) {
+                continue;
+            }
+            if (!isDescendantOf(containerRank, candidate, itemsByRank)) {
+                break;
+            }
+            insertionIndex = i + 1;
+        }
+        if (insertionIndex < 0 || insertionIndex > roomContentItems.size()) {
+            return roomContentItems.size();
+        }
+        return insertionIndex;
+    }
+
+    private boolean isDescendantOf(long ancestorRank,
+                                   @NonNull RoomContentItem candidate,
+                                   @NonNull Map<Long, RoomContentItem> itemsByRank) {
+        RoomContentItem current = candidate;
+        int safety = 0;
+        int maxDepth = roomContentItems.size();
+        while (current != null && safety < maxDepth) {
+            Long parentRank = current.getParentRank();
+            if (parentRank == null) {
+                return false;
+            }
+            if (parentRank == ancestorRank) {
+                return true;
+            }
+            current = itemsByRank.get(parentRank);
+            safety++;
+        }
+        return false;
     }
 
     private void saveRoomContent() {
