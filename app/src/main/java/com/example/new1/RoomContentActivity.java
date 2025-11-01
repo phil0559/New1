@@ -1795,7 +1795,12 @@ public class RoomContentActivity extends Activity {
                     preserveHierarchyMetadata(existingItem, item);
                     roomContentItems.set(positionToEdit, item);
                 } else {
-                    roomContentItems.add(item);
+                    if (targetContainer != null) {
+                        int insertionIndex = findInsertionIndexForContainer(targetContainer);
+                        roomContentItems.add(insertionIndex, item);
+                    } else {
+                        roomContentItems.add(item);
+                    }
                 }
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
@@ -2473,7 +2478,12 @@ public class RoomContentActivity extends Activity {
                             : null;
                     RoomContentHierarchyHelper.attachToContainer(newItem, targetContainer);
                     updateFurniturePlacement(newItem, targetContainer, forcedFurnitureLevel, null);
-                    roomContentItems.add(newItem);
+                    if (targetContainer != null) {
+                        int insertionIndex = findInsertionIndexForContainer(targetContainer);
+                        roomContentItems.add(insertionIndex, newItem);
+                    } else {
+                        roomContentItems.add(newItem);
+                    }
                 }
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
@@ -4996,6 +5006,23 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         for (RoomContentItem item : items) {
             item.setDisplayed(true);
         }
+    }
+
+    private int findInsertionIndexForContainer(@NonNull RoomContentItem container) {
+        RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        int containerIndex = roomContentItems.indexOf(container);
+        if (containerIndex < 0) {
+            return roomContentItems.size();
+        }
+        int groupSize = RoomContentGroupingManager.computeGroupSize(roomContentItems, containerIndex);
+        if (groupSize <= 0) {
+            groupSize = 1;
+        }
+        int insertionIndex = containerIndex + groupSize;
+        if (insertionIndex > roomContentItems.size()) {
+            insertionIndex = roomContentItems.size();
+        }
+        return insertionIndex;
     }
 
     private void updateEmptyState() {
