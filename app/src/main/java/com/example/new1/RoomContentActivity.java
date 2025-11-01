@@ -1800,6 +1800,7 @@ public class RoomContentActivity extends Activity {
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+                ensureContainerShowsItems(targetContainer);
                 if (roomContentAdapter != null) {
                     roomContentAdapter.notifyDataSetChanged();
                 }
@@ -2478,6 +2479,7 @@ public class RoomContentActivity extends Activity {
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
                 sortRoomContentItems();
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+                ensureContainerShowsItems(targetContainer);
                 if (roomContentAdapter != null) {
                     roomContentAdapter.notifyDataSetChanged();
                 }
@@ -5094,6 +5096,16 @@ private void showMoveRoomContentDialogForSelection(@NonNull List<RoomContentItem
         destination.setDisplayRank(source.getDisplayRank());
         destination.setContainerLevel(source.getContainerLevel());
         destination.setContainerColumn(source.getContainerColumn());
+    }
+
+    private void ensureContainerShowsItems(@Nullable RoomContentItem container) {
+        if (container == null) {
+            return;
+        }
+        if (roomContentAdapter == null) {
+            return;
+        }
+        roomContentAdapter.ensureItemsVisibleForContainer(container);
     }
 
     private void saveRoomContent() {

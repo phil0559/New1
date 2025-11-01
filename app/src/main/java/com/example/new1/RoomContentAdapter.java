@@ -1014,6 +1014,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         invalidateDecorations();
     }
 
+    public void ensureItemsVisibleForContainer(@NonNull RoomContentItem container) {
+        int position = items.indexOf(container);
+        if (position < 0) {
+            return;
+        }
+        int currentMask = getContainerVisibilityMask(container);
+        if (currentMask == VISIBILITY_DEFAULT_MASK) {
+            return;
+        }
+        setContainerVisibilityMask(container, position, VISIBILITY_DEFAULT_MASK);
+        notifyItemChanged(position);
+        notifyAttachedItemsChanged(position);
+    }
+
     private void updateAttachedItemsDisplayState(int containerPosition, int visibilityMask) {
         if (containerPosition < 0 || containerPosition >= items.size()) {
             return;
