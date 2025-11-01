@@ -4217,7 +4217,81 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         @Nullable
         private String formatFurniturePlacement(@NonNull RoomContentItem item) {
-            return null;
+            Context context = RoomContentAdapter.this.context;
+            if (context == null) {
+                return null;
+            }
+            List<String> segments = new ArrayList<>();
+            RoomContentItem parent = null;
+            int adapterPosition = RoomContentAdapter.this.findPositionForItem(item);
+            if (adapterPosition >= 0) {
+                parent = RoomContentAdapter.this.findAttachedContainer(adapterPosition);
+            }
+            if (parent == null) {
+                Long parentRank = item.getParentRank();
+                if (parentRank != null) {
+                    for (RoomContentItem candidate : RoomContentAdapter.this.items) {
+                        if (candidate != null && parentRank.equals(candidate.getRank())) {
+                            parent = candidate;
+                            break;
+                        }
+                    }
+                }
+            }
+            RoomContentItem furnitureContext = (parent != null && parent.isFurniture()) ? parent : null;
+            Integer level = item.getContainerLevel();
+            Integer column = item.getContainerColumn();
+            if (furnitureContext != null) {
+                if (level == null) {
+                    if (furnitureContext.hasFurnitureTop()) {
+                        String topLabel = context.getString(R.string.furniture_popup_top_title);
+                        if (!TextUtils.isEmpty(topLabel)) {
+                            segments.add(topLabel);
+                        }
+                    }
+                } else if (level == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+                    if (furnitureContext.hasFurnitureBottom()) {
+                        String bottomLabel = context.getString(R.string.furniture_popup_bottom_title);
+                        if (!TextUtils.isEmpty(bottomLabel)) {
+                            segments.add(bottomLabel);
+                        }
+                    }
+                } else if (level > 0) {
+                    segments.add(context.getString(R.string.room_content_furniture_level_short, level));
+                }
+            } else if (level != null) {
+                if (level == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+                    String bottomLabel = context.getString(R.string.furniture_popup_bottom_title);
+                    if (!TextUtils.isEmpty(bottomLabel)) {
+                        segments.add(bottomLabel);
+                    }
+                } else if (level > 0) {
+                    segments.add(context.getString(R.string.room_content_furniture_level_short, level));
+                }
+            }
+            if (column != null && column > 0) {
+                segments.add(context.getString(R.string.room_content_furniture_column_short, column));
+            }
+            if (item.isFurniture()) {
+                if (item.hasFurnitureTop()) {
+                    String topLabel = context.getString(R.string.furniture_popup_top_title);
+                    if (!TextUtils.isEmpty(topLabel) && !segments.contains(topLabel)) {
+                        // Ajouter « Dessus » pour mettre en avant la surface supérieure disponible.
+                        segments.add(topLabel);
+                    }
+                }
+                if (item.hasFurnitureBottom()) {
+                    String bottomLabel = context.getString(R.string.furniture_popup_bottom_title);
+                    if (!TextUtils.isEmpty(bottomLabel) && !segments.contains(bottomLabel)) {
+                        // Ajouter « Dessous » pour signaler la présence d’une surface inférieure.
+                        segments.add(bottomLabel);
+                    }
+                }
+            }
+            if (segments.isEmpty()) {
+                return null;
+            }
+            return TextUtils.join(" · ", segments);
         }
 
         private void populateFurnitureSections(@NonNull LinearLayout container,
