@@ -45,6 +45,8 @@ import android.util.Base64;
 import android.util.SparseArray;
 
 import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.PopupWindowCompat;
@@ -1316,6 +1318,10 @@ public class RoomContentActivity extends Activity {
                 : null;
 
         dialog.show();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+        }
 
         EditText nameInput = dialogView.findViewById(R.id.input_room_content_name);
         EditText commentInput = dialogView.findViewById(R.id.input_room_content_comment);
