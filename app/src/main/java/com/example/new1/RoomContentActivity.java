@@ -2460,6 +2460,7 @@ public class RoomContentActivity extends Activity {
                         photoValues,
                         true,
                         0);
+                RoomContentItem targetContainer = null;
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
                         dialog.dismiss();
@@ -2468,8 +2469,12 @@ public class RoomContentActivity extends Activity {
                     RoomContentItem existingItem = roomContentItems.get(positionToEdit);
                     preserveHierarchyMetadata(existingItem, newItem);
                     roomContentItems.set(positionToEdit, newItem);
+                    Long parentRank = newItem.getParentRank();
+                    if (parentRank != null) {
+                        targetContainer = findContainerByRank(roomContentItems, parentRank);
+                    }
                 } else {
-                    RoomContentItem targetContainer = forcedParentRank != null
+                    targetContainer = forcedParentRank != null
                             ? findContainerByRank(roomContentItems, forcedParentRank)
                             : null;
                     RoomContentHierarchyHelper.attachToContainer(newItem, targetContainer);
