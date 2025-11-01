@@ -2204,12 +2204,12 @@ public class RoomContentActivity extends Activity {
                 appliedForcedParentRank,
                 appliedForcedFurnitureLevel);
 
-Window dialogWindow = dialog.getWindow();
-if (dialogWindow != null) {
-    dialogWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-    dialogWindow.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-    dialogWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-}
+        Window dialogWindow = dialog.getWindow();
+        if (dialogWindow != null) {
+            dialogWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            dialogWindow.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialogWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         }
 
         if (restoreData != null && restoreData.resumeLookup
