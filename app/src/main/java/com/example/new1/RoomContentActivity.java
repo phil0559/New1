@@ -1323,6 +1323,7 @@ public class RoomContentActivity extends Activity {
 
         dialog.show();
 
+
         ScrollView dialogScrollView = dialogView.findViewById(R.id.scroll_container_dialog);
         if (dialogScrollView != null) {
             final int initialPaddingBottom = dialogScrollView.getPaddingBottom();
@@ -1343,6 +1344,7 @@ public class RoomContentActivity extends Activity {
         Window window = dialog.getWindow();
         if (window != null) {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+
         }
 
         EditText nameInput = dialogView.findViewById(R.id.input_room_content_name);
@@ -2202,12 +2204,12 @@ public class RoomContentActivity extends Activity {
                 appliedForcedParentRank,
                 appliedForcedFurnitureLevel);
 
-        Window window = dialog.getWindow();
-        if (window != null) {
-            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+Window dialogWindow = dialog.getWindow();
+if (dialogWindow != null) {
+    dialogWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+    dialogWindow.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+    dialogWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+}
         }
 
         if (restoreData != null && restoreData.resumeLookup
