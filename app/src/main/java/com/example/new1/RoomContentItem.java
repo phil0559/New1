@@ -618,7 +618,15 @@ public class RoomContentItem {
             }
         }
         boolean isContainer = object.optBoolean(KEY_CONTAINER, false);
-        boolean isFurniture = object.optBoolean(KEY_FURNITURE, false);
+        boolean furnitureFlag = object.optBoolean(KEY_FURNITURE, false);
+        boolean hasFurnitureAttributes = object.has(KEY_FURNITURE_TYPE)
+                || object.has(KEY_FURNITURE_CUSTOM_TYPE)
+                || object.has(KEY_FURNITURE_LEVELS)
+                || object.has(KEY_FURNITURE_COLUMNS)
+                || object.has(KEY_FURNITURE_HAS_TOP)
+                || object.has(KEY_FURNITURE_HAS_BOTTOM)
+                || object.has(KEY_FURNITURE_STORAGE_TOWER);
+        boolean isFurniture = furnitureFlag || hasFurnitureAttributes;
         String parsedFurnitureType = null;
         String parsedFurnitureCustomType = null;
         Integer parsedFurnitureLevels = null;
