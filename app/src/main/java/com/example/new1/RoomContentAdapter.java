@@ -5250,7 +5250,24 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 optionsPopup.dismiss();
                 return;
             }
-            dismissFurniturePopup();
+            boolean anchorInsideFurniturePopup = false;
+            if (furniturePopup != null && furniturePopup.isShowing()) {
+                View furniturePopupContent = furniturePopup.getContentView();
+                if (furniturePopupContent != null) {
+                    View current = anchor;
+                    while (current != null) {
+                        if (current == furniturePopupContent) {
+                            anchorInsideFurniturePopup = true;
+                            break;
+                        }
+                        ViewParent parent = current.getParent();
+                        current = parent instanceof View ? (View) parent : null;
+                    }
+                }
+            }
+            if (!anchorInsideFurniturePopup) {
+                dismissFurniturePopup();
+            }
             View popupView = RoomContentAdapter.this.inflater
                     .inflate(R.layout.popup_room_content_menu, null);
             PopupWindow popupWindow = new PopupWindow(popupView,
