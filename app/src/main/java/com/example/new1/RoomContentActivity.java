@@ -3900,8 +3900,23 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 if (maxLevels == null || maxLevels > 0) {
                     Integer parsedLevel = selectedContainerHolder.desiredLevel;
                     boolean acceptsBottom = furniture.hasFurnitureBottom();
-                    boolean levelValid = parsedLevel != null;
-                    if (levelValid) {
+                    boolean supportsTopPlacement = furniture.hasFurnitureTop();
+                    boolean levelValid;
+                    if (parsedLevel == null) {
+                        boolean topOptionAvailable = supportsTopPlacement;
+                        if (!topOptionAvailable) {
+                            List<LevelOption> levelOptions = buildLevelOptions(furniture,
+                                    targetOption.contents);
+                            for (LevelOption option : levelOptions) {
+                                if (option != null && option.value == null) {
+                                    topOptionAvailable = true;
+                                    break;
+                                }
+                            }
+                        }
+                        levelValid = topOptionAvailable;
+                    } else {
+                        levelValid = true;
                         if (parsedLevel == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
                             levelValid = acceptsBottom;
                         } else if (parsedLevel <= 0
