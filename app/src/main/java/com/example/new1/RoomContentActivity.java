@@ -53,6 +53,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.widget.PopupWindowCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
@@ -718,6 +719,17 @@ public class RoomContentActivity extends Activity {
                     });
             roomContentAdapter.setSelectionChangedListener(this::updateSelectionActions);
             contentList.setAdapter(roomContentAdapter);
+
+            RecyclerView.ItemAnimator animator = contentList.getItemAnimator();
+            if (animator != null) {
+                animator.setAddDuration(0);
+                animator.setRemoveDuration(0);
+                animator.setMoveDuration(0);
+                animator.setChangeDuration(0);
+                if (animator instanceof SimpleItemAnimator) {
+                    ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+                }
+            }
         }
 
         loadRoomContent();
