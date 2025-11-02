@@ -9,13 +9,13 @@
 
     <TextView
         android:id="@+id/text_column_spinner_dropdown"
-        android:layout_width="@dimen/furniture_popup_column_chip_size"
+        android:layout_width="wrap_content"
         android:layout_height="@dimen/furniture_popup_column_chip_size"
         android:layout_gravity="center_vertical"
-        android:ellipsize="end"
         android:gravity="center"
-        android:maxLines="1"
-        android:padding="8dp"
+        android:minWidth="@dimen/furniture_popup_column_chip_size"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="8dp"
         android:textColor="@color/text_dark"
         android:textSize="14sp"
         android:textStyle="bold" />
