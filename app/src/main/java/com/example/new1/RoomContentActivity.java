@@ -4926,7 +4926,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         boolean sameRoom = sameEstablishment && normalizedRoom.equalsIgnoreCase(normalizedCurrentRoom);
         if (sameRoom) {
             RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-            Set<Long> excludedRanks = collectExcludedContainerRanks(roomContentItems, item, position);
+            Set<Long> excludedRanks = collectExcludedContainerRanks(roomContentItems, position);
             if (additionalExcludedRanks != null && !additionalExcludedRanks.isEmpty()) {
                 excludedRanks.addAll(additionalExcludedRanks);
             }
@@ -4968,10 +4968,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     @NonNull
     static Set<Long> collectExcludedContainerRanks(@NonNull List<RoomContentItem> items,
-            @NonNull RoomContentItem item,
             int position) {
         Set<Long> ranks = collectGroupRanks(items, position);
-        collectAncestorRanks(item, items, ranks);
         return ranks;
     }
 
@@ -4986,20 +4984,6 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             ranks.add(current.getRank());
         }
         return ranks;
-    }
-
-    private static void collectAncestorRanks(@NonNull RoomContentItem item,
-            @NonNull List<RoomContentItem> items,
-            @NonNull Set<Long> destination) {
-        Long parentRank = item.getParentRank();
-        while (parentRank != null) {
-            destination.add(parentRank);
-            RoomContentItem parent = findContainerByRank(items, parentRank);
-            if (parent == null) {
-                break;
-            }
-            parentRank = parent.getParentRank();
-        }
     }
 
     @Nullable
