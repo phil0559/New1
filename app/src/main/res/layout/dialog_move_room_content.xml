@@ -98,16 +98,15 @@
                     android:textColor="@color/text_dark"
                     android:textSize="14sp" />
 
-                <EditText
-                    android:id="@+id/input_move_furniture_level"
+                <Spinner
+                    android:id="@+id/spinner_move_furniture_level"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_input_field_white"
-                    android:hint="@string/dialog_move_room_content_level_hint"
-                    android:inputType="number"
                     android:paddingStart="12dp"
-                    android:paddingEnd="12dp" />
+                    android:paddingEnd="12dp"
+                    android:spinnerMode="dropdown" />
             </LinearLayout>
 
             <LinearLayout
