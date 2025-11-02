@@ -4402,6 +4402,12 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             Integer appliedLevel = normalizeFurnitureLevel(targetLevel, targetContainer);
             Integer appliedColumn = sanitizePlacementValue(targetColumn,
                     targetContainer.getFurnitureColumns());
+            if (targetContainer.isStorageTower()
+                    && appliedLevel != null
+                    && appliedLevel > RoomContentItem.FURNITURE_BOTTOM_LEVEL
+                    && appliedColumn == null) {
+                appliedColumn = 1;
+            }
             item.setContainerLevel(appliedLevel);
             item.setContainerColumn(appliedColumn);
         } else {
