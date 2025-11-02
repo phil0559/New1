@@ -3447,6 +3447,9 @@ public class RoomContentActivity extends Activity {
                                 targetAdapterPosition);
                     }
                     roomContentAdapter.dismissActiveContainerPopup();
+                } else if (anchorType == ADD_MENU_ANCHOR_FURNITURE_LEVEL) {
+                    prepareFurniturePopupRestore(targetAdapterPosition, forcedParentRank,
+                            furnitureLevelIndex);
                 }
                 showAddRoomContentDialog(forcedParentRank, forcedFurnitureLevel);
             });
@@ -3464,6 +3467,9 @@ public class RoomContentActivity extends Activity {
                                 targetAdapterPosition);
                     }
                     roomContentAdapter.dismissActiveContainerPopup();
+                } else if (anchorType == ADD_MENU_ANCHOR_FURNITURE_LEVEL) {
+                    prepareFurniturePopupRestore(targetAdapterPosition, forcedParentRank,
+                            furnitureLevelIndex);
                 }
                 showAddContainerDialog(forcedParentRank, forcedFurnitureLevel);
             });
@@ -3538,6 +3544,30 @@ public class RoomContentActivity extends Activity {
         PopupWindowCompat.showAsDropDown(addMenuPopup, anchor, 0, yOffset, Gravity.END);
     }
 
+    private void prepareFurniturePopupRestore(@Nullable Integer targetAdapterPosition,
+                                              @Nullable Long forcedParentRank,
+                                              @Nullable Integer furnitureLevelIndex) {
+        if (roomContentAdapter == null || furnitureLevelIndex == null) {
+            return;
+        }
+        int adapterPosition = targetAdapterPosition != null
+                ? targetAdapterPosition
+                : (forcedParentRank != null
+                        ? findAdapterPositionForRank(forcedParentRank)
+                        : RecyclerView.NO_POSITION);
+        if (adapterPosition == RecyclerView.NO_POSITION) {
+            return;
+        }
+        RoomContentAdapter.FurniturePopupRestoreState activeState =
+                roomContentAdapter.captureActiveFurniturePopupState();
+        Integer columnToDisplay = null;
+        if (activeState != null && activeState.furniturePosition == adapterPosition) {
+            columnToDisplay = activeState.columnToDisplay;
+        }
+        roomContentAdapter.preparePendingFurniturePopupRestore(adapterPosition,
+                furnitureLevelIndex, columnToDisplay, false);
+    }
+
     private void showFurnitureLevelAddMenu(@NonNull View anchor,
                                            @NonNull RoomContentItem furniture,
                                            int level) {
@@ -3557,6 +3587,11 @@ public class RoomContentActivity extends Activity {
         if (addMenuPopup != null && addMenuPopup.isShowing()) {
             addMenuPopup.dismiss();
         }
+        int adapterPosition = findAdapterPositionForItem(furniture);
+        Integer resolvedPosition = adapterPosition != RecyclerView.NO_POSITION
+                ? adapterPosition
+                : null;
+        prepareFurniturePopupRestore(resolvedPosition, furniture.getRank(), level);
         RoomContentItem prefillItem = new RoomContentItem(
                 "",
                 "",
