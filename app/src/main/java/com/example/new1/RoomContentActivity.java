@@ -4803,13 +4803,18 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         if (showLevel) {
             Integer levelValue = selection.desiredLevel;
+            boolean supportsTopPlacement = furniture.hasFurnitureTop();
             if (levelValue == null) {
                 boolean sameContainer = item.getParentRank() != null
                         && item.getParentRank().equals(option.rank);
-                if (sameContainer && item.getContainerLevel() != null) {
-                    levelValue = item.getContainerLevel();
-                }
-                if (levelValue == null) {
+                if (sameContainer) {
+                    Integer currentLevel = item.getContainerLevel();
+                    if (currentLevel != null) {
+                        levelValue = currentLevel;
+                    } else if (!supportsTopPlacement) {
+                        levelValue = 1;
+                    }
+                } else if (!supportsTopPlacement) {
                     levelValue = 1;
                 }
             }
@@ -4878,10 +4883,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             selection.desiredLevel = null;
             return;
         }
-        int selectionIndex = -1;
-        if (desiredLevel != null) {
-            selectionIndex = adapter.findPositionByValue(desiredLevel);
-        }
+        int selectionIndex = adapter.findPositionByValue(desiredLevel);
         if (selectionIndex < 0) {
             selectionIndex = 0;
         }
@@ -4965,6 +4967,18 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     private List<LevelOption> buildLevelOptions(@NonNull RoomContentItem furniture,
             @NonNull List<RoomContentItem> contents) {
         LinkedHashSet<Integer> values = new LinkedHashSet<>();
+        boolean includeTopOption = furniture.hasFurnitureTop();
+        if (!includeTopOption) {
+            for (RoomContentItem child : contents) {
+                if (child == null) {
+                    continue;
+                }
+                if (child.getContainerLevel() == null) {
+                    includeTopOption = true;
+                    break;
+                }
+            }
+        }
         if (furniture.hasFurnitureBottom()) {
             values.add(RoomContentItem.FURNITURE_BOTTOM_LEVEL);
         }
@@ -4987,7 +5001,11 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 values.add(1);
             }
         }
-        List<LevelOption> options = new ArrayList<>(values.size());
+        List<LevelOption> options = new ArrayList<>(values.size() + (includeTopOption ? 1 : 0));
+        if (includeTopOption) {
+            String topLabel = getString(R.string.furniture_popup_top_title);
+            options.add(new LevelOption(null, topLabel));
+        }
         for (Integer value : values) {
             if (value == null) {
                 continue;
@@ -5042,11 +5060,12 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     }
 
     private static final class LevelOption {
-        final int value;
+        @Nullable
+        final Integer value;
         @NonNull
         final String label;
 
-        LevelOption(int value, @NonNull String label) {
+        LevelOption(@Nullable Integer value, @NonNull String label) {
             this.value = value;
             this.label = label;
         }
@@ -5070,10 +5089,17 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             notifyDataSetChanged();
         }
 
-        int findPositionByValue(int value) {
+        int findPositionByValue(@Nullable Integer value) {
             for (int index = 0; index < getCount(); index++) {
                 LevelOption option = getItem(index);
-                if (option != null && option.value == value) {
+                if (option == null) {
+                    continue;
+                }
+                if (option.value == null) {
+                    if (value == null) {
+                        return index;
+                    }
+                } else if (value != null && option.value.equals(value)) {
                     return index;
                 }
             }
