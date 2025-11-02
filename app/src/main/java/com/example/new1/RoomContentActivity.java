@@ -5235,6 +5235,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         String normalizedCurrentRoom = normalizeName(roomName);
         boolean sameEstablishment = normalizedEstablishment.equalsIgnoreCase(normalizedCurrentEstablishment);
         boolean sameRoom = sameEstablishment && normalizedRoom.equalsIgnoreCase(normalizedCurrentRoom);
+        boolean movingStorageTower = item.isStorageTower();
         if (sameRoom) {
             RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
             Set<Long> excludedRanks = collectExcludedContainerRanks(roomContentItems, position);
@@ -5247,6 +5248,16 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 }
                 if (movingFurniture && candidate.isStorageTower()) {
                     continue;
+                }
+                if (movingStorageTower) {
+                    // Une tour de rangement ne peut pas être placée dans un contenant ni dans
+                    // une autre tour : seules les options de mobilier sont conservées.
+                    if (!candidate.isFurniture()) {
+                        continue;
+                    }
+                    if (candidate.isStorageTower()) {
+                        continue;
+                    }
                 }
                 if (excludedRanks.contains(candidate.getRank())) {
                     continue;
@@ -5268,6 +5279,14 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 }
                 if (movingFurniture && candidate.isStorageTower()) {
                     continue;
+                }
+                if (movingStorageTower) {
+                    if (!candidate.isFurniture()) {
+                        continue;
+                    }
+                    if (candidate.isStorageTower()) {
+                        continue;
+                    }
                 }
                 String label = candidate.getName();
                 if (label == null || label.trim().isEmpty()) {
