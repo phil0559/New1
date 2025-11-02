@@ -148,6 +148,8 @@ public class RoomContentActivity extends Activity {
     private static final String STATE_CONTAINER_POPUP_POSITION = "state_container_popup_position";
     private static final String STATE_CONTAINER_POPUP_MASK = "state_container_popup_mask";
     private static final String STATE_FURNITURE_POPUP_POSITION = "state_furniture_popup_position";
+    private static final String STATE_FURNITURE_POPUP_HAS_RANK = "state_furniture_popup_has_rank";
+    private static final String STATE_FURNITURE_POPUP_RANK = "state_furniture_popup_rank";
     private static final String STATE_FURNITURE_POPUP_HAS_LEVEL = "state_furniture_popup_has_level";
     private static final String STATE_FURNITURE_POPUP_LEVEL = "state_furniture_popup_level";
     private static final String STATE_FURNITURE_POPUP_HAS_COLUMN = "state_furniture_popup_has_column";
@@ -845,6 +847,10 @@ public class RoomContentActivity extends Activity {
             int furniturePosition = savedInstanceState.getInt(STATE_FURNITURE_POPUP_POSITION,
                     RecyclerView.NO_POSITION);
             if (furniturePosition != RecyclerView.NO_POSITION) {
+                long furnitureRank = -1L;
+                if (savedInstanceState.getBoolean(STATE_FURNITURE_POPUP_HAS_RANK, false)) {
+                    furnitureRank = savedInstanceState.getLong(STATE_FURNITURE_POPUP_RANK, -1L);
+                }
                 Integer level = null;
                 if (savedInstanceState.getBoolean(STATE_FURNITURE_POPUP_HAS_LEVEL, false)) {
                     level = savedInstanceState.getInt(STATE_FURNITURE_POPUP_LEVEL);
@@ -854,7 +860,7 @@ public class RoomContentActivity extends Activity {
                     column = savedInstanceState.getInt(STATE_FURNITURE_POPUP_COLUMN);
                 }
                 pendingFurniturePopupState = new RoomContentAdapter.FurniturePopupRestoreState(
-                        furniturePosition, level, column, false);
+                        furniturePosition, furnitureRank, level, column, false);
             }
         }
         if (savedInstanceState.containsKey(STATE_OPTIONS_POPUP_POSITION)) {
@@ -1243,6 +1249,12 @@ public class RoomContentActivity extends Activity {
             if (furnitureState != null) {
                 outState.putInt(STATE_FURNITURE_POPUP_POSITION,
                         furnitureState.furniturePosition);
+                if (furnitureState.furnitureRank >= 0) {
+                    outState.putBoolean(STATE_FURNITURE_POPUP_HAS_RANK, true);
+                    outState.putLong(STATE_FURNITURE_POPUP_RANK, furnitureState.furnitureRank);
+                } else {
+                    outState.putBoolean(STATE_FURNITURE_POPUP_HAS_RANK, false);
+                }
                 if (furnitureState.levelToExpand != null) {
                     outState.putBoolean(STATE_FURNITURE_POPUP_HAS_LEVEL, true);
                     outState.putInt(STATE_FURNITURE_POPUP_LEVEL,

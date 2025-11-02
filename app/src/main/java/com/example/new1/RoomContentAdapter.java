@@ -1458,6 +1458,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     static class FurniturePopupRestoreState {
         final int furniturePosition;
+        final long furnitureRank;
         @Nullable
         final Integer levelToExpand;
         @Nullable
@@ -1465,13 +1466,22 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         final boolean autoOpenWhenBound;
 
         FurniturePopupRestoreState(int furniturePosition,
+                long furnitureRank,
                 @Nullable Integer levelToExpand,
                 @Nullable Integer columnToDisplay,
                 boolean autoOpenWhenBound) {
             this.furniturePosition = furniturePosition;
+            this.furnitureRank = furnitureRank;
             this.levelToExpand = levelToExpand;
             this.columnToDisplay = columnToDisplay;
             this.autoOpenWhenBound = autoOpenWhenBound;
+        }
+
+        FurniturePopupRestoreState(int furniturePosition,
+                @Nullable Integer levelToExpand,
+                @Nullable Integer columnToDisplay,
+                boolean autoOpenWhenBound) {
+            this(furniturePosition, -1L, levelToExpand, columnToDisplay, autoOpenWhenBound);
         }
     }
 
@@ -1605,7 +1615,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         if (activeFurniturePopupAdapterPosition == RecyclerView.NO_POSITION) {
             return null;
         }
+        if (activeFurniturePopupAdapterPosition < 0
+                || activeFurniturePopupAdapterPosition >= items.size()) {
+            return null;
+        }
+        RoomContentItem item = items.get(activeFurniturePopupAdapterPosition);
+        if (item == null || !item.isFurniture()) {
+            return null;
+        }
         return new FurniturePopupRestoreState(activeFurniturePopupAdapterPosition,
+                item.getRank(),
                 activeFurniturePopupExpandedLevel,
                 activeFurniturePopupSelectedColumn,
                 false);
@@ -1660,7 +1679,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return;
         }
         pendingFurniturePopupRestore = new FurniturePopupRestoreState(furniturePosition,
-                levelToExpand, columnToDisplay, autoOpenWhenBound);
+                item.getRank(), levelToExpand, columnToDisplay, autoOpenWhenBound);
     }
 
     @Nullable
@@ -1696,29 +1715,63 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
     public void restoreFurniturePopup(@NonNull RecyclerView recyclerView,
             @NonNull FurniturePopupRestoreState state) {
-        if (state.furniturePosition < 0 || state.furniturePosition >= items.size()) {
+        int targetPosition = resolveFurniturePosition(state);
+        if (targetPosition == RecyclerView.NO_POSITION) {
             return;
         }
-        RoomContentItem item = items.get(state.furniturePosition);
-        if (item == null || !item.isFurniture()) {
-            return;
-        }
+        final int adapterPosition = targetPosition;
         RecyclerView.ViewHolder holder = recyclerView
-                .findViewHolderForAdapterPosition(state.furniturePosition);
+                .findViewHolderForAdapterPosition(adapterPosition);
         if (holder instanceof ViewHolder) {
             ((ViewHolder) holder).reopenFurniturePopup(state.levelToExpand,
                     state.columnToDisplay);
         } else {
-            recyclerView.scrollToPosition(state.furniturePosition);
+            recyclerView.scrollToPosition(adapterPosition);
             recyclerView.post(() -> {
                 RecyclerView.ViewHolder postHolder = recyclerView
-                        .findViewHolderForAdapterPosition(state.furniturePosition);
+                        .findViewHolderForAdapterPosition(adapterPosition);
                 if (postHolder instanceof ViewHolder) {
                     ((ViewHolder) postHolder).reopenFurniturePopup(state.levelToExpand,
                             state.columnToDisplay);
                 }
             });
         }
+    }
+
+    private int resolveFurniturePosition(@NonNull FurniturePopupRestoreState state) {
+        if (matchesFurnitureAtPosition(state.furniturePosition, state.furnitureRank)) {
+            return state.furniturePosition;
+        }
+        int resolvedPosition = findFurniturePositionByRank(state.furnitureRank);
+        if (resolvedPosition != RecyclerView.NO_POSITION) {
+            return resolvedPosition;
+        }
+        return RecyclerView.NO_POSITION;
+    }
+
+    private boolean matchesFurnitureAtPosition(int position, long expectedRank) {
+        if (position < 0 || position >= items.size()) {
+            return false;
+        }
+        RoomContentItem candidate = items.get(position);
+        if (candidate == null || !candidate.isFurniture()) {
+            return false;
+        }
+        return expectedRank < 0 || candidate.getRank() == expectedRank;
+    }
+
+    private int findFurniturePositionByRank(long furnitureRank) {
+        if (furnitureRank < 0) {
+            return RecyclerView.NO_POSITION;
+        }
+        for (int index = 0; index < items.size(); index++) {
+            RoomContentItem candidate = items.get(index);
+            if (candidate != null && candidate.isFurniture()
+                    && candidate.getRank() == furnitureRank) {
+                return index;
+            }
+        }
+        return RecyclerView.NO_POSITION;
     }
 
     private void maybeRestoreFurniturePopup() {
