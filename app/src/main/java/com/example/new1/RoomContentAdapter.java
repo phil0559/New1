@@ -4272,18 +4272,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (column != null && column > 0) {
                 segments.add(context.getString(R.string.room_content_furniture_column_short, column));
             }
-            if (item.isFurniture()) {
+            if (!item.isFurniture()) {
                 if (item.hasFurnitureTop()) {
                     String topLabel = context.getString(R.string.furniture_popup_top_title);
                     if (!TextUtils.isEmpty(topLabel) && !segments.contains(topLabel)) {
-                        // Ajouter « Dessus » pour mettre en avant la surface supérieure disponible.
+                        // Ajouter « Dessus » uniquement pour les éléments dépendants d’un mobilier.
                         segments.add(topLabel);
                     }
                 }
                 if (item.hasFurnitureBottom()) {
                     String bottomLabel = context.getString(R.string.furniture_popup_bottom_title);
                     if (!TextUtils.isEmpty(bottomLabel) && !segments.contains(bottomLabel)) {
-                        // Ajouter « Dessous » pour signaler la présence d’une surface inférieure.
+                        // Ajouter « Dessous » uniquement pour les éléments dépendants d’un mobilier.
                         segments.add(bottomLabel);
                     }
                 }
