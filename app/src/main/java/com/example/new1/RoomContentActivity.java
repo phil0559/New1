@@ -4786,8 +4786,10 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         RoomContentItem furniture = option.container;
         Integer maxLevels = furniture.getFurnitureLevels();
         Integer maxColumns = furniture.getFurnitureColumns();
-        boolean showLevel = maxLevels == null || maxLevels > 0;
-        boolean showColumn = maxColumns != null && maxColumns > 0;
+        List<LevelOption> levelOptions = buildLevelOptions(furniture, option.contents);
+        List<ColumnOption> columnOptions = buildColumnOptions(furniture, option.contents);
+        boolean showLevel = !levelOptions.isEmpty();
+        boolean showColumn = !columnOptions.isEmpty();
         if (!showLevel && !showColumn) {
             detailsContainer.setVisibility(View.GONE);
             if (levelContainer != null) {
@@ -4838,8 +4840,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             }
             selection.desiredLevel = levelValue;
             if (levelSpinner != null) {
-                configureFurnitureLevelSpinner(levelSpinner, furniture, option,
-                        levelValue, selection);
+                configureFurnitureLevelSpinner(levelSpinner, levelValue, selection,
+                        levelOptions);
             }
         } else {
             selection.desiredLevel = null;
@@ -4866,8 +4868,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             }
             selection.desiredColumn = columnValue;
             if (columnSpinner != null) {
-                configureFurnitureColumnSpinner(columnSpinner, furniture, option,
-                        columnValue, selection);
+                configureFurnitureColumnSpinner(columnSpinner, columnValue, selection,
+                        columnOptions);
             }
         } else {
             selection.desiredColumn = null;
@@ -4880,11 +4882,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     }
 
     private void configureFurnitureLevelSpinner(@NonNull Spinner levelSpinner,
-            @NonNull RoomContentItem furniture,
-            @NonNull ContainerOption option,
             @Nullable Integer desiredLevel,
-            @NonNull ContainerSelection selection) {
-        List<LevelOption> levelOptions = buildLevelOptions(furniture, option.contents);
+            @NonNull ContainerSelection selection,
+            @NonNull List<LevelOption> levelOptions) {
         LevelSpinnerAdapter adapter;
         if (levelSpinner.getAdapter() instanceof LevelSpinnerAdapter) {
             adapter = (LevelSpinnerAdapter) levelSpinner.getAdapter();
@@ -4928,11 +4928,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     }
 
     private void configureFurnitureColumnSpinner(@NonNull Spinner columnSpinner,
-            @NonNull RoomContentItem furniture,
-            @NonNull ContainerOption option,
             @Nullable Integer desiredColumn,
-            @NonNull ContainerSelection selection) {
-        List<ColumnOption> columnOptions = buildColumnOptions(furniture, option.contents);
+            @NonNull ContainerSelection selection,
+            @NonNull List<ColumnOption> columnOptions) {
         ColumnSpinnerAdapter adapter;
         if (columnSpinner.getAdapter() instanceof ColumnSpinnerAdapter) {
             adapter = (ColumnSpinnerAdapter) columnSpinner.getAdapter();
