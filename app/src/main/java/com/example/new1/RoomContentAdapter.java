@@ -152,12 +152,14 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 public void onChanged() {
                     invalidateHierarchyCache();
                     refreshActiveContainerPopupSelection();
+                    refreshActiveFurniturePopupContents();
                 }
 
                 @Override
                 public void onItemRangeChanged(int positionStart, int itemCount) {
                     invalidateHierarchyCache();
                     refreshActiveContainerPopupSelection();
+                    refreshActiveFurniturePopupContents();
                 }
 
                 @Override
@@ -165,24 +167,28 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         @Nullable Object payload) {
                     invalidateHierarchyCache();
                     refreshActiveContainerPopupSelection();
+                    refreshActiveFurniturePopupContents();
                 }
 
                 @Override
                 public void onItemRangeInserted(int positionStart, int itemCount) {
                     invalidateHierarchyCache();
                     refreshActiveContainerPopupSelection();
+                    refreshActiveFurniturePopupContents();
                 }
 
                 @Override
                 public void onItemRangeRemoved(int positionStart, int itemCount) {
                     invalidateHierarchyCache();
                     refreshActiveContainerPopupSelection();
+                    refreshActiveFurniturePopupContents();
                 }
 
                 @Override
                 public void onItemRangeMoved(int fromPosition, int toPosition, int itemCount) {
                     invalidateHierarchyCache();
                     refreshActiveContainerPopupSelection();
+                    refreshActiveFurniturePopupContents();
                 }
             };
 
@@ -1504,6 +1510,20 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 .findViewHolderForAdapterPosition(activeContainerPopupAdapterPosition);
         if (holder instanceof ViewHolder) {
             ((ViewHolder) holder).refreshActiveContainerPopupSelection();
+        }
+    }
+
+    private void refreshActiveFurniturePopupContents() {
+        if (attachedRecyclerView == null) {
+            return;
+        }
+        if (activeFurniturePopupAdapterPosition == RecyclerView.NO_POSITION) {
+            return;
+        }
+        RecyclerView.ViewHolder holder = attachedRecyclerView
+                .findViewHolderForAdapterPosition(activeFurniturePopupAdapterPosition);
+        if (holder instanceof ViewHolder) {
+            ((ViewHolder) holder).refreshFurniturePopupContents();
         }
     }
 
@@ -3103,6 +3123,40 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     : getBindingAdapterPosition();
             refreshContainerPopupChildren(activeContainerPopupChildrenContainer, fallbackPosition,
                     containerPopupVisibilityMask);
+        }
+
+        void refreshFurniturePopupContents() {
+            if (furniturePopup == null || !furniturePopup.isShowing()) {
+                return;
+            }
+            if (currentItem == null || !currentItem.isFurniture()) {
+                return;
+            }
+            View contentView = furniturePopup.getContentView();
+            if (contentView == null) {
+                return;
+            }
+            LinearLayout sectionsContainer = contentView.findViewById(R.id.container_furniture_sections);
+            LinearLayout columnsContainer = contentView.findViewById(R.id.container_furniture_columns);
+            LinearLayout columnsHeaderContainer = furnitureColumnsHeaderContainer != null
+                    ? furnitureColumnsHeaderContainer
+                    : contentView.findViewById(R.id.container_furniture_columns_header);
+            LinearLayout columnsRowContainer = furnitureColumnsRowContainer != null
+                    ? furnitureColumnsRowContainer
+                    : contentView.findViewById(R.id.container_furniture_columns_row);
+            HorizontalScrollView columnsScroll = contentView.findViewById(R.id.scroll_furniture_columns);
+            Spinner columnDropdown = contentView.findViewById(R.id.spinner_furniture_columns);
+            selectedFurnitureColumn = RoomContentAdapter.this.activeFurniturePopupSelectedColumn;
+            if (columnsContainer != null) {
+                populateFurniturePopupColumns(columnsContainer, sectionsContainer,
+                        columnsHeaderContainer, columnsRowContainer, currentItem,
+                        columnsScroll, columnDropdown);
+            }
+            if (sectionsContainer != null) {
+                populateFurnitureSections(sectionsContainer, currentItem,
+                        RoomContentAdapter.this.activeFurniturePopupExpandedLevel,
+                        columnsHeaderContainer, columnsRowContainer);
+            }
         }
 
         private void populateContainerPopupChildren(@NonNull ViewGroup container,
