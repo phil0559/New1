@@ -5205,9 +5205,15 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     private static boolean containsFurniture(@NonNull List<RoomContentItem> items) {
         for (RoomContentItem current : items) {
-            if (current.isFurniture()) {
-                return true;
+            if (!current.isFurniture()) {
+                continue;
             }
+            if (current.isStorageTower()) {
+                // Les tours de rangement doivent pouvoir être déplacées vers un autre
+                // mobilier : ne pas les compter comme du mobilier "bloquant".
+                continue;
+            }
+            return true;
         }
         return false;
     }
