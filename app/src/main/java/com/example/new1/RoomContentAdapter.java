@@ -1648,7 +1648,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         return state;
     }
 
-    private void preparePendingFurniturePopupRestore(int furniturePosition,
+    public void preparePendingFurniturePopupRestore(int furniturePosition,
             @Nullable Integer levelToExpand,
             @Nullable Integer columnToDisplay,
             boolean autoOpenWhenBound) {
