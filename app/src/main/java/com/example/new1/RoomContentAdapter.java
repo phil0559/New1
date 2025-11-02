@@ -4294,6 +4294,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             RoomContentItem furnitureContext = (parent != null && parent.isFurniture()) ? parent : null;
             Integer level = item.getContainerLevel();
             Integer column = item.getContainerColumn();
+            boolean storageTower = furnitureContext != null && furnitureContext.isStorageTower();
             if (furnitureContext != null) {
                 if (level == null) {
                     if (furnitureContext.hasFurnitureTop()) {
@@ -4310,7 +4311,16 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         }
                     }
                 } else if (level > 0) {
-                    segments.add(context.getString(R.string.room_content_furniture_level_short, level));
+                    if (storageTower) {
+                        int normalizedColumn = (column != null && column > 0) ? column : 1;
+                        segments.add(context.getString(R.string.storage_tower_placement_column,
+                                normalizedColumn));
+                        segments.add(context.getString(R.string.storage_tower_placement_drawer,
+                                level));
+                    } else {
+                        segments.add(context.getString(R.string.room_content_furniture_level_short,
+                                level));
+                    }
                 }
             } else if (level != null) {
                 if (level == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
@@ -4322,7 +4332,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     segments.add(context.getString(R.string.room_content_furniture_level_short, level));
                 }
             }
-            if (column != null && column > 0) {
+            if (!storageTower && column != null && column > 0) {
                 segments.add(context.getString(R.string.room_content_furniture_column_short, column));
             }
             if (!item.isFurniture()) {
