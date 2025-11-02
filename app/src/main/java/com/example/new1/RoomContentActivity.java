@@ -563,6 +563,7 @@ public class RoomContentActivity extends Activity {
     private RoomContentAdapter.OptionsPopupRestoreState pendingOptionsPopupState;
     private boolean selectionModeEnabled;
     private boolean suppressFurnitureLevelSelectionCallbacks;
+    private boolean suppressFurnitureColumnSelectionCallbacks;
 
     public static Intent createIntent(Context context, @Nullable String establishmentName, @Nullable Room room) {
         Intent intent = new Intent(context, RoomContentActivity.class);
@@ -3709,7 +3710,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     View furnitureLevelContainer = dialogView.findViewById(R.id.container_move_furniture_level);
     Spinner furnitureLevelSpinner = dialogView.findViewById(R.id.spinner_move_furniture_level);
     View furnitureColumnContainer = dialogView.findViewById(R.id.container_move_furniture_column);
-    EditText furnitureColumnInput = dialogView.findViewById(R.id.input_move_furniture_column);
+    Spinner furnitureColumnSpinner = dialogView.findViewById(R.id.spinner_move_furniture_column);
 
     List<String> establishmentOptions = loadEstablishmentNames();
     if (establishmentOptions.isEmpty()) {
@@ -3770,22 +3771,8 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
     }
 
-    if (furnitureColumnInput != null) {
-        furnitureColumnInput.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                selectedContainerHolder.desiredColumn = parsePositiveInteger(s);
-                furnitureColumnInput.setError(null);
-            }
-        });
+    if (furnitureColumnSpinner != null) {
+        furnitureColumnSpinner.setOnItemSelectedListener(null);
     }
 
     int titleRes = multipleSelection
@@ -3810,7 +3797,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     : null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-                    furnitureColumnContainer, furnitureColumnInput,
+                    furnitureColumnContainer, furnitureColumnSpinner,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
                     selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
         }
@@ -3824,7 +3811,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     : null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-                    furnitureColumnContainer, furnitureColumnInput,
+                    furnitureColumnContainer, furnitureColumnSpinner,
                     null, selectedRoomHolder[0], primary, position, selectedContainerHolder,
                     additionalExcludedRanks, movingAnyFurniture);
         }
@@ -3838,7 +3825,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             selectedRoomHolder[0] = value != null ? value.toString() : null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-                    furnitureColumnContainer, furnitureColumnInput,
+                    furnitureColumnContainer, furnitureColumnSpinner,
                     selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
                     selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
         }
@@ -3848,7 +3835,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             selectedRoomHolder[0] = null;
             updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-                    furnitureColumnContainer, furnitureColumnInput,
+                    furnitureColumnContainer, furnitureColumnSpinner,
                     selectedEstablishmentHolder[0], null, primary, position,
                     selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
         }
@@ -3867,7 +3854,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             : selectedRoomHolder[0];
     updateMoveDialogContainers(dialog, containerRadioGroup, containerLabel,
             furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-            furnitureColumnContainer, furnitureColumnInput,
+            furnitureColumnContainer, furnitureColumnSpinner,
             selectedEstablishmentHolder[0], selectedRoomHolder[0], primary, position,
             selectedContainerHolder, additionalExcludedRanks, movingAnyFurniture);
 
@@ -3938,15 +3925,14 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                     selectedContainerHolder.desiredLevel = null;
                 }
                 if (maxColumns != null && maxColumns > 0) {
-                    Integer parsedColumn = parsePositiveInteger(furnitureColumnInput != null
-                            ? furnitureColumnInput.getText()
-                            : null);
-                    if (parsedColumn == null
+                    Integer parsedColumn = selectedContainerHolder.desiredColumn;
+                    if (parsedColumn == null || parsedColumn <= 0
                             || (maxColumns != null && parsedColumn > maxColumns)) {
-                        if (furnitureColumnInput != null) {
-                            furnitureColumnInput.setError(getString(
-                                    R.string.error_move_room_content_invalid_column));
-                            furnitureColumnInput.requestFocus();
+                        Toast.makeText(RoomContentActivity.this,
+                                R.string.error_move_room_content_invalid_column,
+                                Toast.LENGTH_SHORT).show();
+                        if (furnitureColumnSpinner != null) {
+                            furnitureColumnSpinner.performClick();
                         }
                         return;
                     }
@@ -4656,7 +4642,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @Nullable View furnitureLevelContainer,
             @Nullable Spinner furnitureLevelSpinner,
             @Nullable View furnitureColumnContainer,
-            @Nullable EditText furnitureColumnInput,
+            @Nullable Spinner furnitureColumnSpinner,
             @Nullable String establishment,
             @Nullable String room,
             @NonNull RoomContentItem item,
@@ -4667,7 +4653,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         if (containerGroup == null) {
             refreshFurniturePlacementInputs(selection.selectedOption, item, furnitureDetailsContainer,
                     furnitureLevelContainer, furnitureLevelSpinner, furnitureColumnContainer,
-                    furnitureColumnInput, selection);
+                    furnitureColumnSpinner, selection);
             return;
         }
         List<ContainerOption> options = buildContainerOptions(establishment, room, item, position,
@@ -4742,12 +4728,12 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             }
             refreshFurniturePlacementInputs(selection.selectedOption, item,
                     furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-                    furnitureColumnContainer, furnitureColumnInput, selection);
+                    furnitureColumnContainer, furnitureColumnSpinner, selection);
         });
         containerGroup.check(checkedId);
         refreshFurniturePlacementInputs(selection.selectedOption, item,
                 furnitureDetailsContainer, furnitureLevelContainer, furnitureLevelSpinner,
-                furnitureColumnContainer, furnitureColumnInput, selection);
+                furnitureColumnContainer, furnitureColumnSpinner, selection);
     }
 
     private void refreshFurniturePlacementInputs(@Nullable ContainerOption option,
@@ -4756,7 +4742,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @Nullable View levelContainer,
             @Nullable Spinner levelSpinner,
             @Nullable View columnContainer,
-            @Nullable EditText columnInput,
+            @Nullable Spinner columnSpinner,
             @NonNull ContainerSelection selection) {
         if (detailsContainer == null) {
             return;
@@ -4773,10 +4759,11 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 levelSpinner.setOnItemSelectedListener(null);
                 levelSpinner.setAdapter(null);
             }
-            if (columnInput != null) {
-                columnInput.setText(null);
-                columnInput.setError(null);
+            if (columnSpinner != null) {
+                columnSpinner.setOnItemSelectedListener(null);
+                columnSpinner.setAdapter(null);
             }
+            suppressFurnitureColumnSelectionCallbacks = false;
             selection.desiredLevel = null;
             selection.desiredColumn = null;
             return;
@@ -4798,10 +4785,11 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 levelSpinner.setOnItemSelectedListener(null);
                 levelSpinner.setAdapter(null);
             }
-            if (columnInput != null) {
-                columnInput.setText(null);
-                columnInput.setError(null);
+            if (columnSpinner != null) {
+                columnSpinner.setOnItemSelectedListener(null);
+                columnSpinner.setAdapter(null);
             }
+            suppressFurnitureColumnSelectionCallbacks = false;
             selection.desiredLevel = null;
             selection.desiredColumn = null;
             return;
@@ -4857,16 +4845,17 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 columnValue = maxColumns;
             }
             selection.desiredColumn = columnValue;
-            if (columnInput != null) {
-                columnInput.setText(columnValue != null ? String.valueOf(columnValue) : "");
-                columnInput.setError(null);
+            if (columnSpinner != null) {
+                configureFurnitureColumnSpinner(columnSpinner, furniture, option,
+                        columnValue, selection);
             }
         } else {
             selection.desiredColumn = null;
-            if (columnInput != null) {
-                columnInput.setText(null);
-                columnInput.setError(null);
+            if (columnSpinner != null) {
+                columnSpinner.setOnItemSelectedListener(null);
+                columnSpinner.setAdapter(null);
             }
+            suppressFurnitureColumnSelectionCallbacks = false;
         }
     }
 
@@ -4921,6 +4910,57 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         });
     }
 
+    private void configureFurnitureColumnSpinner(@NonNull Spinner columnSpinner,
+            @NonNull RoomContentItem furniture,
+            @NonNull ContainerOption option,
+            @Nullable Integer desiredColumn,
+            @NonNull ContainerSelection selection) {
+        List<ColumnOption> columnOptions = buildColumnOptions(furniture, option.contents);
+        ColumnSpinnerAdapter adapter;
+        if (columnSpinner.getAdapter() instanceof ColumnSpinnerAdapter) {
+            adapter = (ColumnSpinnerAdapter) columnSpinner.getAdapter();
+            adapter.updateOptions(columnOptions);
+        } else {
+            adapter = new ColumnSpinnerAdapter(this, columnOptions);
+            columnSpinner.setAdapter(adapter);
+        }
+        if (adapter.getCount() == 0) {
+            columnSpinner.setOnItemSelectedListener(null);
+            selection.desiredColumn = null;
+            return;
+        }
+        int selectionIndex = -1;
+        if (desiredColumn != null) {
+            selectionIndex = adapter.findPositionByValue(desiredColumn);
+        }
+        if (selectionIndex < 0) {
+            selectionIndex = 0;
+        }
+        suppressFurnitureColumnSelectionCallbacks = true;
+        columnSpinner.setSelection(selectionIndex, false);
+        suppressFurnitureColumnSelectionCallbacks = false;
+        ColumnOption currentOption = adapter.getItem(selectionIndex);
+        selection.desiredColumn = currentOption != null ? currentOption.value : null;
+        ColumnSpinnerAdapter finalAdapter = adapter;
+        columnSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (suppressFurnitureColumnSelectionCallbacks) {
+                    return;
+                }
+                ColumnOption option = finalAdapter.getItem(position);
+                selection.desiredColumn = option != null ? option.value : null;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                if (!suppressFurnitureColumnSelectionCallbacks) {
+                    selection.desiredColumn = null;
+                }
+            }
+        });
+    }
+
     @NonNull
     private List<LevelOption> buildLevelOptions(@NonNull RoomContentItem furniture,
             @NonNull List<RoomContentItem> contents) {
@@ -4965,6 +5005,42 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         return options;
     }
 
+    @NonNull
+    private List<ColumnOption> buildColumnOptions(@NonNull RoomContentItem furniture,
+            @NonNull List<RoomContentItem> contents) {
+        LinkedHashSet<Integer> values = new LinkedHashSet<>();
+        Integer maxColumns = furniture.getFurnitureColumns();
+        if (maxColumns != null && maxColumns > 0) {
+            for (int index = 1; index <= maxColumns; index++) {
+                values.add(index);
+            }
+        } else {
+            for (RoomContentItem child : contents) {
+                if (child == null) {
+                    continue;
+                }
+                Integer column = child.getContainerColumn();
+                if (column != null && column > 0) {
+                    values.add(column);
+                }
+            }
+            if (values.isEmpty()) {
+                values.add(1);
+            }
+        }
+        List<Integer> sortedValues = new ArrayList<>(values);
+        Collections.sort(sortedValues);
+        List<ColumnOption> options = new ArrayList<>(sortedValues.size());
+        for (Integer value : sortedValues) {
+            if (value == null) {
+                continue;
+            }
+            String label = getString(R.string.room_content_furniture_column_short, value);
+            options.add(new ColumnOption(value, label));
+        }
+        return options;
+    }
+
     private static final class LevelOption {
         final int value;
         @NonNull
@@ -5002,6 +5078,79 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 }
             }
             return -1;
+        }
+    }
+
+    private static final class ColumnOption {
+        final int value;
+        @NonNull
+        final String label;
+
+        ColumnOption(int value, @NonNull String label) {
+            this.value = value;
+            this.label = label;
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return label;
+        }
+    }
+
+    private static final class ColumnSpinnerAdapter extends ArrayAdapter<ColumnOption> {
+        ColumnSpinnerAdapter(@NonNull Context context, @NonNull List<ColumnOption> options) {
+            super(context, R.layout.item_furniture_column_spinner, new ArrayList<>(options));
+            setDropDownViewResource(R.layout.item_furniture_column_spinner_dropdown);
+        }
+
+        void updateOptions(@NonNull List<ColumnOption> options) {
+            clear();
+            addAll(options);
+            notifyDataSetChanged();
+        }
+
+        int findPositionByValue(int value) {
+            for (int index = 0; index < getCount(); index++) {
+                ColumnOption option = getItem(index);
+                if (option != null && option.value == value) {
+                    return index;
+                }
+            }
+            return -1;
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+            View view = convertView;
+            if (view == null) {
+                view = LayoutInflater.from(getContext()).inflate(
+                        R.layout.item_furniture_column_spinner, parent, false);
+            }
+            TextView textView = view.findViewById(R.id.text_column_spinner);
+            ColumnOption option = getItem(position);
+            if (textView != null && option != null) {
+                textView.setText(option.label);
+            }
+            return view;
+        }
+
+        @NonNull
+        @Override
+        public View getDropDownView(int position, @Nullable View convertView,
+                @NonNull ViewGroup parent) {
+            View view = convertView;
+            if (view == null) {
+                view = LayoutInflater.from(getContext()).inflate(
+                        R.layout.item_furniture_column_spinner_dropdown, parent, false);
+            }
+            TextView textView = view.findViewById(R.id.text_column_spinner_dropdown);
+            ColumnOption option = getItem(position);
+            if (textView != null && option != null) {
+                textView.setText(option.label);
+            }
+            return view;
         }
     }
 
