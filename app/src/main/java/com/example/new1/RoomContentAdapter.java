@@ -4426,6 +4426,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             Integer furnitureLevels = item.getFurnitureLevels();
             int levelCount = furnitureLevels != null && furnitureLevels > 0 ? furnitureLevels : 0;
             boolean storageTower = item.isStorageTower();
+            if (storageTower && levelCount <= 0) {
+                levelCount = 1;
+            }
             boolean hasBottom = storageTower ? false : item.hasFurnitureBottom();
             List<RoomContentItem> children = item.getChildren();
             int parentPosition = RoomContentAdapter.this.findPositionForItem(item);
