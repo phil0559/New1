@@ -197,6 +197,8 @@
     <string name="dialog_label_storage_tower_drawers">Number of drawers</string>
     <string name="dialog_storage_tower_type_default">- Storage tower</string>
     <string name="error_storage_tower_name_required">The storage tower name is required</string>
+    <string name="error_storage_tower_drawers_required">Number of drawers is required</string>
+    <string name="error_storage_tower_columns_required">Number of columns is required</string>
     <string name="room_storage_tower_added_confirmation">Storage tower added to the room.</string>
     <string name="room_storage_tower_updated_confirmation">Storage tower updated.</string>
     <string name="storage_tower_popup_drawer_title">Drawer %1$d</string>

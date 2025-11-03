@@ -242,6 +242,8 @@
     <string name="dialog_label_storage_tower_drawers">Número de cajones</string>
     <string name="dialog_storage_tower_type_default">- Torre de almacenamiento</string>
     <string name="error_storage_tower_name_required">El nombre de la torre de almacenamiento es obligatorio</string>
+    <string name="error_storage_tower_drawers_required">Se requiere el número de cajones</string>
+    <string name="error_storage_tower_columns_required">Se requiere el número de columnas</string>
     <string name="room_storage_tower_added_confirmation">Torre de almacenamiento agregada a la habitación.</string>
     <string name="room_storage_tower_updated_confirmation">Torre de almacenamiento actualizada.</string>
     <string name="storage_tower_popup_drawer_title">Cajón %1$d</string>
