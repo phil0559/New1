@@ -204,6 +204,8 @@
     <string name="storage_tower_popup_drawer_title">Drawer %1$d</string>
     <string name="storage_tower_popup_section_empty">No item in this drawer.</string>
     <string name="error_furniture_name_required">The furniture name is required</string>
+    <string name="error_furniture_levels_required">Number of drawers is required</string>
+    <string name="error_furniture_columns_required">Number of columns is required</string>
     <string name="dialog_barcode_section_title">Barcode</string>
     <string name="dialog_button_barcode">Scan</string>
     <string name="dialog_button_generate_barcode">Create</string>

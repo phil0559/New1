@@ -225,6 +225,8 @@
     <string name="storage_tower_placement_column">C%1$d</string>
     <string name="storage_tower_placement_drawer">T%1$d</string>
     <string name="error_furniture_name_required">Le nom du mobilier est obligatoire</string>
+    <string name="error_furniture_levels_required">Le nombre de tiroirs est obligatoire</string>
+    <string name="error_furniture_columns_required">Le nombre de colonnes est obligatoire</string>
     <string name="dialog_barcode_section_title">Code-barres</string>
     <string name="dialog_button_barcode">Flasher</string>
     <string name="dialog_button_generate_barcode">Créer</string>
