@@ -22,7 +22,7 @@
     <color name="popup_delete_red">#D32F2F</color>
     <color name="popup_container_blue">#D6EEF8</color>
     <color name="popup_container_light_gray">#F2F2F2</color>
-    <color name="storage_tower_popup_background">#F3E6CE</color>
+    <color name="storage_tower_popup_background">#ADD8E6</color>
     <color name="furniture_popup_section_top_background">#F5E5CC</color>
     <color name="furniture_popup_section_top_border">#80B08A60</color>
     <color name="furniture_popup_section_level_background">#E7DAF7</color>
