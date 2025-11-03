@@ -83,8 +83,10 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.text.Normalizer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -4335,18 +4337,24 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         if (position < 0 || position >= roomContentItems.size()) {
             return;
         }
-        RoomContentItem removedItem = roomContentItems.remove(position);
-        boolean wasContainer = removedItem != null && removedItem.isContainer();
+        RoomContentItem itemToRemove = roomContentItems.get(position);
+        if (itemToRemove == null) {
+            return;
+        }
+        boolean wasContainer = itemToRemove.isContainer();
         Set<RoomContentItem> containersToRefresh = new LinkedHashSet<>();
-        if (removedItem != null) {
-            Long parentRank = removedItem.getParentRank();
-            if (parentRank != null) {
-                RoomContentItem parent = findContainerByRank(roomContentItems, parentRank);
-                if (parent != null) {
-                    containersToRefresh.add(parent);
-                }
+        Long parentRank = itemToRemove.getParentRank();
+        if (parentRank != null) {
+            RoomContentItem parent = findContainerByRank(roomContentItems, parentRank);
+            if (parent != null) {
+                containersToRefresh.add(parent);
             }
         }
+        if (itemToRemove.isStorageTower()) {
+            List<RoomContentItem> descendants = collectDescendants(itemToRemove);
+            removeItemsFromRoomContent(descendants);
+        }
+        removeItemsFromRoomContent(Collections.singleton(itemToRemove));
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         sortRoomContentItems();
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -4368,6 +4376,16 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         Set<RoomContentItem> selection = Collections.newSetFromMap(new IdentityHashMap<>());
         selection.addAll(items);
+        Set<RoomContentItem> storageTowers = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (RoomContentItem candidate : selection) {
+            if (candidate != null && candidate.isStorageTower()) {
+                storageTowers.add(candidate);
+            }
+        }
+        for (RoomContentItem storageTower : storageTowers) {
+            List<RoomContentItem> descendants = collectDescendants(storageTower);
+            selection.addAll(descendants);
+        }
         boolean removedAny = false;
         int removedContainers = 0;
         int removedItems = 0;
@@ -4414,6 +4432,61 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
         exitSelectionMode();
+    }
+
+    @NonNull
+    private List<RoomContentItem> collectDescendants(@NonNull RoomContentItem parent) {
+        List<RoomContentItem> descendants = new ArrayList<>();
+        long parentRank = parent.getRank();
+        Map<Long, List<RoomContentItem>> childrenByParent = new HashMap<>();
+        for (RoomContentItem item : roomContentItems) {
+            Long candidateParentRank = item.getParentRank();
+            if (candidateParentRank == null) {
+                continue;
+            }
+            List<RoomContentItem> children = childrenByParent.get(candidateParentRank);
+            if (children == null) {
+                children = new ArrayList<>();
+                childrenByParent.put(candidateParentRank, children);
+            }
+            children.add(item);
+        }
+        List<RoomContentItem> directChildren = childrenByParent.get(parentRank);
+        if (directChildren == null || directChildren.isEmpty()) {
+            return descendants;
+        }
+        Set<RoomContentItem> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        ArrayDeque<RoomContentItem> stack = new ArrayDeque<>(directChildren);
+        while (!stack.isEmpty()) {
+            RoomContentItem current = stack.pop();
+            if (current == null || !seen.add(current)) {
+                continue;
+            }
+            descendants.add(current);
+            if (!current.isContainer()) {
+                continue;
+            }
+            List<RoomContentItem> nestedChildren = childrenByParent.get(current.getRank());
+            if (nestedChildren != null && !nestedChildren.isEmpty()) {
+                stack.addAll(nestedChildren);
+            }
+        }
+        return descendants;
+    }
+
+    private void removeItemsFromRoomContent(@NonNull Collection<RoomContentItem> itemsToRemove) {
+        if (itemsToRemove.isEmpty()) {
+            return;
+        }
+        Set<RoomContentItem> removalSet = Collections.newSetFromMap(new IdentityHashMap<>());
+        removalSet.addAll(itemsToRemove);
+        Iterator<RoomContentItem> iterator = roomContentItems.iterator();
+        while (iterator.hasNext()) {
+            RoomContentItem current = iterator.next();
+            if (removalSet.contains(current)) {
+                iterator.remove();
+            }
+        }
     }
 
     private boolean moveRoomContentItem(@NonNull RoomContentItem item, int position,
