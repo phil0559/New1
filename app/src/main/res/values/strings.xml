@@ -214,7 +214,7 @@
     <string name="dialog_label_storage_tower_photos_default">Photos de la tour de rangement (0)</string>
     <string name="dialog_label_storage_tower_photos_template">Photos de la tour de rangement (%1$d)</string>
     <string name="dialog_label_storage_tower_drawers">Nombre de tiroirs</string>
-    <string name="dialog_storage_tower_type_default"></string>
+    <string name="dialog_storage_tower_type_default">- Tour de rangement</string>
     <string name="error_storage_tower_name_required">Le nom de la tour de rangement est obligatoire</string>
     <string name="room_storage_tower_added_confirmation">Tour de rangement ajoutée à la pièce.</string>
     <string name="room_storage_tower_updated_confirmation">Tour de rangement mise à jour.</string>
