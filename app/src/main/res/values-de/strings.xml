@@ -293,6 +293,8 @@
     <string name="dialog_content_description_edit_custom_field_label">Bezeichnung des benutzerdefinierten Feldes bearbeiten</string>
     <string name="error_room_content_name_required">Der Name des Elements ist erforderlich</string>
     <string name="error_furniture_name_required">Der Name des Möbels ist erforderlich</string>
+    <string name="error_furniture_levels_required">Die Anzahl der Schubladen ist erforderlich</string>
+    <string name="error_furniture_columns_required">Die Anzahl der Spalten ist erforderlich</string>
     <string name="content_description_previous_photo">Vorheriges Foto anzeigen</string>
     <string name="content_description_next_photo">Nächstes Foto anzeigen</string>
     <string name="content_description_delete_photo">Angezeigtes Foto löschen</string>

@@ -292,6 +292,8 @@
     <string name="dialog_content_description_edit_custom_field_label">Editar el nombre del campo personalizado</string>
     <string name="error_room_content_name_required">El nombre del elemento es obligatorio</string>
     <string name="error_furniture_name_required">El nombre del mobiliario es obligatorio</string>
+    <string name="error_furniture_levels_required">La cantidad de cajones es obligatoria</string>
+    <string name="error_furniture_columns_required">La cantidad de columnas es obligatoria</string>
     <string name="content_description_previous_photo">Ver la foto anterior</string>
     <string name="content_description_next_photo">Ver la foto siguiente</string>
     <string name="content_description_delete_photo">Eliminar la foto mostrada</string>

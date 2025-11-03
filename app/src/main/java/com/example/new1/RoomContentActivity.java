@@ -3072,6 +3072,19 @@ public class RoomContentActivity extends Activity {
         confirmButton.setAlpha(enabled ? 1f : ACTION_DISABLED_ALPHA);
     }
 
+    private void updateFurnitureConfirmButtonState(@Nullable Button confirmButton,
+            @Nullable EditText nameInput, @Nullable EditText levelsInput,
+            @Nullable EditText columnsInput) {
+        if (confirmButton == null) {
+            return;
+        }
+        boolean enabled = hasNonEmptyText(nameInput)
+                && hasPositiveInteger(levelsInput)
+                && hasPositiveInteger(columnsInput);
+        confirmButton.setEnabled(enabled);
+        confirmButton.setAlpha(enabled ? 1f : ACTION_DISABLED_ALPHA);
+    }
+
     private boolean hasNonEmptyText(@Nullable EditText input) {
         if (input == null || input.getText() == null) {
             return false;
@@ -3289,6 +3302,15 @@ public class RoomContentActivity extends Activity {
                         }
                     }
                 }
+                if (levelsValue == null) {
+                    if (levelsInput != null) {
+                        levelsInput.setError(getString(R.string.error_furniture_levels_required));
+                        levelsInput.requestFocus();
+                    }
+                    return;
+                } else if (levelsInput != null) {
+                    levelsInput.setError(null);
+                }
 
                 Integer columnsValue = null;
                 if (columnsInput != null && columnsInput.getText() != null) {
@@ -3302,6 +3324,15 @@ public class RoomContentActivity extends Activity {
                         } catch (NumberFormatException ignored) {
                         }
                     }
+                }
+                if (columnsValue == null) {
+                    if (columnsInput != null) {
+                        columnsInput.setError(getString(R.string.error_furniture_columns_required));
+                        columnsInput.requestFocus();
+                    }
+                    return;
+                } else if (columnsInput != null) {
+                    columnsInput.setError(null);
                 }
 
                 boolean hasTop = topCheckBox != null && topCheckBox.isChecked();
@@ -3359,6 +3390,8 @@ public class RoomContentActivity extends Activity {
             });
         }
 
+        updateFurnitureConfirmButtonState(confirmButton, nameInput, levelsInput, columnsInput);
+
         dialog.setOnDismissListener(d -> {
             if (currentFormState == formState) {
                 currentFormState = null;
@@ -3392,6 +3425,80 @@ public class RoomContentActivity extends Activity {
                     } else {
                         nameInput.setError(null);
                     }
+                    updateFurnitureConfirmButtonState(confirmButton, nameInput, levelsInput,
+                            columnsInput);
+                }
+            });
+        }
+
+        if (levelsInput != null) {
+            levelsInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    if (levelsInput == null) {
+                        return;
+                    }
+                    String value = editable != null ? editable.toString().trim() : "";
+                    if (value.isEmpty()) {
+                        levelsInput.setError(getString(R.string.error_furniture_levels_required));
+                    } else {
+                        try {
+                            int parsed = Integer.parseInt(value);
+                            if (parsed > 0) {
+                                levelsInput.setError(null);
+                            } else {
+                                levelsInput.setError(getString(R.string.error_furniture_levels_required));
+                            }
+                        } catch (NumberFormatException e) {
+                            levelsInput.setError(getString(R.string.error_furniture_levels_required));
+                        }
+                    }
+                    updateFurnitureConfirmButtonState(confirmButton, nameInput, levelsInput,
+                            columnsInput);
+                }
+            });
+        }
+
+        if (columnsInput != null) {
+            columnsInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    if (columnsInput == null) {
+                        return;
+                    }
+                    String value = editable != null ? editable.toString().trim() : "";
+                    if (value.isEmpty()) {
+                        columnsInput.setError(getString(R.string.error_furniture_columns_required));
+                    } else {
+                        try {
+                            int parsed = Integer.parseInt(value);
+                            if (parsed > 0) {
+                                columnsInput.setError(null);
+                            } else {
+                                columnsInput.setError(getString(R.string.error_furniture_columns_required));
+                            }
+                        } catch (NumberFormatException e) {
+                            columnsInput.setError(getString(R.string.error_furniture_columns_required));
+                        }
+                    }
+                    updateFurnitureConfirmButtonState(confirmButton, nameInput, levelsInput,
+                            columnsInput);
                 }
             });
         }
