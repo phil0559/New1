@@ -243,6 +243,8 @@
     <string name="dialog_label_storage_tower_drawers">Anzahl der Schubladen</string>
     <string name="dialog_storage_tower_type_default">- Aufbewahrungsturm</string>
     <string name="error_storage_tower_name_required">Der Name des Aufbewahrungsturms ist erforderlich</string>
+    <string name="error_storage_tower_drawers_required">Die Anzahl der Schubladen ist erforderlich</string>
+    <string name="error_storage_tower_columns_required">Die Anzahl der Spalten ist erforderlich</string>
     <string name="room_storage_tower_added_confirmation">Aufbewahrungsturm wurde dem Raum hinzugefügt.</string>
     <string name="room_storage_tower_updated_confirmation">Aufbewahrungsturm aktualisiert.</string>
     <string name="storage_tower_popup_drawer_title">Schublade %1$d</string>

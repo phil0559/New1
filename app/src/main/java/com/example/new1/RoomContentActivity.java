@@ -2777,19 +2777,89 @@ public class RoomContentActivity extends Activity {
 
         if (confirmButton != null) {
             confirmButton.setOnClickListener(v -> {
+                View firstInvalidField = null;
+
                 String trimmedName = null;
                 if (nameInput != null && nameInput.getText() != null) {
                     trimmedName = nameInput.getText().toString().trim();
                 }
-                if (trimmedName == null || trimmedName.isEmpty()) {
+                if (TextUtils.isEmpty(trimmedName)) {
                     if (nameInput != null) {
                         nameInput.setError(getString(R.string.error_storage_tower_name_required));
-                        nameInput.requestFocus();
+                        firstInvalidField = nameInput;
                     }
+                } else if (nameInput != null) {
+                    nameInput.setError(null);
+                }
+
+                Integer drawersValue = null;
+                if (drawersInput != null) {
+                    CharSequence drawersText = drawersInput.getText();
+                    String rawDrawers = drawersText != null ? drawersText.toString().trim() : "";
+                    if (rawDrawers.isEmpty()) {
+                        drawersInput.setError(getString(R.string.error_storage_tower_drawers_required));
+                        if (firstInvalidField == null) {
+                            firstInvalidField = drawersInput;
+                        }
+                    } else {
+                        try {
+                            int parsed = Integer.parseInt(rawDrawers);
+                            if (parsed > 0) {
+                                drawersValue = parsed;
+                                drawersInput.setError(null);
+                            } else {
+                                drawersInput.setError(getString(R.string.error_storage_tower_drawers_required));
+                                if (firstInvalidField == null) {
+                                    firstInvalidField = drawersInput;
+                                }
+                            }
+                        } catch (NumberFormatException ignored) {
+                            drawersInput.setError(getString(R.string.error_storage_tower_drawers_required));
+                            if (firstInvalidField == null) {
+                                firstInvalidField = drawersInput;
+                            }
+                        }
+                    }
+                }
+
+                Integer columnsValue = null;
+                if (columnsInput != null) {
+                    CharSequence columnsText = columnsInput.getText();
+                    String rawColumns = columnsText != null ? columnsText.toString().trim() : "";
+                    if (rawColumns.isEmpty()) {
+                        columnsInput.setError(getString(R.string.error_storage_tower_columns_required));
+                        if (firstInvalidField == null) {
+                            firstInvalidField = columnsInput;
+                        }
+                    } else {
+                        try {
+                            int parsed = Integer.parseInt(rawColumns);
+                            if (parsed > 0) {
+                                columnsValue = parsed;
+                                columnsInput.setError(null);
+                            } else {
+                                columnsInput.setError(getString(R.string.error_storage_tower_columns_required));
+                                if (firstInvalidField == null) {
+                                    firstInvalidField = columnsInput;
+                                }
+                            }
+                        } catch (NumberFormatException ignored) {
+                            columnsInput.setError(getString(R.string.error_storage_tower_columns_required));
+                            if (firstInvalidField == null) {
+                                firstInvalidField = columnsInput;
+                            }
+                        }
+                    }
+                }
+
+                if (firstInvalidField != null) {
+                    firstInvalidField.requestFocus();
+                    updateStorageTowerConfirmButtonState(confirmButton, nameInput, drawersInput, columnsInput);
                     return;
                 }
-                if (nameInput != null) {
-                    nameInput.setError(null);
+
+                if (trimmedName == null) {
+                    trimmedName = "";
                 }
 
                 String commentValue = null;
@@ -2813,34 +2883,6 @@ public class RoomContentActivity extends Activity {
                     String rawValue = customTypeInput.getText().toString().trim();
                     if (!rawValue.isEmpty()) {
                         customTypeValue = rawValue;
-                    }
-                }
-
-                Integer drawersValue = null;
-                if (drawersInput != null && drawersInput.getText() != null) {
-                    String rawDrawers = drawersInput.getText().toString().trim();
-                    if (!rawDrawers.isEmpty()) {
-                        try {
-                            int parsed = Integer.parseInt(rawDrawers);
-                            if (parsed > 0) {
-                                drawersValue = parsed;
-                            }
-                        } catch (NumberFormatException ignored) {
-                        }
-                    }
-                }
-
-                Integer columnsValue = null;
-                if (columnsInput != null && columnsInput.getText() != null) {
-                    String rawColumns = columnsInput.getText().toString().trim();
-                    if (!rawColumns.isEmpty()) {
-                        try {
-                            int parsed = Integer.parseInt(rawColumns);
-                            if (parsed > 0) {
-                                columnsValue = parsed;
-                            }
-                        } catch (NumberFormatException ignored) {
-                        }
                     }
                 }
 
@@ -2930,14 +2972,125 @@ public class RoomContentActivity extends Activity {
                     } else {
                         nameInput.setError(null);
                     }
+                    updateStorageTowerConfirmButtonState(confirmButton, nameInput, drawersInput,
+                            columnsInput);
                 }
             });
         }
+
+        if (drawersInput != null) {
+            drawersInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    if (drawersInput == null) {
+                        return;
+                    }
+                    String value = editable != null ? editable.toString().trim() : "";
+                    if (value.isEmpty()) {
+                        drawersInput.setError(getString(R.string.error_storage_tower_drawers_required));
+                    } else {
+                        try {
+                            int parsed = Integer.parseInt(value);
+                            if (parsed > 0) {
+                                drawersInput.setError(null);
+                            } else {
+                                drawersInput.setError(getString(R.string.error_storage_tower_drawers_required));
+                            }
+                        } catch (NumberFormatException e) {
+                            drawersInput.setError(getString(R.string.error_storage_tower_drawers_required));
+                        }
+                    }
+                    updateStorageTowerConfirmButtonState(confirmButton, nameInput, drawersInput,
+                            columnsInput);
+                }
+            });
+        }
+
+        if (columnsInput != null) {
+            columnsInput.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+                    if (columnsInput == null) {
+                        return;
+                    }
+                    String value = editable != null ? editable.toString().trim() : "";
+                    if (value.isEmpty()) {
+                        columnsInput.setError(getString(R.string.error_storage_tower_columns_required));
+                    } else {
+                        try {
+                            int parsed = Integer.parseInt(value);
+                            if (parsed > 0) {
+                                columnsInput.setError(null);
+                            } else {
+                                columnsInput.setError(getString(R.string.error_storage_tower_columns_required));
+                            }
+                        } catch (NumberFormatException e) {
+                            columnsInput.setError(getString(R.string.error_storage_tower_columns_required));
+                        }
+                    }
+                    updateStorageTowerConfirmButtonState(confirmButton, nameInput, drawersInput,
+                            columnsInput);
+                }
+            });
+        }
+
+        updateStorageTowerConfirmButtonState(confirmButton, nameInput, drawersInput, columnsInput);
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
             dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+    }
+
+    private void updateStorageTowerConfirmButtonState(@Nullable Button confirmButton,
+            @Nullable EditText nameInput, @Nullable EditText drawersInput,
+            @Nullable EditText columnsInput) {
+        if (confirmButton == null) {
+            return;
+        }
+        boolean enabled = hasNonEmptyText(nameInput)
+                && hasPositiveInteger(drawersInput)
+                && hasPositiveInteger(columnsInput);
+        confirmButton.setEnabled(enabled);
+        confirmButton.setAlpha(enabled ? 1f : ACTION_DISABLED_ALPHA);
+    }
+
+    private boolean hasNonEmptyText(@Nullable EditText input) {
+        if (input == null || input.getText() == null) {
+            return false;
+        }
+        return !input.getText().toString().trim().isEmpty();
+    }
+
+    private boolean hasPositiveInteger(@Nullable EditText input) {
+        if (input == null || input.getText() == null) {
+            return false;
+        }
+        String value = input.getText().toString().trim();
+        if (value.isEmpty()) {
+            return false;
+        }
+        try {
+            return Integer.parseInt(value) > 0;
+        } catch (NumberFormatException e) {
+            return false;
         }
     }
 
