@@ -85,6 +85,7 @@
     <string name="room_container_added_confirmation">Container added to the room.</string>
     <string name="room_container_updated_confirmation">Container updated.</string>
     <string name="room_container_deleted_confirmation">Container deleted.</string>
+    <string name="room_container_copied_confirmation">Container duplicated along with all of its contents.</string>
     <string name="room_content_deleted_selection_confirmation_containers">Containers deleted.</string>
     <string name="room_content_deleted_selection_confirmation_items">Items deleted.</string>
     <string name="room_content_deleted_selection_confirmation">Selection deleted.</string>

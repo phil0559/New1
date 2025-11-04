@@ -104,6 +104,7 @@
     <string name="room_container_added_confirmation">Contenant ajouté à la pièce.</string>
     <string name="room_container_updated_confirmation">Contenant mis à jour.</string>
     <string name="room_container_deleted_confirmation">Contenant supprimé.</string>
+    <string name="room_container_copied_confirmation">Contenant copié avec l’intégralité de son contenu.</string>
     <string name="room_content_deleted_selection_confirmation_containers">Contenants supprimés.</string>
     <string name="room_content_deleted_selection_confirmation_items">Éléments supprimés.</string>
     <string name="room_content_deleted_selection_confirmation">Sélection supprimée.</string>
