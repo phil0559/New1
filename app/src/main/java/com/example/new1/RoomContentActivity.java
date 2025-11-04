@@ -4350,7 +4350,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 containersToRefresh.add(parent);
             }
         }
-        if (itemToRemove.isStorageTower()) {
+        if (itemToRemove.isContainer()) {
             List<RoomContentItem> descendants = collectDescendants(itemToRemove);
             removeItemsFromRoomContent(descendants);
         }
@@ -4376,14 +4376,14 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
         Set<RoomContentItem> selection = Collections.newSetFromMap(new IdentityHashMap<>());
         selection.addAll(items);
-        Set<RoomContentItem> storageTowers = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<RoomContentItem> containers = Collections.newSetFromMap(new IdentityHashMap<>());
         for (RoomContentItem candidate : selection) {
-            if (candidate != null && candidate.isStorageTower()) {
-                storageTowers.add(candidate);
+            if (candidate != null && candidate.isContainer()) {
+                containers.add(candidate);
             }
         }
-        for (RoomContentItem storageTower : storageTowers) {
-            List<RoomContentItem> descendants = collectDescendants(storageTower);
+        for (RoomContentItem container : containers) {
+            List<RoomContentItem> descendants = collectDescendants(container);
             selection.addAll(descendants);
         }
         boolean removedAny = false;
