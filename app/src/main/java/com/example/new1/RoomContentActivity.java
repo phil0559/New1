@@ -2539,6 +2539,7 @@ public class RoomContentActivity extends Activity {
                         ? new ArrayList<>(formState.photos)
                         : new ArrayList<>();
 
+                final boolean copyingContainer = !isEditing && containerToEdit != null;
                 RoomContentItem newItem = new RoomContentItem(trimmedName,
                         trimmedComment,
                         selectedType,
@@ -2555,6 +2556,8 @@ public class RoomContentActivity extends Activity {
                         photoValues,
                         true,
                         0);
+                Set<RoomContentItem> containersToRefresh = new LinkedHashSet<>();
+                RoomContentItem targetContainer = null;
                 if (isEditing) {
                     if (positionToEdit < 0 || positionToEdit >= roomContentItems.size()) {
                         dialog.dismiss();
@@ -2564,7 +2567,7 @@ public class RoomContentActivity extends Activity {
                     preserveHierarchyMetadata(existingItem, newItem);
                     roomContentItems.set(positionToEdit, newItem);
                 } else {
-                    RoomContentItem targetContainer = forcedParentRank != null
+                    targetContainer = forcedParentRank != null
                             ? findContainerByRank(roomContentItems, forcedParentRank)
                             : null;
                     RoomContentHierarchyHelper.attachToContainer(newItem, targetContainer);
@@ -2572,8 +2575,13 @@ public class RoomContentActivity extends Activity {
                     if (targetContainer != null) {
                         int insertionIndex = findInsertionIndexForContainer(targetContainer);
                         roomContentItems.add(insertionIndex, newItem);
+                        containersToRefresh.add(targetContainer);
                     } else {
                         roomContentItems.add(newItem);
+                    }
+                    if (copyingContainer) {
+                        RoomContentHierarchyHelper.ensureRanks(roomContentItems);
+                        duplicateContainerContents(containerToEdit, newItem, containersToRefresh);
                     }
                 }
                 RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -2591,10 +2599,18 @@ public class RoomContentActivity extends Activity {
                 }
                 saveRoomContent();
                 updateEmptyState();
-                int messageRes = isEditing
-                        ? R.string.room_container_updated_confirmation
-                        : R.string.room_container_added_confirmation;
-                Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+                scheduleContainerIndicatorRefresh(containersToRefresh);
+                if (copyingContainer) {
+                    Toast.makeText(this,
+                            R.string.room_container_copied_confirmation,
+                            Toast.LENGTH_LONG)
+                            .show();
+                } else {
+                    int messageRes = isEditing
+                            ? R.string.room_container_updated_confirmation
+                            : R.string.room_container_added_confirmation;
+                    Toast.makeText(this, messageRes, Toast.LENGTH_SHORT).show();
+                }
                 dialog.dismiss();
             });
         }
@@ -4472,6 +4488,80 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             }
         }
         return descendants;
+    }
+
+    private void duplicateContainerContents(@NonNull RoomContentItem sourceContainer,
+            @NonNull RoomContentItem newContainer,
+            @NonNull Set<RoomContentItem> containersToRefresh) {
+        List<RoomContentItem> directChildren = sourceContainer.getChildren();
+        if (directChildren.isEmpty()) {
+            containersToRefresh.add(newContainer);
+            return;
+        }
+        Map<Long, RoomContentItem> clonedParents = new LinkedHashMap<>();
+        clonedParents.put(sourceContainer.getRank(), newContainer);
+        ArrayDeque<RoomContentItem> stack = new ArrayDeque<>(directChildren);
+        while (!stack.isEmpty()) {
+            RoomContentItem originalChild = stack.removeFirst();
+            Long parentRank = originalChild.getParentRank();
+            RoomContentItem parentClone = parentRank != null ? clonedParents.get(parentRank) : null;
+            RoomContentItem clonedChild = cloneRoomContentItem(originalChild);
+            RoomContentHierarchyHelper.attachToContainer(clonedChild, parentClone);
+            if (parentClone != null) {
+                updateFurniturePlacement(clonedChild,
+                        parentClone,
+                        originalChild.getContainerLevel(),
+                        originalChild.getContainerColumn());
+                containersToRefresh.add(parentClone);
+            } else {
+                updateFurniturePlacement(clonedChild, null, null, null);
+            }
+            roomContentItems.add(clonedChild);
+            if (originalChild.isContainer()) {
+                clonedParents.put(originalChild.getRank(), clonedChild);
+                stack.addAll(originalChild.getChildren());
+            }
+        }
+        containersToRefresh.add(newContainer);
+    }
+
+    @NonNull
+    private RoomContentItem cloneRoomContentItem(@NonNull RoomContentItem original) {
+        try {
+            RoomContentItem copy = RoomContentItem.fromJson(original.toJson());
+            copy.setRank(-1L);
+            copy.setParentRank(null);
+            copy.setDisplayRank(null);
+            copy.setDisplayed(false);
+            copy.setAttachedItemCount(0);
+            copy.clearChildren();
+            return copy;
+        } catch (JSONException exception) {
+            String fallbackName = original.getName() != null ? original.getName() : "";
+            RoomContentItem copy = new RoomContentItem(fallbackName,
+                    original.getComment(),
+                    original.getType(),
+                    original.getCategory(),
+                    original.getBarcode(),
+                    original.getSeries(),
+                    original.getNumber(),
+                    original.getAuthor(),
+                    original.getPublisher(),
+                    original.getEdition(),
+                    original.getPublicationDate(),
+                    original.getSummary(),
+                    new ArrayList<>(original.getTracks()),
+                    new ArrayList<>(original.getPhotos()),
+                    original.isContainer(),
+                    0);
+            copy.setRank(-1L);
+            copy.setParentRank(null);
+            copy.setDisplayRank(null);
+            copy.setDisplayed(false);
+            copy.setContainerLevel(original.getContainerLevel());
+            copy.setContainerColumn(original.getContainerColumn());
+            return copy;
+        }
     }
 
     private void removeItemsFromRoomContent(@NonNull Collection<RoomContentItem> itemsToRemove) {

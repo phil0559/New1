@@ -85,6 +85,7 @@
     <string name="room_container_added_confirmation">Behälter wurde dem Raum hinzugefügt.</string>
     <string name="room_container_updated_confirmation">Behälter aktualisiert.</string>
     <string name="room_container_deleted_confirmation">Behälter gelöscht.</string>
+    <string name="room_container_copied_confirmation">Behälter inklusive seines gesamten Inhalts kopiert.</string>
     <string name="room_content_deleted_selection_confirmation_containers">Behälter gelöscht.</string>
     <string name="room_content_deleted_selection_confirmation_items">Elemente gelöscht.</string>
     <string name="room_content_deleted_selection_confirmation">Auswahl gelöscht.</string>
