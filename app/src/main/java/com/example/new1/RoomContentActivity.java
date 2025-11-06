@@ -613,7 +613,7 @@ public class RoomContentActivity extends Activity {
         searchButton = findViewById(R.id.button_search);
         if (searchButton != null) {
             searchButton.setOnClickListener(view ->
-                    Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+                    EstablishmentSearchDialog.show(this, establishmentName));
         }
 
         moveSelectedButton = findViewById(R.id.button_move_selected);

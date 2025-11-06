@@ -89,7 +89,7 @@ public class EstablishmentContentActivity extends Activity {
         ImageView searchButton = findViewById(R.id.button_search);
         if (searchButton != null) {
             searchButton.setOnClickListener(view ->
-                    Toast.makeText(this, R.string.feature_coming_soon, Toast.LENGTH_SHORT).show());
+                    EstablishmentSearchDialog.show(this, establishmentName));
         }
 
         Intent intent = getIntent();
