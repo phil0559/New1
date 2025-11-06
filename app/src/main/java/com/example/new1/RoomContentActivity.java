@@ -5852,6 +5852,10 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         Comparator<RoomContentItem> comparator = new Comparator<RoomContentItem>() {
             @Override
             public int compare(RoomContentItem first, RoomContentItem second) {
+                int locationComparison = compareContainerLocation(first, second);
+                if (locationComparison != 0) {
+                    return locationComparison;
+                }
                 String firstType = normalizeForSort(first.getType());
                 String secondType = normalizeForSort(second.getType());
                 boolean firstHasType = !firstType.isEmpty();
@@ -5868,7 +5872,11 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 }
                 String firstName = normalizeForSort(first.getName());
                 String secondName = normalizeForSort(second.getName());
-                return firstName.compareToIgnoreCase(secondName);
+                int nameComparison = firstName.compareToIgnoreCase(secondName);
+                if (nameComparison != 0) {
+                    return nameComparison;
+                }
+                return Long.compare(first.getRank(), second.getRank());
             }
         };
         RoomContentGroupingManager.sortWithComparator(items, comparator);
@@ -5878,6 +5886,49 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     @NonNull
     private String normalizeForSort(@Nullable String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private int compareContainerLocation(@NonNull RoomContentItem first,
+            @NonNull RoomContentItem second) {
+        Integer firstLevel = first.getContainerLevel();
+        Integer secondLevel = second.getContainerLevel();
+        if (firstLevel == null && secondLevel == null) {
+            return 0;
+        }
+        if (firstLevel == null) {
+            return -1;
+        }
+        if (secondLevel == null) {
+            return 1;
+        }
+        int firstColumn = normalizeContainerColumn(first.getContainerColumn());
+        int secondColumn = normalizeContainerColumn(second.getContainerColumn());
+        if (firstColumn != secondColumn) {
+            return Integer.compare(firstColumn, secondColumn);
+        }
+        int normalizedFirstLevel = normalizeContainerLevel(firstLevel);
+        int normalizedSecondLevel = normalizeContainerLevel(secondLevel);
+        if (normalizedFirstLevel != normalizedSecondLevel) {
+            return Integer.compare(normalizedFirstLevel, normalizedSecondLevel);
+        }
+        return 0;
+    }
+
+    private int normalizeContainerLevel(@Nullable Integer level) {
+        if (level == null) {
+            return Integer.MIN_VALUE;
+        }
+        if (level <= RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+            return RoomContentItem.FURNITURE_BOTTOM_LEVEL + 1;
+        }
+        return level;
+    }
+
+    private int normalizeContainerColumn(@Nullable Integer column) {
+        if (column == null || column <= 0) {
+            return 1;
+        }
+        return column;
     }
 
     private static final class MovementGroup {
