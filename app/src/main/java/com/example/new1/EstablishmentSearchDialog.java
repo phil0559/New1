@@ -549,7 +549,8 @@ final class EstablishmentSearchDialog {
         TextView view = new TextView(context);
         view.setText(textRes);
         view.setPadding(dpToPx(context, 12), dpToPx(context, 8), dpToPx(context, 12), dpToPx(context, 8));
-        view.setTextAppearance(context, R.style.TextAppearance_MaterialComponents_Subtitle2);
+        view.setTextAppearance(context,
+                com.google.android.material.R.style.TextAppearance_MaterialComponents_Subtitle2);
         return view;
     }
 
@@ -558,7 +559,8 @@ final class EstablishmentSearchDialog {
         TextView view = new TextView(context);
         view.setText(formatValue(value));
         view.setPadding(dpToPx(context, 12), dpToPx(context, 8), dpToPx(context, 12), dpToPx(context, 8));
-        view.setTextAppearance(context, R.style.TextAppearance_MaterialComponents_Body2);
+        view.setTextAppearance(context,
+                com.google.android.material.R.style.TextAppearance_MaterialComponents_Body2);
         return view;
     }
 
