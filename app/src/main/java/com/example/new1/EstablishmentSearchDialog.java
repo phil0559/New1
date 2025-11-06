@@ -10,8 +10,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -63,19 +66,65 @@ final class EstablishmentSearchDialog {
         dialog.setContentView(contentView);
 
         TextView titleView = contentView.findViewById(R.id.text_search_title);
-        if (titleView != null) {
-            String name = establishmentName != null ? establishmentName.trim() : "";
-            if (name.isEmpty()) {
-                titleView.setText(R.string.search_dialog_title_generic);
-            } else {
-                titleView.setText(activity.getString(R.string.search_dialog_title_with_name, name));
-            }
-        }
-
         EditText queryInput = contentView.findViewById(R.id.input_search_query);
         Button searchButton = contentView.findViewById(R.id.button_run_search);
         TextView statusView = contentView.findViewById(R.id.text_search_status);
         TableLayout resultTable = contentView.findViewById(R.id.table_search_results);
+        View establishmentContainer = contentView.findViewById(R.id.container_establishment_selector);
+        Spinner establishmentSpinner = contentView.findViewById(R.id.spinner_establishment_selector);
+
+        String normalizedEstablishment = normalizeEstablishmentName(establishmentName);
+        boolean requiresSelection = TextUtils.isEmpty(normalizedEstablishment);
+        final boolean[] hasEstablishments = new boolean[]{true};
+
+        if (requiresSelection) {
+            if (establishmentContainer != null) {
+                establishmentContainer.setVisibility(View.VISIBLE);
+            }
+            List<String> establishments = loadEstablishmentNames(activity.getApplicationContext());
+            if (establishments.isEmpty()) {
+                hasEstablishments[0] = false;
+                updateDialogTitle(titleView, activity, null);
+                if (statusView != null) {
+                    statusView.setText(R.string.search_dialog_status_no_establishments);
+                    statusView.setVisibility(View.VISIBLE);
+                }
+                if (searchButton != null) {
+                    searchButton.setEnabled(false);
+                }
+            } else if (establishmentSpinner != null) {
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(activity,
+                        android.R.layout.simple_spinner_item, establishments);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                establishmentSpinner.setAdapter(adapter);
+                if (statusView != null) {
+                    statusView.setVisibility(View.GONE);
+                }
+                if (searchButton != null) {
+                    searchButton.setEnabled(true);
+                }
+                updateDialogTitle(titleView, activity,
+                        (String) establishmentSpinner.getSelectedItem());
+                establishmentSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                    @Override
+                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                        Object selected = parent.getItemAtPosition(position);
+                        updateDialogTitle(titleView, activity,
+                                selected instanceof String ? (String) selected : null);
+                    }
+
+                    @Override
+                    public void onNothingSelected(AdapterView<?> parent) {
+                        updateDialogTitle(titleView, activity, null);
+                    }
+                });
+            }
+        } else {
+            updateDialogTitle(titleView, activity, normalizedEstablishment);
+            if (establishmentContainer != null) {
+                establishmentContainer.setVisibility(View.GONE);
+            }
+        }
 
         View closeButton = contentView.findViewById(R.id.button_close_search);
         if (closeButton != null) {
@@ -97,13 +146,28 @@ final class EstablishmentSearchDialog {
                 return;
             }
             hideKeyboard(activity, queryInput);
+            if (requiresSelection && !hasEstablishments[0]) {
+                statusView.setText(R.string.search_dialog_status_no_establishments);
+                statusView.setVisibility(View.VISIBLE);
+                resultTable.removeAllViews();
+                return;
+            }
+            String selectedEstablishment = resolveEstablishmentName(normalizedEstablishment,
+                    establishmentSpinner);
+            if (TextUtils.isEmpty(selectedEstablishment)) {
+                statusView.setText(R.string.search_dialog_status_missing_establishment);
+                statusView.setVisibility(View.VISIBLE);
+                resultTable.removeAllViews();
+                return;
+            }
             statusView.setText(R.string.search_dialog_status_loading);
             statusView.setVisibility(View.VISIBLE);
             searchButton.setEnabled(false);
             resultTable.removeAllViews();
+            final String establishmentForSearch = selectedEstablishment;
             EXECUTOR.execute(() -> {
                 List<SearchMatch> matches = performSearch(activity.getApplicationContext(),
-                        establishmentName, rawQuery);
+                        establishmentForSearch, rawQuery);
                 MAIN_HANDLER.post(() -> {
                     if (!activity.isFinishing()) {
                         populateResults(activity, resultTable, statusView, matches);
@@ -137,6 +201,81 @@ final class EstablishmentSearchDialog {
         if (imm != null) {
             imm.hideSoftInputFromWindow(target.getWindowToken(), 0);
         }
+    }
+
+    @NonNull
+    private static String normalizeEstablishmentName(@Nullable String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    @Nullable
+    private static String resolveEstablishmentName(@NonNull String normalized,
+            @Nullable Spinner spinner) {
+        if (!normalized.isEmpty()) {
+            return normalized;
+        }
+        if (spinner == null) {
+            return null;
+        }
+        Object selected = spinner.getSelectedItem();
+        if (!(selected instanceof String)) {
+            return null;
+        }
+        String trimmed = ((String) selected).trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static void updateDialogTitle(@Nullable TextView titleView,
+            @NonNull Activity activity,
+            @Nullable String establishment) {
+        if (titleView == null) {
+            return;
+        }
+        String normalized = establishment != null ? establishment.trim() : "";
+        if (normalized.isEmpty()) {
+            titleView.setText(R.string.search_dialog_title_generic);
+        } else {
+            titleView.setText(activity.getString(R.string.search_dialog_title_with_name, normalized));
+        }
+    }
+
+    @NonNull
+    private static List<String> loadEstablishmentNames(@NonNull Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(
+                EstablishmentActivity.PREFS_NAME, Context.MODE_PRIVATE);
+        String storedValue = preferences.getString(EstablishmentActivity.KEY_ESTABLISHMENTS, null);
+        if (storedValue == null || storedValue.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> result = new ArrayList<>();
+        try {
+            JSONArray array = new JSONArray(storedValue);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject item = array.optJSONObject(i);
+                if (item == null) {
+                    continue;
+                }
+                String name = item.optString("name", "").trim();
+                if (name.isEmpty()) {
+                    continue;
+                }
+                if (!containsIgnoreCase(result, name)) {
+                    result.add(name);
+                }
+            }
+        } catch (JSONException ignored) {
+        }
+        Collections.sort(result, (left, right) -> left.compareToIgnoreCase(right));
+        return result;
+    }
+
+    private static boolean containsIgnoreCase(@NonNull List<String> values, @NonNull String target) {
+        for (String value : values) {
+            if (value != null && value.trim().equalsIgnoreCase(target.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @NonNull

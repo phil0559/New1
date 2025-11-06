@@ -334,11 +334,14 @@
     <string name="search_dialog_title_with_name">Recherche – %1$s</string>
     <string name="search_dialog_input_hint">Saisissez un mot-clé</string>
     <string name="search_dialog_button">Rechercher</string>
+    <string name="search_dialog_establishment_label">Choisissez un établissement</string>
     <string name="search_dialog_status_empty">Entrez un terme à rechercher.</string>
     <string name="search_dialog_status_empty_query">Veuillez saisir un terme avant de lancer la recherche.</string>
     <string name="search_dialog_status_loading">Recherche en cours…</string>
     <string name="search_dialog_status_no_results">Aucun résultat ne correspond à votre recherche.</string>
     <string name="search_dialog_status_no_data">Aucune donnée enregistrée pour cet établissement.</string>
+    <string name="search_dialog_status_no_establishments">Aucun établissement n’est disponible pour effectuer une recherche.</string>
+    <string name="search_dialog_status_missing_establishment">Veuillez sélectionner un établissement avant de lancer la recherche.</string>
     <string name="search_dialog_header_room">Pièce</string>
     <string name="search_dialog_header_furniture">Mobilier</string>
     <string name="search_dialog_header_furniture_column">Colonne</string>
