@@ -36,8 +36,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class EstablishmentActivity extends Activity {
-    private static final String PREFS_NAME = "establishments_prefs";
-    private static final String KEY_ESTABLISHMENTS = "establishments";
+    static final String PREFS_NAME = "establishments_prefs";
+    static final String KEY_ESTABLISHMENTS = "establishments";
     private static final int REQUEST_TAKE_PHOTO = 1001;
     private static final String STATE_ACTIVE_POPUP_POSITION = "state_active_popup_position";
 
@@ -66,6 +66,12 @@ public class EstablishmentActivity extends Activity {
 
         ImageView backButton = findViewById(R.id.button_back);
         backButton.setOnClickListener(view -> finish());
+
+        View searchButton = findViewById(R.id.button_search);
+        if (searchButton != null) {
+            searchButton.setOnClickListener(view ->
+                    EstablishmentSearchDialog.show(this, null));
+        }
 
         establishmentList = findViewById(R.id.list_establishments);
         emptyPlaceholder = findViewById(R.id.text_placeholder);

@@ -41,6 +41,31 @@
         android:inputType="text"
         android:maxLines="1" />
 
+    <LinearLayout
+        android:id="@+id/container_establishment_selector"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/text_establishment_selector_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/search_dialog_establishment_label"
+            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+            android:textColor="@color/text_dark" />
+
+        <Spinner
+            android:id="@+id/spinner_establishment_selector"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:spinnerMode="dropdown" />
+    </LinearLayout>
+
     <Button
         android:id="@+id/button_run_search"
         android:layout_width="match_parent"

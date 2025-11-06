@@ -46,6 +46,12 @@ public class MainActivity extends Activity {
         flagIcon = findViewById(R.id.selected_flag_icon);
         updateFlagIconForCurrentLocale();
 
+        View searchIcon = findViewById(R.id.menu_search_icon);
+        if (searchIcon != null) {
+            searchIcon.setOnClickListener(view ->
+                    EstablishmentSearchDialog.show(this, null));
+        }
+
         View establishmentButton = findViewById(R.id.button_establishment);
         establishmentButton.setOnClickListener(view ->
             startActivity(new Intent(this, EstablishmentActivity.class))
