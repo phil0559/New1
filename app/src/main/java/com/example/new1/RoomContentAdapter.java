@@ -4451,7 +4451,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 columnsInserted = attachFurnitureColumns(container, columnsHeaderContainer,
                         columnsRowContainer);
             }
-            for (int index = 1; index <= levelCount; index++) {
+            for (int index = levelCount; index >= 1; index--) {
                 if (!columnsInserted) {
                     columnsInserted = attachFurnitureColumns(container,
                             columnsHeaderContainer, columnsRowContainer);
