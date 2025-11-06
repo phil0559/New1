@@ -102,6 +102,7 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
     private final OnRoomContentInteractionListener interactionListener;
     private final SparseBooleanArray expandedStates = new SparseBooleanArray();
     private final LongSparseArray<Integer> containerVisibilityStates = new LongSparseArray<>();
+    private final LongSparseArray<Integer> furnitureVisibilityStates = new LongSparseArray<>();
     private final int hierarchyIndentPx;
     private final float cardCornerRadiusPx;
     private final float cardElevationLevel0Px;
@@ -948,6 +949,65 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return VISIBILITY_DEFAULT_MASK;
         }
         return stored;
+    }
+
+    private int getFurnitureVisibilityMask(@Nullable RoomContentItem item) {
+        if (item == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        LongSparseArray<Integer> visibilityStates = furnitureVisibilityStates;
+        if (visibilityStates == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        long rank = item.getRank();
+        if (rank < 0) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        Integer stored = visibilityStates.get(rank);
+        if (stored == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        return stored;
+    }
+
+    private int resolveFurniturePopupVisibilityMask(@Nullable RoomContentItem item) {
+        if (item == null) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        int visibilityMask = getFurnitureVisibilityMask(item);
+        int normalized = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalized == VISIBILITY_FLAG_CONTAINERS
+                || normalized == VISIBILITY_FLAG_ITEMS) {
+            return normalized;
+        }
+        if ((normalized & VISIBILITY_FLAG_CONTAINERS) != 0
+                && (normalized & VISIBILITY_FLAG_ITEMS) != 0) {
+            return VISIBILITY_DEFAULT_MASK;
+        }
+        return VISIBILITY_DEFAULT_MASK;
+    }
+
+    private void setFurnitureVisibilityMask(@Nullable RoomContentItem item, int visibilityMask) {
+        if (item == null || !item.isFurniture()) {
+            return;
+        }
+        LongSparseArray<Integer> visibilityStates = furnitureVisibilityStates;
+        if (visibilityStates == null) {
+            return;
+        }
+        int normalizedMask = visibilityMask & (VISIBILITY_FLAG_CONTAINERS | VISIBILITY_FLAG_ITEMS);
+        if (normalizedMask == 0) {
+            normalizedMask = VISIBILITY_DEFAULT_MASK;
+        }
+        long rank = item.getRank();
+        if (rank < 0) {
+            return;
+        }
+        if (normalizedMask == VISIBILITY_DEFAULT_MASK) {
+            visibilityStates.delete(rank);
+        } else {
+            visibilityStates.put(rank, normalizedMask);
+        }
     }
 
     private int resolvePopupVisibilityMask(int position) {
@@ -3078,6 +3138,106 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             }
         }
 
+        private void setupFurniturePopupFilterPanel(@NonNull View popupView,
+                @Nullable LinearLayout sectionsContainer,
+                @Nullable LinearLayout columnsHeaderContainer,
+                @Nullable LinearLayout columnsRowContainer) {
+            View filterPanel = popupView.findViewById(R.id.container_furniture_popup_filter_panel);
+            View filterShowAll = popupView.findViewById(R.id.furniture_filter_show_all);
+            View filterShowContainers = popupView.findViewById(R.id.furniture_filter_show_containers);
+            View filterShowItems = popupView.findViewById(R.id.furniture_filter_show_items);
+            if (filterPanel == null) {
+                return;
+            }
+            if (currentItem == null || !currentItem.isFurniture()) {
+                filterPanel.setVisibility(View.GONE);
+                return;
+            }
+            CharSequence label = currentItem.getName();
+            int visibilityMask = RoomContentAdapter.this
+                    .resolveFurniturePopupVisibilityMask(currentItem);
+            updateFurniturePopupFilterPanel(filterPanel, filterShowAll, filterShowContainers,
+                    filterShowItems, visibilityMask, label);
+            setupFurniturePopupFilterOption(filterShowAll, VISIBILITY_DEFAULT_MASK, filterPanel,
+                    sectionsContainer, columnsHeaderContainer, columnsRowContainer,
+                    filterShowAll, filterShowContainers, filterShowItems, label);
+            setupFurniturePopupFilterOption(filterShowContainers, VISIBILITY_FLAG_CONTAINERS,
+                    filterPanel, sectionsContainer, columnsHeaderContainer, columnsRowContainer,
+                    filterShowAll, filterShowContainers, filterShowItems, label);
+            setupFurniturePopupFilterOption(filterShowItems, VISIBILITY_FLAG_ITEMS, filterPanel,
+                    sectionsContainer, columnsHeaderContainer, columnsRowContainer,
+                    filterShowAll, filterShowContainers, filterShowItems, label);
+        }
+
+        private void setupFurniturePopupFilterOption(@Nullable View optionView, int targetMask,
+                @Nullable View filterPanel, @Nullable LinearLayout sectionsContainer,
+                @Nullable LinearLayout columnsHeaderContainer,
+                @Nullable LinearLayout columnsRowContainer,
+                @Nullable View showAllView, @Nullable View showContainersView,
+                @Nullable View showItemsView, @Nullable CharSequence label) {
+            if (optionView == null) {
+                return;
+            }
+            optionView.setOnClickListener(view -> handleFurniturePopupFilterSelection(targetMask,
+                    filterPanel, sectionsContainer, columnsHeaderContainer, columnsRowContainer,
+                    showAllView, showContainersView, showItemsView, label));
+        }
+
+        private void handleFurniturePopupFilterSelection(int newMask,
+                @Nullable View filterPanel, @Nullable LinearLayout sectionsContainer,
+                @Nullable LinearLayout columnsHeaderContainer,
+                @Nullable LinearLayout columnsRowContainer,
+                @Nullable View showAllView, @Nullable View showContainersView,
+                @Nullable View showItemsView, @Nullable CharSequence label) {
+            if (currentItem == null || !currentItem.isFurniture()) {
+                return;
+            }
+            int normalizedMask = normalizePopupVisibilityMask(newMask);
+            RoomContentAdapter.this.setFurnitureVisibilityMask(currentItem, normalizedMask);
+            int resolvedMask = RoomContentAdapter.this
+                    .resolveFurniturePopupVisibilityMask(currentItem);
+            updateFurniturePopupFilterPanel(filterPanel, showAllView, showContainersView,
+                    showItemsView, resolvedMask, label);
+            if (sectionsContainer != null) {
+                populateFurnitureSections(sectionsContainer, currentItem,
+                        RoomContentAdapter.this.activeFurniturePopupExpandedLevel,
+                        columnsHeaderContainer, columnsRowContainer);
+            }
+        }
+
+        private void updateFurniturePopupFilterPanel(@Nullable View filterPanel,
+                @Nullable View showAllView, @Nullable View showContainersView,
+                @Nullable View showItemsView, int visibilityMask,
+                @Nullable CharSequence label) {
+            boolean hasDetails = currentItem != null && currentItem.isFurniture()
+                    && !currentItem.getChildren().isEmpty();
+            if (filterPanel != null) {
+                filterPanel.setVisibility(hasDetails ? View.VISIBLE : View.GONE);
+            }
+            if (!hasDetails) {
+                return;
+            }
+            int normalizedMask = normalizePopupVisibilityMask(visibilityMask);
+            String labelText = resolveContainerPopupLabel(label);
+            updateContainerPopupFilterOption(showAllView,
+                    normalizedMask == VISIBILITY_DEFAULT_MASK, labelText,
+                    R.string.content_description_room_content_popup_filter_all,
+                    R.drawable.ic_filter_circle_full);
+            updateContainerPopupFilterOption(showContainersView,
+                    normalizedMask == VISIBILITY_FLAG_CONTAINERS, labelText,
+                    R.string.content_description_room_content_popup_filter_containers,
+                    R.drawable.ic_filter_circle_left);
+            updateContainerPopupFilterOption(showItemsView,
+                    normalizedMask == VISIBILITY_FLAG_ITEMS, labelText,
+                    R.string.content_description_room_content_popup_filter_items,
+                    R.drawable.ic_filter_circle_right);
+            if (filterPanel != null) {
+                filterPanel.setContentDescription(filterPanel.getContext().getString(
+                        R.string.content_description_room_content_popup_filter_group,
+                        labelText));
+            }
+        }
+
         @NonNull
         private String resolveContainerPopupLabel(@Nullable CharSequence label) {
             if (label != null && label.length() > 0) {
@@ -3147,6 +3307,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             HorizontalScrollView columnsScroll = contentView.findViewById(R.id.scroll_furniture_columns);
             Spinner columnDropdown = contentView.findViewById(R.id.spinner_furniture_columns);
             selectedFurnitureColumn = RoomContentAdapter.this.activeFurniturePopupSelectedColumn;
+            setupFurniturePopupFilterPanel(contentView, sectionsContainer,
+                    columnsHeaderContainer, columnsRowContainer);
             if (columnsContainer != null) {
                 populateFurniturePopupColumns(columnsContainer, sectionsContainer,
                         columnsHeaderContainer, columnsRowContainer, currentItem,
@@ -3850,6 +4012,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             Spinner columnDropdown = popupView.findViewById(R.id.spinner_furniture_columns);
             furnitureColumnsHeaderContainer = columnsHeaderContainer;
             furnitureColumnsRowContainer = columnsRowContainer;
+            setupFurniturePopupFilterPanel(popupView, sectionsContainer,
+                    columnsHeaderContainer, columnsRowContainer);
             if (columnsContainer != null && currentItem != null) {
                 populateFurniturePopupColumns(columnsContainer, sectionsContainer,
                         columnsHeaderContainer, columnsRowContainer, currentItem,
@@ -4435,6 +4599,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             int baseDepth = parentPosition >= 0
                     ? RoomContentAdapter.this.computeHierarchyDepth(parentPosition)
                     : -1;
+            int visibilityMask = RoomContentAdapter.this.resolveFurniturePopupVisibilityMask(item);
+            int normalizedMask = normalizePopupVisibilityMask(visibilityMask);
             if (!hasTop && levelCount <= 0 && !hasBottom) {
                 container.setVisibility(View.GONE);
                 return;
@@ -4442,7 +4608,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             container.setVisibility(View.VISIBLE);
             boolean columnsInserted = false;
             if (hasTop) {
-                List<RoomContentItem> topItems = collectFurnitureItemsForTop(children);
+                List<RoomContentItem> topItems = collectFurnitureItemsForTop(children,
+                        normalizedMask);
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_top_title), true,
                         topItems, parentPosition, baseDepth, FURNITURE_SECTION_INDEX_TOP,
@@ -4459,7 +4626,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 String title = storageTower
                         ? context.getString(R.string.storage_tower_popup_drawer_title, index)
                         : context.getString(R.string.furniture_popup_level_title, index);
-                List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children, index);
+                List<RoomContentItem> levelItems = collectFurnitureItemsForLevel(children,
+                        index, normalizedMask);
                 View section = createFurnitureSection(layoutInflater, container, title, true,
                         levelItems, parentPosition, baseDepth, index, levelToExpand);
                 container.addView(section);
@@ -4469,7 +4637,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                         columnsRowContainer);
             }
             if (hasBottom) {
-                List<RoomContentItem> bottomItems = collectFurnitureItemsForBottom(children);
+                List<RoomContentItem> bottomItems = collectFurnitureItemsForBottom(children,
+                        normalizedMask);
                 View section = createFurnitureSection(layoutInflater, container,
                         context.getString(R.string.furniture_popup_bottom_title), true,
                         bottomItems, parentPosition, baseDepth, FURNITURE_SECTION_INDEX_BOTTOM,
@@ -4666,9 +4835,18 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             return section;
         }
 
+        private boolean shouldIncludeFurnitureChild(@NonNull RoomContentItem child,
+                int visibilityMask) {
+            int normalizedMask = normalizePopupVisibilityMask(visibilityMask);
+            if (child.isContainer() || child.isFurniture()) {
+                return (normalizedMask & VISIBILITY_FLAG_CONTAINERS) != 0;
+            }
+            return (normalizedMask & VISIBILITY_FLAG_ITEMS) != 0;
+        }
+
         @NonNull
         private List<RoomContentItem> collectFurnitureItemsForTop(
-                @Nullable List<RoomContentItem> children) {
+                @Nullable List<RoomContentItem> children, int visibilityMask) {
             if (children == null || children.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -4679,6 +4857,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                     continue;
                 }
                 if (child.getContainerLevel() != null) {
+                    continue;
+                }
+                if (!shouldIncludeFurnitureChild(child, visibilityMask)) {
                     continue;
                 }
                 long rank = child.getRank();
@@ -4701,7 +4882,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         @NonNull
         private List<RoomContentItem> collectFurnitureItemsForLevel(
                 @Nullable List<RoomContentItem> children,
-                int desiredLevel) {
+                int desiredLevel,
+                int visibilityMask) {
             if (children == null || children.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -4713,6 +4895,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 Integer childLevel = child.getContainerLevel();
                 if (childLevel != null && childLevel == desiredLevel) {
+                    if (!shouldIncludeFurnitureChild(child, visibilityMask)) {
+                        continue;
+                    }
                     if (selectedColumn != null) {
                         Integer childColumn = child.getContainerColumn();
                         if (childColumn == null) {
@@ -4744,7 +4929,8 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
 
         @NonNull
         private List<RoomContentItem> collectFurnitureItemsForBottom(
-                @Nullable List<RoomContentItem> children) {
+                @Nullable List<RoomContentItem> children,
+                int visibilityMask) {
             if (children == null || children.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -4757,6 +4943,9 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 }
                 Integer childLevel = child.getContainerLevel();
                 if (childLevel != null && childLevel == RoomContentItem.FURNITURE_BOTTOM_LEVEL) {
+                    if (!shouldIncludeFurnitureChild(child, visibilityMask)) {
+                        continue;
+                    }
                     // On ignore la colonne : le dessous est partagé et dédoublé par rang ou par nom.
                     long childRank = child.getRank();
                     if (childRank >= 0L) {

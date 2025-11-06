@@ -46,6 +46,57 @@
                 android:tint="@color/icon_brown" />
         </LinearLayout>
 
+        <LinearLayout
+            android:id="@+id/container_furniture_popup_filter_panel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_container_popup_filter_panel"
+            android:orientation="horizontal"
+            android:paddingStart="@dimen/container_popup_filter_panel_padding_horizontal"
+            android:paddingTop="@dimen/container_popup_filter_panel_padding_vertical"
+            android:paddingEnd="@dimen/container_popup_filter_panel_padding_horizontal"
+            android:paddingBottom="@dimen/container_popup_filter_panel_padding_vertical"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/furniture_filter_show_all"
+                android:layout_width="@dimen/container_popup_filter_icon_size"
+                android:layout_height="@dimen/container_popup_filter_icon_size"
+                android:background="@drawable/bg_container_popup_filter_option"
+                android:contentDescription="@null"
+                android:padding="@dimen/container_popup_filter_icon_padding"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_filter_circle_full"
+                android:tint="@color/text_dark" />
+
+            <ImageView
+                android:id="@+id/furniture_filter_show_containers"
+                android:layout_width="@dimen/container_popup_filter_icon_size"
+                android:layout_height="@dimen/container_popup_filter_icon_size"
+                android:layout_marginStart="@dimen/container_popup_filter_option_spacing"
+                android:layout_marginEnd="@dimen/container_popup_filter_option_spacing"
+                android:background="@drawable/bg_container_popup_filter_option"
+                android:contentDescription="@null"
+                android:padding="@dimen/container_popup_filter_icon_padding"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_filter_circle_left"
+                android:tint="@color/text_dark" />
+
+            <ImageView
+                android:id="@+id/furniture_filter_show_items"
+                android:layout_width="@dimen/container_popup_filter_icon_size"
+                android:layout_height="@dimen/container_popup_filter_icon_size"
+                android:background="@drawable/bg_container_popup_filter_option"
+                android:contentDescription="@null"
+                android:padding="@dimen/container_popup_filter_icon_padding"
+                android:scaleType="centerInside"
+                android:src="@drawable/ic_filter_circle_right"
+                android:tint="@color/text_dark" />
+
+        </LinearLayout>
+
     </LinearLayout>
 
     <androidx.core.widget.NestedScrollView
