@@ -1,6 +1,8 @@
 import org.gradle.api.JavaVersion
 
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
+apply plugin: 'kotlin-kapt'
 
 android {
     namespace 'com.example.new1'
