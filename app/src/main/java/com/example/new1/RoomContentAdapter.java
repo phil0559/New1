@@ -3424,14 +3424,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 baseName = RoomContentAdapter.this.appendAttachmentCount(baseName, child);
             }
             String displayName = baseName;
-            String rankLabel = child.getDisplayRank();
-            if (rankLabel != null && !rankLabel.trim().isEmpty()) {
-                displayName = rankLabel + " · " + baseName;
-            }
-            String placementLabel = formatFurniturePlacement(child);
-            if (placementLabel != null && !placementLabel.isEmpty()) {
-                displayName = displayName + " · " + placementLabel;
-            }
             final String resolvedDisplayName = displayName;
 
             if (titleView != null) {
