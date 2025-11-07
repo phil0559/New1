@@ -3986,6 +3986,10 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             if (menuIcon != null) {
                 menuIcon.setOnClickListener(view -> showFurnitureOptionsMenu(menuIcon));
             }
+            popupMenuActionView = menuIcon;
+            popupMenuDefaultVisibility = menuIcon != null ? menuIcon.getVisibility() : View.GONE;
+            popupAddActionView = null;
+            popupAddDefaultVisibility = View.GONE;
             LinearLayout sectionsContainer = popupView.findViewById(R.id.container_furniture_sections);
             LinearLayout columnsHeaderContainer = popupView
                     .findViewById(R.id.container_furniture_columns_header);
@@ -3994,6 +3998,32 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             LinearLayout columnsContainer = popupView.findViewById(R.id.container_furniture_columns);
             HorizontalScrollView columnsScroll = popupView.findViewById(R.id.scroll_furniture_columns);
             Spinner columnDropdown = popupView.findViewById(R.id.spinner_furniture_columns);
+            popupSelectionActionsContainer = popupView.findViewById(
+                    R.id.container_furniture_popup_selection_actions);
+            View headerActionsContainer = popupView.findViewById(
+                    R.id.container_furniture_popup_header_actions);
+            popupActionButtonsContainer = headerActionsContainer;
+            popupActionButtonsDefaultVisibility = headerActionsContainer != null
+                    ? headerActionsContainer.getVisibility()
+                    : View.GONE;
+            popupSelectionCountView = popupView.findViewById(
+                    R.id.text_furniture_popup_selection_count);
+            View selectionMoveButton = popupView.findViewById(
+                    R.id.button_furniture_popup_selection_move);
+            popupSelectionMoveButton = selectionMoveButton;
+            if (selectionMoveButton != null) {
+                selectionMoveButton.setOnClickListener(view -> performPopupSelectionMove());
+            }
+            View selectionDeleteButton = popupView.findViewById(
+                    R.id.button_furniture_popup_selection_delete);
+            popupSelectionDeleteButton = selectionDeleteButton;
+            if (selectionDeleteButton != null) {
+                selectionDeleteButton.setOnClickListener(view -> performPopupSelectionDelete());
+            }
+            popupFilterPanel = popupView.findViewById(R.id.container_furniture_popup_filter_panel);
+            popupFilterPanelDefaultVisibility = popupFilterPanel != null
+                    ? popupFilterPanel.getVisibility()
+                    : View.GONE;
             furnitureColumnsHeaderContainer = columnsHeaderContainer;
             furnitureColumnsRowContainer = columnsRowContainer;
             setupFurniturePopupFilterPanel(popupView, sectionsContainer,
@@ -4027,12 +4057,27 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 furnitureAddAnchors.clear();
                 furnitureColumnsHeaderContainer = null;
                 furnitureColumnsRowContainer = null;
+                popupSelectionController.reset();
+                popupSelectionActionsContainer = null;
+                popupActionButtonsContainer = null;
+                popupSelectionCountView = null;
+                popupSelectionMoveButton = null;
+                popupSelectionDeleteButton = null;
+                popupFilterPanel = null;
+                popupAddActionView = null;
+                popupMenuActionView = null;
+                popupFilterPanelDefaultVisibility = View.GONE;
+                popupActionButtonsDefaultVisibility = View.GONE;
+                popupAddDefaultVisibility = View.GONE;
+                popupMenuDefaultVisibility = View.GONE;
             });
             furniturePopup = popupWindow;
             RoomContentAdapter.this.setActiveFurniturePopup(position, levelToExpand,
                     selectedFurnitureColumn);
             dismissOptionsMenu();
             popupWindow.showAtLocation(itemView, Gravity.CENTER, 0, 0);
+            popupSelectionController.reset();
+            updateContainerPopupSelectionUi();
         }
 
         private void showFurnitureOptionsMenu(@NonNull View anchor) {
