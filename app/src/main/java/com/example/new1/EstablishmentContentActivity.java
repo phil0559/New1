@@ -250,7 +250,11 @@ public class EstablishmentContentActivity extends Activity {
                     return;
                 }
 
-                Room updatedRoom = new Room(name, comment, new ArrayList<>(formState.photos));
+                String roomId = isEditing && roomToEdit != null
+                        ? roomToEdit.getId()
+                        : Room.generateStableId();
+                Room updatedRoom = new Room(roomId, name, comment,
+                        new ArrayList<>(formState.photos));
                 if (isEditing) {
                     migrateRoomContent(roomToEdit, updatedRoom);
                     rooms.set(position, updatedRoom);
@@ -361,7 +365,8 @@ public class EstablishmentContentActivity extends Activity {
                         }
                     }
                 }
-                rooms.add(new Room(name, comment, photos));
+                String id = item.optString("id", null);
+                rooms.add(new Room(id, name, comment, photos));
             }
         } catch (JSONException ignored) {
         }
@@ -374,6 +379,7 @@ public class EstablishmentContentActivity extends Activity {
         for (Room room : rooms) {
             JSONObject item = new JSONObject();
             try {
+                item.put("id", room.getId());
                 item.put("name", room.getName());
                 item.put("comment", room.getComment());
                 JSONArray photosArray = new JSONArray();
