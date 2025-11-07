@@ -2238,14 +2238,6 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
                 baseName = appendAttachmentCount(baseName, item);
             }
             String displayName = baseName;
-            String rankLabel = item.getDisplayRank();
-            if (rankLabel != null && !rankLabel.trim().isEmpty()) {
-                displayName = rankLabel + " · " + baseName;
-            }
-            String placementLabel = formatFurniturePlacement(item);
-            if (placementLabel != null && !placementLabel.isEmpty()) {
-                displayName = displayName + " · " + placementLabel;
-            }
             nameView.setText(displayName);
             resetCardStyle();
             int parentPosition = RoomContentAdapter.this
