@@ -2,8 +2,21 @@ package com.example.new1.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 
-@Database(entities = [RoomContentEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [
+        RoomContentEntity::class,
+        EstablishmentEntity::class,
+        RoomEntity::class,
+        ContentItemEntity::class,
+        ContentItemTrackEntity::class,
+        ContentItemPhotoEntity::class,
+    ],
+    version = 2,
+    exportSchema = false,
+)
+@TypeConverters(RoomContentTypeConverters::class)
 abstract class RoomContentDatabase : RoomDatabase() {
     abstract fun roomContentDao(): RoomContentDao
 
