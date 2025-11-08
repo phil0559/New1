@@ -8,8 +8,8 @@ import androidx.annotation.Nullable;
 
 import java.nio.charset.StandardCharsets;
 
-final class RoomContentStorage {
-    static final String PREFS_NAME = "room_content_prefs";
+public final class RoomContentStorage {
+    public static final String PREFS_NAME = "room_content_prefs";
     private static final String KEY_PREFIX = "room_content_";
     private static final String LEGACY_DEFAULT_TOKEN = "default";
     private static final int ENCODING_FLAGS = Base64.NO_WRAP | Base64.URL_SAFE;
@@ -18,12 +18,12 @@ final class RoomContentStorage {
     }
 
     @NonNull
-    static String buildKey(@Nullable String establishment, @Nullable String room) {
+    public static String buildKey(@Nullable String establishment, @Nullable String room) {
         return KEY_PREFIX + encode(establishment) + "_" + encode(room);
     }
 
     @NonNull
-    static String resolveKey(@NonNull SharedPreferences preferences,
+    public static String resolveKey(@NonNull SharedPreferences preferences,
             @Nullable String establishment,
             @Nullable String room) {
         String canonicalKey = buildKey(establishment, room);
@@ -37,7 +37,7 @@ final class RoomContentStorage {
         return canonicalKey;
     }
 
-    static void ensureCanonicalKey(@NonNull SharedPreferences preferences,
+    public static void ensureCanonicalKey(@NonNull SharedPreferences preferences,
             @Nullable String establishment,
             @Nullable String room,
             @NonNull String resolvedKey) {

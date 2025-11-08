@@ -7,6 +7,7 @@ import net.sqlcipher.database.SupportFactory
 import java.util.Arrays
 
 object RoomContentDatabaseFactory {
+    @JvmStatic
     fun create(context: Context): RoomContentDatabase {
         val appContext = context.applicationContext
         SQLiteDatabase.loadLibs(appContext)
