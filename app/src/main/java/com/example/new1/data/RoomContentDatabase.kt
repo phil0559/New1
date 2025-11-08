@@ -28,6 +28,16 @@ import com.example.new1.data.metadata.TypeFieldConfigEntity
 abstract class RoomContentDatabase : RoomDatabase() {
     abstract fun roomContentDao(): RoomContentDao
 
+    abstract fun establishmentDao(): EstablishmentDao
+
+    abstract fun roomDao(): RoomDao
+
+    abstract fun contentItemDao(): ContentItemDao
+
+    abstract fun contentItemPhotoDao(): ContentItemPhotoDao
+
+    abstract fun contentItemTrackDao(): ContentItemTrackDao
+
     abstract fun metadataDao(): MetadataDao
 
     abstract fun contentPhotoDao(): ContentPhotoDao
