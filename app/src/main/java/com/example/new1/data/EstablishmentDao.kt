@@ -14,11 +14,17 @@ interface EstablishmentDao {
     @Query("SELECT * FROM establishments WHERE id = :establishmentId LIMIT 1")
     fun observeById(establishmentId: String): Flow<EstablishmentEntity?>
 
+    @Query("SELECT COUNT(*) FROM establishments")
+    fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(establishment: EstablishmentEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(establishments: List<EstablishmentEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertAllSync(establishments: List<EstablishmentEntity>)
 
     @Query("DELETE FROM establishments WHERE id = :establishmentId")
     suspend fun deleteById(establishmentId: String)
