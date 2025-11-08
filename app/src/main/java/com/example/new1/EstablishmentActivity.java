@@ -36,8 +36,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class EstablishmentActivity extends Activity {
-    static final String PREFS_NAME = "establishments_prefs";
-    static final String KEY_ESTABLISHMENTS = "establishments";
+    public static final String PREFS_NAME = "establishments_prefs";
+    public static final String KEY_ESTABLISHMENTS = "establishments";
     private static final int REQUEST_TAKE_PHOTO = 1001;
     private static final String STATE_ACTIVE_POPUP_POSITION = "state_active_popup_position";
 

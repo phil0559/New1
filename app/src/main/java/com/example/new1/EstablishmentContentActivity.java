@@ -35,8 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EstablishmentContentActivity extends Activity {
-    static final String PREFS_NAME = "rooms_prefs";
-    static final String KEY_ROOMS = "rooms";
+    public static final String PREFS_NAME = "rooms_prefs";
+    public static final String KEY_ROOMS = "rooms";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final String STATE_ACTIVE_POPUP_POSITION = "state_active_popup_position";
 
