@@ -284,9 +284,9 @@ internal object DatabaseInitializer {
     private data class RoomKey(val establishment: String, val room: String)
 
     private class MigrationState {
-        val establishments: LinkedHashMap<String, EstablishmentEntity> = LinkedHashMap()
-        val establishmentIdsByName: MutableMap<String, String> = LinkedHashMap()
-        val rooms: LinkedHashMap<String, RoomEntity> = LinkedHashMap()
-        val roomNames: LinkedHashMap<RoomKey, LegacyRoomNames> = LinkedHashMap()
+        val establishments: LinkedHashMap<String, EstablishmentEntity> = LinkedHashMap<String, EstablishmentEntity>()
+        val establishmentIdsByName: MutableMap<String, String> = LinkedHashMap<String, String>()
+        val rooms: LinkedHashMap<String, RoomEntity> = LinkedHashMap<String, RoomEntity>()
+        val roomNames: LinkedHashMap<RoomKey, LegacyRoomNames> = LinkedHashMap<RoomKey, LegacyRoomNames>()
     }
 }
