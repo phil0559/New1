@@ -32,6 +32,7 @@ internal object DatabaseInitializer {
             database.roomDao().count() > 0 ||
             database.roomContentDao().count() > 0
         ) {
+            clearLegacyRoomContent(appContext)
             statePrefs.edit().putBoolean(KEY_MIGRATION_COMPLETED, true).apply()
             return
         }
@@ -56,6 +57,7 @@ internal object DatabaseInitializer {
             }
         }
 
+        clearLegacyRoomContent(appContext)
         statePrefs.edit().putBoolean(KEY_MIGRATION_COMPLETED, true).apply()
     }
 
@@ -203,6 +205,26 @@ internal object DatabaseInitializer {
         }
 
         return result
+    }
+
+    private fun clearLegacyRoomContent(context: Context) {
+        val preferences = context.getSharedPreferences(RoomContentStorage.PREFS_NAME, Context.MODE_PRIVATE)
+        if (preferences.all.isEmpty()) {
+            return
+        }
+        val editor = preferences.edit()
+        var modified = false
+        for (key in preferences.all.keys) {
+            val storedKey = key as? String ?: continue
+            if (!storedKey.startsWith(ROOM_CONTENT_KEY_PREFIX)) {
+                continue
+            }
+            editor.remove(storedKey)
+            modified = true
+        }
+        if (modified) {
+            editor.apply()
+        }
     }
 
     private fun decodeLegacyRoomContentKey(key: String): Pair<String?, String?>? {
