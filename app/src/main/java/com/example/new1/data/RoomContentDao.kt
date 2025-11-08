@@ -13,8 +13,14 @@ interface RoomContentDao {
     @Query("SELECT storage_key FROM room_content")
     suspend fun listStorageKeys(): List<String>
 
+    @Query("SELECT COUNT(*) FROM room_content")
+    fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: RoomContentEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertAllSync(entities: List<RoomContentEntity>)
 
     @Query("DELETE FROM room_content WHERE storage_key = :storageKey")
     suspend fun deleteByStorageKey(storageKey: String)

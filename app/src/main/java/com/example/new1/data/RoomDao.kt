@@ -16,11 +16,17 @@ interface RoomDao {
     @Query("SELECT * FROM rooms WHERE id = :roomId LIMIT 1")
     fun observeById(roomId: String): Flow<RoomEntity?>
 
+    @Query("SELECT COUNT(*) FROM rooms")
+    fun count(): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(room: RoomEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(rooms: List<RoomEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun upsertAllSync(rooms: List<RoomEntity>)
 
     @Query("DELETE FROM rooms WHERE id = :roomId")
     suspend fun deleteById(roomId: String)

@@ -15,7 +15,7 @@ object New1DatabaseFactory {
         val passphrase = DatabaseEncryptionKeyManager.getOrCreatePassphrase(appContext)
         val factory = SupportFactory(passphrase.copyOf())
         return try {
-            Room.databaseBuilder(
+            val database = Room.databaseBuilder(
                 appContext,
                 New1Database::class.java,
                 New1Database.DATABASE_NAME,
@@ -23,6 +23,8 @@ object New1DatabaseFactory {
                 .openHelperFactory(factory)
                 .fallbackToDestructiveMigration(false)
                 .build()
+            DatabaseInitializer.initialize(appContext, database)
+            database
         } finally {
             Arrays.fill(passphrase, 0.toByte())
         }
