@@ -57,6 +57,7 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.example.new1.data.metadata.MetadataStorage;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.radiobutton.MaterialRadioButton;
@@ -108,9 +109,6 @@ public class RoomContentActivity extends Activity {
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
 
-    private static final String KEY_CUSTOM_CATEGORIES = "custom_categories";
-    private static final String KEY_TYPE_FIELD_CONFIGS = "type_field_configs";
-    private static final String KEY_TYPE_DATE_FORMATS = "type_date_formats";
     private static final String FIELD_NAME = "name";
     private static final String FIELD_COMMENT = "comment";
     private static final String FIELD_PHOTOS = "photos";
@@ -531,6 +529,8 @@ public class RoomContentActivity extends Activity {
     private final Map<String, Set<String>> typeFieldConfigurations = new HashMap<>();
     private final Map<String, String> typeDateFormats = new HashMap<>();
     @Nullable
+    private MetadataStorage metadataStorage;
+    @Nullable
     private RecyclerView contentList;
     @Nullable
     private TextView placeholderView;
@@ -595,8 +595,9 @@ public class RoomContentActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room_content);
 
-        loadTypeFieldConfigurationsFromPreferences();
-        loadTypeDateFormatsFromPreferences();
+        metadataStorage = new MetadataStorage(this);
+        loadTypeFieldConfigurationsFromStorage();
+        loadTypeDateFormatsFromStorage();
         ensureDefaultTypeConfigurations();
 
         ImageView backButton = findViewById(R.id.button_back);
@@ -7541,6 +7542,10 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         pendingContainerPopupState = null;
         pendingFurniturePopupState = null;
         pendingOptionsPopupState = null;
+        if (metadataStorage != null) {
+            metadataStorage.close();
+            metadataStorage = null;
+        }
         barcodeLookupExecutor.shutdownNow();
     }
 
@@ -7925,121 +7930,86 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
     }
 
-    private void loadTypeFieldConfigurationsFromPreferences() {
+    private void loadTypeFieldConfigurationsFromStorage() {
         typeFieldConfigurations.clear();
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String stored = preferences.getString(KEY_TYPE_FIELD_CONFIGS, null);
-        if (stored == null || stored.trim().isEmpty()) {
+        if (metadataStorage == null) {
             return;
         }
-        try {
-            JSONObject root = new JSONObject(stored);
-            Iterator<String> keys = root.keys();
-            while (keys.hasNext()) {
-                String rawKey = keys.next();
-                if (rawKey == null) {
-                    continue;
-                }
-                String trimmedKey = rawKey.trim();
-                if (trimmedKey.isEmpty()) {
-                    continue;
-                }
-                JSONArray fieldsArray = root.optJSONArray(rawKey);
-                if (fieldsArray == null) {
-                    continue;
-                }
-                LinkedHashSet<String> fields = new LinkedHashSet<>();
-                for (int i = 0; i < fieldsArray.length(); i++) {
-                    String value = fieldsArray.optString(i, null);
-                    if (value != null && !value.trim().isEmpty()) {
-                        fields.add(value);
-                    }
-                }
-                typeFieldConfigurations.put(trimmedKey, sanitizeFieldSelection(fields));
+        Map<String, Set<String>> stored = metadataStorage.loadTypeFieldConfigurations();
+        for (Map.Entry<String, Set<String>> entry : stored.entrySet()) {
+            String key = entry.getKey();
+            if (key == null) {
+                continue;
             }
-        } catch (JSONException exception) {
-            preferences.edit().remove(KEY_TYPE_FIELD_CONFIGS).apply();
+            String trimmed = key.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            typeFieldConfigurations.put(trimmed, sanitizeFieldSelection(entry.getValue()));
         }
     }
 
     private void persistTypeFieldConfigurations() {
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        JSONObject root = new JSONObject();
-        for (Map.Entry<String, Set<String>> entry : typeFieldConfigurations.entrySet()) {
-            String label = entry.getKey();
-            if (label == null || label.trim().isEmpty()) {
-                continue;
-            }
-            LinkedHashSet<String> fields = sanitizeFieldSelection(entry.getValue());
-            JSONArray array = new JSONArray();
-            for (String field : fields) {
-                array.put(field);
-            }
-            try {
-                root.put(label, array);
-            } catch (JSONException ignored) {
-            }
-        }
-        SharedPreferences.Editor editor = preferences.edit();
-        if (root.length() > 0) {
-            editor.putString(KEY_TYPE_FIELD_CONFIGS, root.toString());
-        } else {
-            editor.remove(KEY_TYPE_FIELD_CONFIGS);
-        }
-        editor.apply();
-    }
-
-    private void loadTypeDateFormatsFromPreferences() {
-        typeDateFormats.clear();
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String stored = preferences.getString(KEY_TYPE_DATE_FORMATS, null);
-        if (stored == null || stored.trim().isEmpty()) {
+        if (metadataStorage == null) {
             return;
         }
-        try {
-            JSONObject root = new JSONObject(stored);
-            Iterator<String> keys = root.keys();
-            while (keys.hasNext()) {
-                String rawKey = keys.next();
-                if (rawKey == null) {
-                    continue;
-                }
-                String trimmedKey = rawKey.trim();
-                if (trimmedKey.isEmpty()) {
-                    continue;
-                }
-                String value = root.optString(rawKey, null);
-                String sanitized = sanitizeDateFormatSelection(value);
-                if (sanitized != null) {
-                    typeDateFormats.put(trimmedKey, sanitized);
-                }
+        Map<String, Set<String>> snapshot = new LinkedHashMap<>();
+        for (Map.Entry<String, Set<String>> entry : typeFieldConfigurations.entrySet()) {
+            String label = entry.getKey();
+            if (label == null) {
+                continue;
             }
-        } catch (JSONException exception) {
-            preferences.edit().remove(KEY_TYPE_DATE_FORMATS).apply();
+            String trimmed = label.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            snapshot.put(trimmed, sanitizeFieldSelection(entry.getValue()));
+        }
+        metadataStorage.saveTypeFieldConfigurations(snapshot);
+    }
+
+    private void loadTypeDateFormatsFromStorage() {
+        typeDateFormats.clear();
+        if (metadataStorage == null) {
+            return;
+        }
+        Map<String, String> stored = metadataStorage.loadTypeDateFormats();
+        for (Map.Entry<String, String> entry : stored.entrySet()) {
+            String key = entry.getKey();
+            if (key == null) {
+                continue;
+            }
+            String trimmed = key.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String sanitized = sanitizeDateFormatSelection(entry.getValue());
+            if (sanitized != null) {
+                typeDateFormats.put(trimmed, sanitized);
+            }
         }
     }
 
     private void persistTypeDateFormats() {
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        JSONObject root = new JSONObject();
+        if (metadataStorage == null) {
+            return;
+        }
+        Map<String, String> snapshot = new LinkedHashMap<>();
         for (Map.Entry<String, String> entry : typeDateFormats.entrySet()) {
             String label = entry.getKey();
-            String format = sanitizeDateFormatSelection(entry.getValue());
-            if (label == null || label.trim().isEmpty() || format == null) {
+            if (label == null) {
                 continue;
             }
-            try {
-                root.put(label, format);
-            } catch (JSONException ignored) {
+            String trimmed = label.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            String sanitized = sanitizeDateFormatSelection(entry.getValue());
+            if (sanitized != null) {
+                snapshot.put(trimmed, sanitized);
             }
         }
-        SharedPreferences.Editor editor = preferences.edit();
-        if (root.length() > 0) {
-            editor.putString(KEY_TYPE_DATE_FORMATS, root.toString());
-        } else {
-            editor.remove(KEY_TYPE_DATE_FORMATS);
-        }
-        editor.apply();
+        metadataStorage.saveTypeDateFormats(snapshot);
     }
 
     @NonNull
@@ -8587,60 +8557,18 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     }
 
     private void persistCategoryOptions(@NonNull List<String> categoryOptions) {
-        LinkedHashSet<String> normalized = new LinkedHashSet<>();
-        JSONArray array = new JSONArray();
-        for (String option : categoryOptions) {
-            if (option == null) {
-                continue;
-            }
-            String trimmed = option.trim();
-            if (trimmed.isEmpty()) {
-                continue;
-            }
-            String key = trimmed.toLowerCase(Locale.ROOT);
-            if (normalized.add(key)) {
-                array.put(trimmed);
-            }
+        if (metadataStorage == null) {
+            return;
         }
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        if (array.length() > 0) {
-            editor.putString(KEY_CUSTOM_CATEGORIES, array.toString());
-        } else {
-            editor.remove(KEY_CUSTOM_CATEGORIES);
-        }
-        editor.apply();
+        metadataStorage.saveCategories(categoryOptions);
     }
 
     @NonNull
     private List<String> loadStoredCategories() {
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String stored = preferences.getString(KEY_CUSTOM_CATEGORIES, null);
-        List<String> result = new ArrayList<>();
-        if (stored == null || stored.trim().isEmpty()) {
-            return result;
+        if (metadataStorage == null) {
+            return new ArrayList<>();
         }
-        try {
-            JSONArray array = new JSONArray(stored);
-            LinkedHashSet<String> normalized = new LinkedHashSet<>();
-            for (int i = 0; i < array.length(); i++) {
-                String value = array.optString(i, null);
-                if (value == null) {
-                    continue;
-                }
-                String trimmed = value.trim();
-                if (trimmed.isEmpty()) {
-                    continue;
-                }
-                String key = trimmed.toLowerCase(Locale.ROOT);
-                if (normalized.add(key)) {
-                    result.add(trimmed);
-                }
-            }
-        } catch (JSONException exception) {
-            preferences.edit().remove(KEY_CUSTOM_CATEGORIES).apply();
-        }
-        return result;
+        return new ArrayList<>(metadataStorage.loadCategories());
     }
 
     private void updateSelectionButtonText(@Nullable Button button,
