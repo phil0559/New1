@@ -4,14 +4,18 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'kotlin-kapt'
 
+def compileSdkVersion = (project.findProperty('ANDROID_COMPILE_SDK') ?: '34').toString().toInteger()
+def targetSdkVersion = (project.findProperty('ANDROID_TARGET_SDK') ?: '34').toString().toInteger()
+def minSdkVersion = (project.findProperty('ANDROID_MIN_SDK') ?: '24').toString().toInteger()
+
 android {
     namespace 'com.example.new1'
-    compileSdk 35
+    compileSdk compileSdkVersion
 
     defaultConfig {
         applicationId "com.example.new1"
-        minSdk 24
-        targetSdk 35
+        minSdk minSdkVersion
+        targetSdk targetSdkVersion
         versionCode 1
         versionName "1.0"
     }
