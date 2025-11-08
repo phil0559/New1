@@ -43,6 +43,7 @@ import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Base64;
+import android.util.Log;
 import android.util.SparseArray;
 
 import android.view.Gravity;
@@ -106,6 +107,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 public class RoomContentActivity extends Activity {
+    private static final String TAG = "RoomContentActivity";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
 
@@ -595,7 +597,14 @@ public class RoomContentActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room_content);
 
-        metadataStorage = new MetadataStorage(this);
+        try {
+            metadataStorage = new MetadataStorage(this);
+        } catch (RuntimeException | UnsatisfiedLinkError exception) {
+            Log.e(TAG, "Impossible d'initialiser le stockage des métadonnées.", exception);
+            metadataStorage = null;
+            Toast.makeText(this, R.string.room_content_metadata_error, Toast.LENGTH_LONG).show();
+        }
+
         loadTypeFieldConfigurationsFromStorage();
         loadTypeDateFormatsFromStorage();
         ensureDefaultTypeConfigurations();
