@@ -7,8 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.new1.RoomContentStorage;
-import com.example.new1.data.RoomContentDatabase;
-import com.example.new1.data.RoomContentDatabaseFactory;
+import com.example.new1.data.New1Database;
+import com.example.new1.data.New1DatabaseFactory;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,14 +43,14 @@ public final class MetadataStorage {
     private static final String DATE_FORMAT_ENGLISH = "MM/dd/yyyy";
     private static final String DATE_FORMAT_ISO = "yyyy-MM-dd";
 
-    private final RoomContentDatabase database;
+    private final New1Database database;
     private final MetadataDao metadataDao;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final SharedPreferences legacyPreferences;
 
     public MetadataStorage(@NonNull Context context) {
         Context appContext = context.getApplicationContext();
-        this.database = RoomContentDatabaseFactory.create(appContext);
+        this.database = New1DatabaseFactory.create(appContext);
         this.metadataDao = database.metadataDao();
         this.legacyPreferences = appContext.getSharedPreferences(RoomContentStorage.PREFS_NAME, Context.MODE_PRIVATE);
         migrateLegacyDataIfNecessary();

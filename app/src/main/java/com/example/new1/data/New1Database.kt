@@ -25,7 +25,7 @@ import com.example.new1.data.metadata.TypeFieldConfigEntity
     exportSchema = false,
 )
 @TypeConverters(RoomContentTypeConverters::class)
-abstract class RoomContentDatabase : RoomDatabase() {
+abstract class New1Database : RoomDatabase() {
     abstract fun roomContentDao(): RoomContentDao
 
     abstract fun establishmentDao(): EstablishmentDao

@@ -2,13 +2,14 @@ package com.example.new1.data
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.RoomDatabase
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 import java.util.Arrays
 
-object RoomContentDatabaseFactory {
+object New1DatabaseFactory {
     @JvmStatic
-    fun create(context: Context): RoomContentDatabase {
+    fun create(context: Context): New1Database {
         val appContext = context.applicationContext
         SQLiteDatabase.loadLibs(appContext)
         val passphrase = DatabaseEncryptionKeyManager.getOrCreatePassphrase(appContext)
@@ -16,14 +17,24 @@ object RoomContentDatabaseFactory {
         return try {
             Room.databaseBuilder(
                 appContext,
-                RoomContentDatabase::class.java,
-                RoomContentDatabase.DATABASE_NAME,
+                New1Database::class.java,
+                New1Database.DATABASE_NAME,
             )
                 .openHelperFactory(factory)
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(false)
                 .build()
         } finally {
             Arrays.fill(passphrase, 0.toByte())
+        }
+    }
+
+    private fun <T : RoomDatabase> RoomDatabase.Builder<T>.fallbackToDestructiveMigration(
+        enabled: Boolean,
+    ): RoomDatabase.Builder<T> {
+        return if (enabled) {
+            fallbackToDestructiveMigration()
+        } else {
+            this
         }
     }
 }
