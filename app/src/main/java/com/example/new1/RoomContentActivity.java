@@ -6288,15 +6288,15 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                                           @NonNull BarcodeLookupResult result) {
         updateBarcodePreview(context.barcodePreviewView, barcode, false);
         updateBarcodeClearButton(context.clearBarcodeButton, true);
-        if (result.errorMessage != null) {
-            Toast.makeText(this, result.errorMessage, Toast.LENGTH_LONG).show();
+        if (result.getErrorMessage() != null) {
+            Toast.makeText(this, result.getErrorMessage(), Toast.LENGTH_LONG).show();
             barcodeScanContext = null;
             pendingBarcodeResult = null;
             return;
         }
-        if (!result.found) {
-            String message = result.infoMessage != null
-                    ? result.infoMessage
+        if (!result.getFound()) {
+            String message = result.getInfoMessage() != null
+                    ? result.getInfoMessage()
                     : getString(R.string.dialog_barcode_lookup_not_found, barcode);
             Toast.makeText(this, message, Toast.LENGTH_LONG).show();
             barcodeScanContext = null;
@@ -6304,47 +6304,47 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             refreshPhotoSection(context.formState);
             return;
         }
-        if (!TextUtils.isEmpty(result.title) && context.nameInput != null) {
-            context.nameInput.setText(result.title);
-            context.nameInput.setSelection(result.title.length());
+        if (!TextUtils.isEmpty(result.getTitle()) && context.nameInput != null) {
+            context.nameInput.setText(result.getTitle());
+            context.nameInput.setSelection(result.getTitle().length());
         }
-        if (!TextUtils.isEmpty(result.author) && context.authorInput != null) {
-            context.authorInput.setText(result.author);
+        if (!TextUtils.isEmpty(result.getAuthor()) && context.authorInput != null) {
+            context.authorInput.setText(result.getAuthor());
         }
-        if (!TextUtils.isEmpty(result.publisher) && context.publisherInput != null) {
-            context.publisherInput.setText(result.publisher);
+        if (!TextUtils.isEmpty(result.getPublisher()) && context.publisherInput != null) {
+            context.publisherInput.setText(result.getPublisher());
         }
-        if (!TextUtils.isEmpty(result.series) && context.seriesInput != null) {
-            context.seriesInput.setText(result.series);
+        if (!TextUtils.isEmpty(result.getSeries()) && context.seriesInput != null) {
+            context.seriesInput.setText(result.getSeries());
         }
-        if (!TextUtils.isEmpty(result.number) && context.numberInput != null) {
-            context.numberInput.setText(result.number);
+        if (!TextUtils.isEmpty(result.getNumber()) && context.numberInput != null) {
+            context.numberInput.setText(result.getNumber());
         }
-        if (!TextUtils.isEmpty(result.edition) && context.editionInput != null) {
-            context.editionInput.setText(result.edition);
+        if (!TextUtils.isEmpty(result.getEdition()) && context.editionInput != null) {
+            context.editionInput.setText(result.getEdition());
         }
-        if (!TextUtils.isEmpty(result.publishDate) && context.publicationDateInput != null) {
-            context.publicationDateInput.setText(result.publishDate);
+        if (!TextUtils.isEmpty(result.getPublishDate()) && context.publicationDateInput != null) {
+            context.publicationDateInput.setText(result.getPublishDate());
         }
-        if (!TextUtils.isEmpty(result.summary) && context.summaryInput != null) {
-            context.summaryInput.setText(result.summary);
+        if (!TextUtils.isEmpty(result.getSummary()) && context.summaryInput != null) {
+            context.summaryInput.setText(result.getSummary());
         }
-        if (!TextUtils.isEmpty(result.typeLabel)) {
-            context.selectedTypeHolder[0] = result.typeLabel;
-            applyTypeConfiguration(result.typeLabel, context.formState, context.bookFields,
+        if (!TextUtils.isEmpty(result.getTypeLabel())) {
+            context.selectedTypeHolder[0] = result.getTypeLabel();
+            applyTypeConfiguration(result.getTypeLabel(), context.formState, context.bookFields,
                     context.trackFields, context.trackTitle, context.typeFieldViews);
-            updateSelectionButtonText(context.selectTypeButton, result.typeLabel,
+            updateSelectionButtonText(context.selectTypeButton, result.getTypeLabel(),
                     R.string.dialog_button_choose_type);
         }
         boolean photosAdded = false;
-        if (!result.photos.isEmpty()) {
-            photosAdded = addPhotosToForm(context.formState, result.photos);
+        if (!result.getPhotos().isEmpty()) {
+            photosAdded = addPhotosToForm(context.formState, result.getPhotos());
         }
         if (!photosAdded) {
             refreshPhotoSection(context.formState);
         }
-        String message = result.infoMessage != null
-                ? result.infoMessage
+        String message = result.getInfoMessage() != null
+                ? result.getInfoMessage()
                 : getString(R.string.dialog_barcode_lookup_success);
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         barcodeScanContext = null;
