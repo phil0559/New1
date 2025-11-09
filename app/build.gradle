@@ -10,7 +10,7 @@ def minSdkVersion = (project.findProperty('ANDROID_MIN_SDK') ?: '24').toString()
 
 android {
     namespace 'com.example.new1'
-    compileSdk compileSdkVersion
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.example.new1"
