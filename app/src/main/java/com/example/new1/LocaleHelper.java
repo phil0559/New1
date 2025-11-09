@@ -39,9 +39,16 @@ public final class LocaleHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             configuration.setLocale(locale);
             configuration.setLocales(new LocaleList(locale));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                configuration.setLayoutDirection(locale);
+            }
+            resources.updateConfiguration(configuration, resources.getDisplayMetrics());
             return context.createConfigurationContext(configuration);
         } else {
             configuration.setLocale(locale);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                configuration.setLayoutDirection(locale);
+            }
             resources.updateConfiguration(configuration, resources.getDisplayMetrics());
             return context;
         }
