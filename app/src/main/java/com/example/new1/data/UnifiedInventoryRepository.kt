@@ -5,8 +5,6 @@ import androidx.room.withTransaction
 import com.example.new1.data.metadata.CategoryOptionEntity
 import com.example.new1.data.metadata.MetadataDao
 import java.util.Locale
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -24,8 +22,10 @@ class UnifiedInventoryRepository(
     private val roomDao: RoomDao = database.roomDao(),
     private val contentItemDao: ContentItemDao = database.contentItemDao(),
     private val metadataDao: MetadataDao = database.metadataDao(),
-    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val dispatcherProvider: CoroutineDispatcherProvider = DefaultCoroutineDispatcherProvider(),
 ) {
+
+    private val ioDispatcher = dispatcherProvider.io
 
     private val categoryOptionsState = MutableStateFlow<List<String>>(emptyList())
 
