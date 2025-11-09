@@ -148,8 +148,8 @@
     <string name="dialog_move_room_content_furniture_section_label">Position im Möbel</string>
     <string name="dialog_move_room_content_level_label">Ebene</string>
     <string name="dialog_move_room_content_column_label">Spalte</string>
-    <string name="dialog_move_room_content_level_hint">z.&#8239;B. 1</string>
-    <string name="dialog_move_room_content_column_hint">z.&#8239;B. 1</string>
+    <string name="dialog_move_room_content_level_hint">z. B. 1</string>
+    <string name="dialog_move_room_content_column_hint">z. B. 1</string>
     <string name="error_move_room_content_invalid_level">Bitte eine gültige Ebene angeben.</string>
     <string name="error_move_room_content_invalid_column">Bitte eine gültige Spalte angeben.</string>
     <string name="room_content_furniture_level_short">Ebene %1$d</string>
