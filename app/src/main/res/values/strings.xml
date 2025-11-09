@@ -125,6 +125,9 @@
     <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="room_content_metadata_error">Certaines données avancées n’ont pas pu être chargées. Les options supplémentaires sont temporairement désactivées.</string>
     <string name="room_content_storage_error">Impossible de charger le contenu sécurisé de la pièce. Les données locales seront utilisées.</string>
+    <string name="establishment_storage_error">Impossible de charger les établissements sécurisés.</string>
+    <string name="room_storage_error">Impossible de charger les pièces sécurisées.</string>
+    <string name="search_storage_error">Impossible d'accéder aux données sécurisées pour la recherche.</string>
     <string name="room_content_lookup_unavailable">La recherche de code-barres est indisponible pour le moment.</string>
     <string name="room_content_filter_containers">Contenants</string>
     <string name="room_content_filter_items">Éléments</string>

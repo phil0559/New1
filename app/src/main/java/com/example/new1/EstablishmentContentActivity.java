@@ -1,10 +1,8 @@
 package com.example.new1;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -21,26 +19,28 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Base64;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EstablishmentContentActivity extends Activity {
+import com.example.new1.RoomContentMigrationHelper;
+
+public class EstablishmentContentActivity extends AppCompatActivity {
     public static final String PREFS_NAME = "rooms_prefs";
     public static final String KEY_ROOMS = "rooms";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final String STATE_ACTIVE_POPUP_POSITION = "state_active_popup_position";
 
     public static final String EXTRA_ESTABLISHMENT_NAME = "extra_establishment_name";
+    public static final String EXTRA_ESTABLISHMENT_ID = "extra_establishment_id";
 
     private final List<Room> rooms = new ArrayList<>();
     private RoomAdapter roomAdapter;
@@ -48,7 +48,11 @@ public class EstablishmentContentActivity extends Activity {
     private TextView emptyPlaceholder;
     private TextView subtitleView;
     private FormState currentFormState;
+    private RoomListViewModel roomListViewModel;
     private String establishmentName;
+    private String establishmentId;
+
+    private static final String TAG = "EstablishmentContent";
 
     private static class FormState {
         TextView photoLabel;
@@ -63,6 +67,10 @@ public class EstablishmentContentActivity extends Activity {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         }
         if (establishment != null) {
+            String id = establishment.getId();
+            if (id != null && !id.trim().isEmpty()) {
+                intent.putExtra(EXTRA_ESTABLISHMENT_ID, id);
+            }
             String name = establishment.getName();
             if (name != null) {
                 intent.putExtra(EXTRA_ESTABLISHMENT_NAME, name);
@@ -93,6 +101,9 @@ public class EstablishmentContentActivity extends Activity {
         }
 
         Intent intent = getIntent();
+        establishmentId = intent != null
+                ? intent.getStringExtra(EXTRA_ESTABLISHMENT_ID)
+                : null;
         establishmentName = intent != null
                 ? intent.getStringExtra(EXTRA_ESTABLISHMENT_NAME)
                 : null;
@@ -138,7 +149,28 @@ public class EstablishmentContentActivity extends Activity {
             addButton.setOnClickListener(view -> showRoomDialog(null, -1));
         }
 
-        loadRooms();
+        try {
+            roomListViewModel = new ViewModelProvider(
+                    this,
+                    RoomListViewModel.provideFactory(getApplication(), establishmentId)
+            ).get(RoomListViewModel.class);
+        } catch (RuntimeException | UnsatisfiedLinkError | ExceptionInInitializerError exception) {
+            Log.e(TAG, "Impossible d'initialiser le stockage sécurisé des pièces.", exception);
+            Toast.makeText(this, R.string.room_storage_error, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
+
+        roomListViewModel.getRooms().observe(this, updatedRooms -> {
+            rooms.clear();
+            if (updatedRooms != null) {
+                rooms.addAll(updatedRooms);
+            }
+            roomAdapter.notifyDataSetChanged();
+            updateEmptyState();
+            applySubtitle();
+        });
+
         updateEmptyState();
 
         if (savedInstanceState != null) {
@@ -250,21 +282,23 @@ public class EstablishmentContentActivity extends Activity {
                     return;
                 }
 
+                if (establishmentId == null || establishmentId.trim().isEmpty()) {
+                    Toast.makeText(this, R.string.room_storage_error, Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                    return;
+                }
+
                 String roomId = isEditing && roomToEdit != null
                         ? roomToEdit.getId()
                         : Room.generateStableId();
-                Room updatedRoom = new Room(roomId, name, comment,
+                Room updatedRoom = new Room(roomId, establishmentId, name, comment,
                         new ArrayList<>(formState.photos));
                 if (isEditing) {
                     migrateRoomContent(roomToEdit, updatedRoom);
-                    rooms.set(position, updatedRoom);
-                    roomAdapter.notifyItemChanged(position);
-                } else {
-                    rooms.add(updatedRoom);
-                    roomAdapter.notifyItemInserted(rooms.size() - 1);
                 }
-                saveRooms();
-                updateEmptyState();
+                if (roomListViewModel != null) {
+                    roomListViewModel.upsertRoom(updatedRoom);
+                }
                 dialog.dismiss();
             });
         });
@@ -292,20 +326,13 @@ public class EstablishmentContentActivity extends Activity {
         if (trimmedPrevious.equals(trimmedNew)) {
             return;
         }
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String oldKey = RoomContentStorage.resolveKey(preferences, establishmentName, previousName);
-        String newKey = RoomContentStorage.buildKey(establishmentName, newName);
-        if (oldKey.equals(newKey)) {
-            return;
-        }
-        String storedValue = preferences.getString(oldKey, null);
-        if (storedValue == null) {
-            return;
-        }
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(newKey, storedValue);
-        editor.remove(oldKey);
-        editor.apply();
+        RoomContentMigrationHelper.migrateRoomContent(
+                this,
+                establishmentName,
+                establishmentName,
+                previousName,
+                newName
+        );
     }
 
     private void showDeleteRoomConfirmation(@NonNull Room room, int position) {
@@ -323,77 +350,11 @@ public class EstablishmentContentActivity extends Activity {
                 .setMessage(getString(R.string.dialog_delete_room_message, name))
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton(R.string.dialog_delete_room_confirm, (dialog, which) -> {
-                    rooms.remove(position);
-                    roomAdapter.notifyItemRemoved(position);
-                    saveRooms();
-                    updateEmptyState();
+                    if (roomListViewModel != null) {
+                        roomListViewModel.deleteRoom(room);
+                    }
                 })
                 .show();
-    }
-
-    private void loadRooms() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String storedValue = preferences.getString(getRoomsKey(), null);
-        rooms.clear();
-
-        if (storedValue == null || storedValue.isEmpty()) {
-            roomAdapter.notifyDataSetChanged();
-            return;
-        }
-
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject item = array.optJSONObject(i);
-                if (item == null) {
-                    continue;
-                }
-
-                String name = item.optString("name", "");
-                if (name.isEmpty()) {
-                    continue;
-                }
-
-                String comment = item.optString("comment", "");
-                List<String> photos = new ArrayList<>();
-                JSONArray photosArray = item.optJSONArray("photos");
-                if (photosArray != null) {
-                    for (int j = 0; j < photosArray.length(); j++) {
-                        String value = photosArray.optString(j, null);
-                        if (value != null && !value.isEmpty()) {
-                            photos.add(value);
-                        }
-                    }
-                }
-                String id = item.optString("id", null);
-                rooms.add(new Room(id, name, comment, photos));
-            }
-        } catch (JSONException ignored) {
-        }
-
-        roomAdapter.notifyDataSetChanged();
-    }
-
-    private void saveRooms() {
-        JSONArray array = new JSONArray();
-        for (Room room : rooms) {
-            JSONObject item = new JSONObject();
-            try {
-                item.put("id", room.getId());
-                item.put("name", room.getName());
-                item.put("comment", room.getComment());
-                JSONArray photosArray = new JSONArray();
-                for (String photo : room.getPhotos()) {
-                    photosArray.put(photo);
-                }
-                item.put("photos", photosArray);
-                array.put(item);
-            } catch (JSONException ignored) {
-            }
-        }
-
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        preferences.edit().putString(getRoomsKey(), array.toString()).apply();
     }
 
     private void updateEmptyState() {
@@ -616,7 +577,4 @@ public class EstablishmentContentActivity extends Activity {
         return KEY_ROOMS + "_" + name;
     }
 
-    private String getRoomsKey() {
-        return buildRoomsKey(establishmentName);
-    }
 }

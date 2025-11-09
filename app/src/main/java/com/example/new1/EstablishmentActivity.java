@@ -1,10 +1,8 @@
 package com.example.new1;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
@@ -20,22 +18,21 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import java.io.ByteArrayOutputStream;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-public class EstablishmentActivity extends Activity {
+public class EstablishmentActivity extends AppCompatActivity {
     public static final String PREFS_NAME = "establishments_prefs";
     public static final String KEY_ESTABLISHMENTS = "establishments";
     private static final int REQUEST_TAKE_PHOTO = 1001;
@@ -46,6 +43,9 @@ public class EstablishmentActivity extends Activity {
     private RecyclerView establishmentList;
     private TextView emptyPlaceholder;
     private FormState currentFormState;
+    private EstablishmentListViewModel establishmentViewModel;
+
+    private static final String TAG = "EstablishmentActivity";
 
     private static class FormState {
         TextView photoLabel;
@@ -63,6 +63,18 @@ public class EstablishmentActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_establishment);
+
+        try {
+            establishmentViewModel = new ViewModelProvider(
+                    this,
+                    EstablishmentListViewModel.provideFactory(getApplication())
+            ).get(EstablishmentListViewModel.class);
+        } catch (RuntimeException | UnsatisfiedLinkError | ExceptionInInitializerError exception) {
+            Log.e(TAG, "Impossible d'initialiser le stockage sécurisé des établissements.", exception);
+            Toast.makeText(this, R.string.establishment_storage_error, Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }
 
         ImageView backButton = findViewById(R.id.button_back);
         backButton.setOnClickListener(view -> finish());
@@ -99,7 +111,15 @@ public class EstablishmentActivity extends Activity {
         View addButton = findViewById(R.id.button_add_establishment);
         addButton.setOnClickListener(view -> showAddEstablishmentDialog());
 
-        loadEstablishments();
+        establishmentViewModel.getEstablishments().observe(this, updatedEstablishments -> {
+            establishments.clear();
+            if (updatedEstablishments != null) {
+                establishments.addAll(updatedEstablishments);
+            }
+            establishmentAdapter.notifyDataSetChanged();
+            updateEmptyState();
+        });
+
         updateEmptyState();
 
         if (savedInstanceState != null) {
@@ -224,26 +244,30 @@ public class EstablishmentActivity extends Activity {
                     return;
                 }
 
-                if (isEditMode) {
-                    if (position < 0 || position >= establishments.size()) {
-                        dialog.dismiss();
-                        return;
+                if (establishmentViewModel != null) {
+                    if (isEditMode) {
+                        if (position < 0 || position >= establishments.size()) {
+                            dialog.dismiss();
+                            return;
+                        }
+                        String existingId = existingEstablishment != null ? existingEstablishment.getId() : null;
+                        Establishment updatedEstablishment = new Establishment(
+                                existingId,
+                                name,
+                                comment,
+                                new ArrayList<>(formState.photos)
+                        );
+                        establishmentViewModel.upsertEstablishment(updatedEstablishment);
+                    } else {
+                        Establishment created = new Establishment(
+                                name,
+                                comment,
+                                new ArrayList<>(formState.photos)
+                        );
+                        establishmentViewModel.upsertEstablishment(created);
                     }
-                    Establishment updatedEstablishment = new Establishment(
-                            name,
-                            comment,
-                            new ArrayList<>(formState.photos)
-                    );
-                    migrateEstablishmentRooms(existingEstablishment, updatedEstablishment);
-                    establishments.set(position, updatedEstablishment);
-                    establishmentAdapter.notifyItemChanged(position);
-                } else {
-                    establishments.add(new Establishment(name, comment, new ArrayList<>(formState.photos)));
-                    establishmentAdapter.notifyItemInserted(establishments.size() - 1);
                 }
 
-                saveEstablishments();
-                updateEmptyState();
                 dialog.dismiss();
             });
         });
@@ -267,159 +291,11 @@ public class EstablishmentActivity extends Activity {
             .setMessage(getString(R.string.dialog_delete_establishment_message, establishment.getName()))
             .setNegativeButton(R.string.action_cancel, null)
             .setPositiveButton(R.string.action_delete, (dialog, which) -> {
-                establishments.remove(position);
-                establishmentAdapter.notifyItemRemoved(position);
-                saveEstablishments();
-                updateEmptyState();
+                if (establishmentViewModel != null) {
+                    establishmentViewModel.deleteEstablishment(establishment);
+                }
             })
             .show();
-    }
-
-    private void loadEstablishments() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String storedValue = preferences.getString(KEY_ESTABLISHMENTS, null);
-        establishments.clear();
-
-        if (storedValue == null || storedValue.isEmpty()) {
-            establishmentAdapter.notifyDataSetChanged();
-            return;
-        }
-
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject item = array.optJSONObject(i);
-                if (item == null) {
-                    continue;
-                }
-
-                String name = item.optString("name", "");
-                if (name.isEmpty()) {
-                    continue;
-                }
-
-                String comment = item.optString("comment", "");
-                JSONArray photosArray = item.optJSONArray("photos");
-                List<String> photos = new ArrayList<>();
-                if (photosArray != null) {
-                    for (int j = 0; j < photosArray.length(); j++) {
-                        String photoValue = photosArray.optString(j, null);
-                        if (photoValue != null && !photoValue.isEmpty()) {
-                            photos.add(photoValue);
-                        }
-                    }
-                }
-                establishments.add(new Establishment(name, comment, photos));
-            }
-        } catch (JSONException ignored) {
-            // Données corrompues : on les ignore simplement.
-        }
-
-        establishmentAdapter.notifyDataSetChanged();
-    }
-
-    private void saveEstablishments() {
-        JSONArray array = new JSONArray();
-        for (Establishment establishment : establishments) {
-            JSONObject item = new JSONObject();
-            try {
-                item.put("name", establishment.getName());
-                item.put("comment", establishment.getComment());
-                JSONArray photosArray = new JSONArray();
-                for (String photo : establishment.getPhotos()) {
-                    photosArray.put(photo);
-                }
-                item.put("photos", photosArray);
-                array.put(item);
-            } catch (JSONException ignored) {
-                // En pratique cela ne devrait pas arriver car nous n'utilisons que des chaînes.
-            }
-        }
-
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        preferences.edit().putString(KEY_ESTABLISHMENTS, array.toString()).apply();
-    }
-
-    private void migrateEstablishmentRooms(@Nullable Establishment previousEstablishment,
-            @NonNull Establishment updatedEstablishment) {
-        if (previousEstablishment == null) {
-            return;
-        }
-
-        String previousName = previousEstablishment.getName();
-        String newName = updatedEstablishment.getName();
-        if (previousName == null || newName == null) {
-            return;
-        }
-
-        String trimmedPrevious = previousName.trim();
-        String trimmedNew = newName.trim();
-        if (trimmedPrevious.equals(trimmedNew)) {
-            return;
-        }
-
-        String oldRoomsKey = EstablishmentContentActivity.buildRoomsKey(trimmedPrevious);
-        String newRoomsKey = EstablishmentContentActivity.buildRoomsKey(trimmedNew);
-        if (oldRoomsKey.equals(newRoomsKey)) {
-            return;
-        }
-
-        SharedPreferences roomsPreferences =
-                getSharedPreferences(EstablishmentContentActivity.PREFS_NAME, MODE_PRIVATE);
-        String storedRoomsValue = roomsPreferences.getString(oldRoomsKey, null);
-        if (storedRoomsValue == null) {
-            return;
-        }
-
-        SharedPreferences.Editor roomsEditor = roomsPreferences.edit();
-        roomsEditor.putString(newRoomsKey, storedRoomsValue);
-        roomsEditor.remove(oldRoomsKey);
-        roomsEditor.apply();
-
-        migrateRoomContentsForEstablishment(trimmedPrevious, trimmedNew, storedRoomsValue);
-    }
-
-    private void migrateRoomContentsForEstablishment(String previousEstablishmentName,
-            String newEstablishmentName, String storedRoomsValue) {
-        SharedPreferences contentPreferences =
-                getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor contentEditor = contentPreferences.edit();
-        boolean hasChanges = false;
-
-        try {
-            JSONArray roomsArray = new JSONArray(storedRoomsValue);
-            for (int i = 0; i < roomsArray.length(); i++) {
-                JSONObject item = roomsArray.optJSONObject(i);
-                if (item == null) {
-                    continue;
-                }
-
-                String roomName = item.optString("name", "");
-                if (roomName.isEmpty()) {
-                    continue;
-                }
-
-                String oldKey = RoomContentStorage.resolveKey(contentPreferences, previousEstablishmentName, roomName);
-                String newKey = RoomContentStorage.buildKey(newEstablishmentName, roomName);
-                if (oldKey.equals(newKey)) {
-                    continue;
-                }
-
-                String storedContent = contentPreferences.getString(oldKey, null);
-                if (storedContent == null) {
-                    continue;
-                }
-
-                contentEditor.putString(newKey, storedContent);
-                contentEditor.remove(oldKey);
-                hasChanges = true;
-            }
-        } catch (JSONException ignored) {
-        }
-
-        if (hasChanges) {
-            contentEditor.apply();
-        }
     }
 
     private void updateEmptyState() {

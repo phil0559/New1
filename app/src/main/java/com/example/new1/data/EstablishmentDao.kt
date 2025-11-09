@@ -11,6 +11,9 @@ interface EstablishmentDao {
     @Query("SELECT * FROM establishments ORDER BY name COLLATE NOCASE ASC")
     fun observeAll(): Flow<List<EstablishmentEntity>>
 
+    @Query("SELECT * FROM establishments ORDER BY name COLLATE NOCASE ASC")
+    suspend fun listAll(): List<EstablishmentEntity>
+
     @Query("SELECT * FROM establishments WHERE id = :establishmentId LIMIT 1")
     fun observeById(establishmentId: String): Flow<EstablishmentEntity?>
 

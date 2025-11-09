@@ -1,7 +1,6 @@
 package com.example.new1;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,10 +14,11 @@ import android.widget.ImageView;
 import android.widget.PopupWindow;
 
 import androidx.core.content.ContextCompat;
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.Locale;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CAMERA_PERMISSION = 1001;
     private static final String KEY_LANGUAGE_POPUP_STATE = "language_popup_state";
     private PopupWindow languagePopup;

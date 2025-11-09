@@ -34,6 +34,10 @@ class UnifiedInventoryRepository(
      */
     fun observeEstablishments(): Flow<List<EstablishmentEntity>> = establishmentDao.observeAll()
 
+    suspend fun listEstablishments(): List<EstablishmentEntity> = withContext(ioDispatcher) {
+        establishmentDao.listAll()
+    }
+
     /**
      * Flux pour suivre un établissement précis.
      */
@@ -45,6 +49,10 @@ class UnifiedInventoryRepository(
      */
     fun observeRooms(establishmentId: String): Flow<List<RoomEntity>> =
         roomDao.observeByEstablishment(establishmentId)
+
+    suspend fun listRooms(establishmentId: String): List<RoomEntity> = withContext(ioDispatcher) {
+        roomDao.listByEstablishment(establishmentId)
+    }
 
     /**
      * Flux pour suivre une pièce.
