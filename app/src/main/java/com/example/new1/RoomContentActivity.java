@@ -5648,28 +5648,11 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     }
 
     private void loadRoomContent() {
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String resolvedKey = RoomContentStorage.resolveKey(preferences, establishmentName, roomName);
-        String storedValue = preferences.getString(resolvedKey, null);
+        List<RoomContentItem> loadedItems = roomContentViewModel != null
+                ? roomContentViewModel.loadRoomContentFor(establishmentName, roomName)
+                : Collections.emptyList();
         roomContentItems.clear();
-        if (storedValue == null || storedValue.trim().isEmpty()) {
-            if (roomContentAdapter != null) {
-                roomContentAdapter.notifyDataSetChanged();
-            }
-            return;
-        }
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject itemObject = array.getJSONObject(i);
-                RoomContentItem item = RoomContentItem.fromJson(itemObject);
-                roomContentItems.add(item);
-            }
-            RoomContentStorage.ensureCanonicalKey(preferences, establishmentName, roomName, resolvedKey);
-        } catch (JSONException e) {
-            roomContentItems.clear();
-            preferences.edit().remove(resolvedKey).apply();
-        }
+        roomContentItems.addAll(loadedItems);
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
         removeKitchenBiblioFurnitureIfNeeded();
         sortRoomContentItems();
@@ -5787,14 +5770,9 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     private void saveRoomContent() {
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-        JSONArray array = new JSONArray();
-        for (RoomContentItem item : roomContentItems) {
-            array.put(item.toJson());
+        if (roomContentViewModel != null) {
+            roomContentViewModel.saveRoomContentFor(establishmentName, roomName, roomContentItems);
         }
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        preferences.edit()
-                .putString(buildRoomContentKey(), array.toString())
-                .apply();
     }
 
     private void sortRoomContentItems() {
