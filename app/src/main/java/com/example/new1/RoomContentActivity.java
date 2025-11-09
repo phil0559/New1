@@ -5680,6 +5680,100 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         }
     }
 
+    private void removeKitchenBiblioFurnitureIfNeeded() {
+        if (roomContentItems.isEmpty()) {
+            return;
+        }
+        if (!isKitchenRoom()) {
+            return;
+        }
+        Set<Long> furnitureRanks = new HashSet<>();
+        for (RoomContentItem item : roomContentItems) {
+            if (!item.isFurniture()) {
+                continue;
+            }
+            if (matchesLibraryFurniture(item)) {
+                furnitureRanks.add(item.getRank());
+            }
+        }
+        if (furnitureRanks.isEmpty()) {
+            return;
+        }
+        Map<Long, List<Long>> childrenByParent = new HashMap<>();
+        for (RoomContentItem item : roomContentItems) {
+            Long parentRank = item.getParentRank();
+            if (parentRank == null) {
+                continue;
+            }
+            List<Long> children = childrenByParent.get(parentRank);
+            if (children == null) {
+                children = new ArrayList<>();
+                childrenByParent.put(parentRank, children);
+            }
+            children.add(item.getRank());
+        }
+        ArrayDeque<Long> pending = new ArrayDeque<>(furnitureRanks);
+        while (!pending.isEmpty()) {
+            Long current = pending.removeFirst();
+            List<Long> children = childrenByParent.get(current);
+            if (children == null || children.isEmpty()) {
+                continue;
+            }
+            for (Long childRank : children) {
+                if (furnitureRanks.add(childRank)) {
+                    pending.addLast(childRank);
+                }
+            }
+        }
+        boolean removed = false;
+        Iterator<RoomContentItem> iterator = roomContentItems.iterator();
+        while (iterator.hasNext()) {
+            RoomContentItem item = iterator.next();
+            if (furnitureRanks.contains(item.getRank())) {
+                iterator.remove();
+                removed = true;
+            }
+        }
+        if (removed) {
+            RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        }
+    }
+
+    private boolean isKitchenRoom() {
+        String normalized = buildComparisonKey(roomName);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+        return normalized.contains("cuisine") || normalized.contains("kitchen");
+    }
+
+    private boolean matchesLibraryFurniture(@NonNull RoomContentItem item) {
+        return containsLibraryKeyword(item.getName())
+                || containsLibraryKeyword(item.getFurnitureType())
+                || containsLibraryKeyword(item.getFurnitureCustomType())
+                || containsLibraryKeyword(item.getType());
+    }
+
+    private boolean containsLibraryKeyword(@Nullable String value) {
+        String normalized = buildComparisonKey(value);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+        return normalized.contains("bibliotheque")
+                || normalized.contains("bookcase")
+                || normalized.contains("library");
+    }
+
+    @NonNull
+    private String buildComparisonKey(@Nullable String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD);
+        String withoutDiacritics = DIACRITICS_PATTERN.matcher(normalized).replaceAll("");
+        return withoutDiacritics.trim().toLowerCase(Locale.ROOT);
+    }
+
     private void preserveHierarchyMetadata(@NonNull RoomContentItem source,
                                            @NonNull RoomContentItem destination) {
         destination.setRank(source.getRank());
