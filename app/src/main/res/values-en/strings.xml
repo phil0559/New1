@@ -104,6 +104,8 @@
     <string name="dialog_track_list_generic">Tracks</string>
     <string name="dialog_track_list_with_format">Tracks (%1$s)</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
+    <string name="room_content_storage_error">Unable to load the secured room content. Local data will be used instead.</string>
+    <string name="room_content_lookup_unavailable">Barcode lookup is currently unavailable.</string>
     <string name="room_content_filter_containers">Containers</string>
     <string name="room_content_filter_items">Items</string>
     <string name="container_popup_children_empty">No items match the current filters.</string>

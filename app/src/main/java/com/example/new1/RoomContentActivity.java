@@ -560,10 +560,16 @@ public class RoomContentActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room_content);
 
-        roomContentViewModel = new ViewModelProvider(
-                this,
-                RoomContentViewModel.provideFactory(getApplication())
-        ).get(RoomContentViewModel.class);
+        try {
+            roomContentViewModel = new ViewModelProvider(
+                    this,
+                    RoomContentViewModel.provideFactory(getApplication())
+            ).get(RoomContentViewModel.class);
+        } catch (RuntimeException | UnsatisfiedLinkError | ExceptionInInitializerError exception) {
+            Log.e(TAG, "Impossible d'initialiser le stockage sécurisé du contenu.", exception);
+            roomContentViewModel = null;
+            Toast.makeText(this, R.string.room_content_storage_error, Toast.LENGTH_LONG).show();
+        }
 
         try {
             metadataStorage = new MetadataStorage(this);
@@ -3980,7 +3986,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     View furnitureColumnContainer = dialogView.findViewById(R.id.container_move_furniture_column);
     Spinner furnitureColumnSpinner = dialogView.findViewById(R.id.spinner_move_furniture_column);
 
-    List<String> establishmentOptions = roomContentViewModel.loadEstablishmentNames(establishmentName);
+    List<String> establishmentOptions = loadEstablishmentNames(establishmentName);
     if (establishmentOptions.isEmpty()) {
         Toast.makeText(this, R.string.dialog_move_room_content_empty_establishments,
                 Toast.LENGTH_SHORT).show();
@@ -4709,7 +4715,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         saveRoomContent();
         updateEmptyState();
 
-        List<RoomContentItem> targetItems = roomContentViewModel.loadRoomContentFor(targetEstablishment, targetRoom);
+        List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
         RoomContentItem target = null;
         if (targetContainer != null) {
             target = findContainerByRank(targetItems, targetContainer.rank);
@@ -4737,7 +4743,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
         sortRoomContentItems(targetItems);
         RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
-        roomContentViewModel.saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
+        saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
     }
 
     @NonNull
@@ -4931,7 +4937,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @NonNull Spinner roomSpinner,
             @Nullable String establishment,
             @Nullable String preferredRoom) {
-        List<String> roomNames = roomContentViewModel.loadRoomNames(establishment, establishmentName, roomName);
+        List<String> roomNames = loadRoomNames(establishment, establishmentName, roomName);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, roomNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -5566,7 +5572,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 result.add(new ContainerOption(label, candidate.getRank(), candidate, children));
             }
         } else {
-            List<RoomContentItem> targetItems = roomContentViewModel.loadRoomContentFor(establishment, room);
+            List<RoomContentItem> targetItems = loadRoomContentFor(establishment, room);
             RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
             for (RoomContentItem candidate : targetItems) {
                 if (!candidate.isContainer()) {
@@ -5648,9 +5654,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     }
 
     private void loadRoomContent() {
-        List<RoomContentItem> loadedItems = roomContentViewModel != null
-                ? roomContentViewModel.loadRoomContentFor(establishmentName, roomName)
-                : Collections.emptyList();
+        List<RoomContentItem> loadedItems = loadRoomContentFor(establishmentName, roomName);
         roomContentItems.clear();
         roomContentItems.addAll(loadedItems);
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
@@ -5770,9 +5774,147 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     private void saveRoomContent() {
         RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
+        saveRoomContentFor(establishmentName, roomName, roomContentItems);
+    }
+
+    @NonNull
+    private List<String> loadEstablishmentNames(@Nullable String currentEstablishment) {
         if (roomContentViewModel != null) {
-            roomContentViewModel.saveRoomContentFor(establishmentName, roomName, roomContentItems);
+            return roomContentViewModel.loadEstablishmentNames(currentEstablishment);
         }
+        SharedPreferences preferences = getSharedPreferences(EstablishmentActivity.PREFS_NAME, MODE_PRIVATE);
+        String storedValue = preferences.getString(EstablishmentActivity.KEY_ESTABLISHMENTS, null);
+        List<String> result = new ArrayList<>();
+        if (storedValue != null && !storedValue.trim().isEmpty()) {
+            try {
+                JSONArray array = new JSONArray(storedValue);
+                for (int index = 0; index < array.length(); index++) {
+                    JSONObject item = array.optJSONObject(index);
+                    if (item == null) {
+                        continue;
+                    }
+                    String name = item.optString("name", "").trim();
+                    if (name.isEmpty()) {
+                        continue;
+                    }
+                    if (findIndexIgnoreCase(result, name) < 0) {
+                        result.add(name);
+                    }
+                }
+            } catch (JSONException exception) {
+                Log.w(TAG, "Impossible de charger les établissements depuis les préférences.", exception);
+            }
+        }
+        String current = currentEstablishment != null ? currentEstablishment.trim() : "";
+        if (!current.isEmpty() && findIndexIgnoreCase(result, current) < 0) {
+            result.add(0, current);
+        }
+        return result;
+    }
+
+    @NonNull
+    private List<String> loadRoomNames(@Nullable String selectedEstablishment,
+            @Nullable String currentEstablishment,
+            @Nullable String currentRoom) {
+        if (roomContentViewModel != null) {
+            return roomContentViewModel.loadRoomNames(selectedEstablishment, currentEstablishment, currentRoom);
+        }
+        SharedPreferences preferences = getSharedPreferences(EstablishmentContentActivity.PREFS_NAME, MODE_PRIVATE);
+        String key = EstablishmentContentActivity.buildRoomsKey(selectedEstablishment);
+        String storedValue = preferences.getString(key, null);
+        List<String> result = new ArrayList<>();
+        if (storedValue != null && !storedValue.trim().isEmpty()) {
+            try {
+                JSONArray array = new JSONArray(storedValue);
+                for (int index = 0; index < array.length(); index++) {
+                    JSONObject item = array.optJSONObject(index);
+                    if (item == null) {
+                        continue;
+                    }
+                    String name = item.optString("name", "").trim();
+                    if (name.isEmpty()) {
+                        continue;
+                    }
+                    if (findIndexIgnoreCase(result, name) < 0) {
+                        result.add(name);
+                    }
+                }
+            } catch (JSONException exception) {
+                Log.w(TAG, "Impossible de charger les pièces depuis les préférences.", exception);
+            }
+        }
+        String normalizedSelected = selectedEstablishment != null ? selectedEstablishment.trim() : "";
+        String normalizedCurrent = currentEstablishment != null ? currentEstablishment.trim() : "";
+        if (!normalizedSelected.isEmpty()
+                && normalizedSelected.equalsIgnoreCase(normalizedCurrent)) {
+            String currentRoomName = currentRoom != null ? currentRoom.trim() : "";
+            if (!currentRoomName.isEmpty() && findIndexIgnoreCase(result, currentRoomName) < 0) {
+                result.add(0, currentRoomName);
+            }
+        }
+        return result;
+    }
+
+    @NonNull
+    private List<RoomContentItem> loadRoomContentFor(@Nullable String establishment,
+            @Nullable String room) {
+        if (roomContentViewModel != null) {
+            return roomContentViewModel.loadRoomContentFor(establishment, room);
+        }
+        return loadRoomContentFromPreferences(establishment, room);
+    }
+
+    private void saveRoomContentFor(@Nullable String establishment,
+            @Nullable String room,
+            @NonNull List<RoomContentItem> items) {
+        if (roomContentViewModel != null) {
+            roomContentViewModel.saveRoomContentFor(establishment, room, items);
+            return;
+        }
+        saveRoomContentToPreferences(establishment, room, items);
+    }
+
+    @NonNull
+    private List<RoomContentItem> loadRoomContentFromPreferences(@Nullable String establishment,
+            @Nullable String room) {
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        String resolvedKey = RoomContentStorage.resolveKey(preferences, establishment, room);
+        String storedValue = preferences.getString(resolvedKey, null);
+        if (storedValue == null || storedValue.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<RoomContentItem> items = new ArrayList<>();
+        try {
+            JSONArray array = new JSONArray(storedValue);
+            for (int index = 0; index < array.length(); index++) {
+                JSONObject object = array.optJSONObject(index);
+                if (object == null) {
+                    continue;
+                }
+                RoomContentItem parsed = RoomContentItem.fromJson(object);
+                items.add(parsed);
+            }
+            RoomContentStorage.ensureCanonicalKey(preferences, establishment, room, resolvedKey);
+            RoomContentHierarchyHelper.normalizeHierarchy(items);
+        } catch (JSONException exception) {
+            Log.w(TAG, "Impossible de lire le contenu depuis les préférences.", exception);
+            preferences.edit().remove(resolvedKey).apply();
+            return Collections.emptyList();
+        }
+        return items;
+    }
+
+    private void saveRoomContentToPreferences(@Nullable String establishment,
+            @Nullable String room,
+            @NonNull List<RoomContentItem> items) {
+        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
+        JSONArray array = new JSONArray();
+        for (RoomContentItem item : items) {
+            array.put(item.toJson());
+        }
+        preferences.edit()
+                .putString(RoomContentStorage.buildKey(establishment, room), array.toString())
+                .apply();
     }
 
     private void sortRoomContentItems() {
@@ -6349,6 +6491,14 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
 
     private void fetchMetadataForBarcode(@NonNull String barcode,
                                          @NonNull BarcodeScanContext context) {
+        if (roomContentViewModel == null) {
+            runOnUiThread(() -> {
+                Toast.makeText(this, R.string.room_content_lookup_unavailable, Toast.LENGTH_LONG).show();
+                barcodeScanContext = null;
+                pendingBarcodeResult = null;
+            });
+            return;
+        }
         barcodeLookupExecutor.execute(() -> {
             BarcodeLookupResult lookupResult = roomContentViewModel.performLookup(barcode, MAX_FORM_PHOTOS);
             runOnUiThread(() -> applyBarcodeLookupResult(barcode, context, lookupResult));

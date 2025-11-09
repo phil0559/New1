@@ -104,6 +104,8 @@
     <string name="dialog_track_list_generic">Titel</string>
     <string name="dialog_track_list_with_format">Titel (%1$s)</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
+    <string name="room_content_storage_error">Der gesicherte Rauminhalt konnte nicht geladen werden. Stattdessen werden lokale Daten verwendet.</string>
+    <string name="room_content_lookup_unavailable">Die Barcode-Suche ist derzeit nicht verfügbar.</string>
     <string name="room_content_filter_containers">Behälter</string>
     <string name="room_content_filter_items">Elemente</string>
     <string name="container_popup_children_empty">Kein Element entspricht den aktuellen Filtern.</string>
