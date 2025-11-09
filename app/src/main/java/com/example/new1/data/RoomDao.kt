@@ -17,7 +17,7 @@ interface RoomDao {
     fun observeById(roomId: String): Flow<RoomEntity?>
 
     @Query("SELECT COUNT(*) FROM rooms")
-    fun count(): Int
+    suspend fun count(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(room: RoomEntity)

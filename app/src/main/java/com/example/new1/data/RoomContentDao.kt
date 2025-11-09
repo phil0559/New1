@@ -14,7 +14,7 @@ interface RoomContentDao {
     suspend fun listStorageKeys(): List<String>
 
     @Query("SELECT COUNT(*) FROM room_content")
-    fun count(): Int
+    suspend fun count(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: RoomContentEntity)

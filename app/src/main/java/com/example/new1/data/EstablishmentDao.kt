@@ -15,7 +15,7 @@ interface EstablishmentDao {
     fun observeById(establishmentId: String): Flow<EstablishmentEntity?>
 
     @Query("SELECT COUNT(*) FROM establishments")
-    fun count(): Int
+    suspend fun count(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(establishment: EstablishmentEntity)

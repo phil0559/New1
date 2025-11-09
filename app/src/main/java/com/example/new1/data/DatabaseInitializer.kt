@@ -6,6 +6,7 @@ import com.example.new1.EstablishmentActivity
 import com.example.new1.EstablishmentContentActivity
 import com.example.new1.Room
 import com.example.new1.RoomContentStorage
+import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONException
 import java.nio.charset.StandardCharsets
@@ -28,10 +29,7 @@ internal object DatabaseInitializer {
             return
         }
 
-        if (database.establishmentDao().count() > 0 ||
-            database.roomDao().count() > 0 ||
-            database.roomContentDao().count() > 0
-        ) {
+        if (hasExistingData(database)) {
             clearLegacyRoomContent(appContext)
             statePrefs.edit().putBoolean(KEY_MIGRATION_COMPLETED, true).apply()
             return
@@ -59,6 +57,12 @@ internal object DatabaseInitializer {
 
         clearLegacyRoomContent(appContext)
         statePrefs.edit().putBoolean(KEY_MIGRATION_COMPLETED, true).apply()
+    }
+
+    private fun hasExistingData(database: New1Database): Boolean = runBlocking {
+        database.establishmentDao().count() > 0 ||
+            database.roomDao().count() > 0 ||
+            database.roomContentDao().count() > 0
     }
 
     private fun loadLegacyEstablishments(context: Context, state: MigrationState) {
