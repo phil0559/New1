@@ -101,6 +101,8 @@
     <string name="room_content_metadata_publication_date">Veröffentlichungsdatum: %1$s</string>
     <string name="room_content_metadata_summary">Zusammenfassung: %1$s</string>
     <string name="room_content_metadata_tracks">Titel: %1$s</string>
+    <string name="dialog_track_list_generic">Titel</string>
+    <string name="dialog_track_list_with_format">Titel (%1$s)</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
     <string name="room_content_filter_containers">Behälter</string>
     <string name="room_content_filter_items">Elemente</string>
