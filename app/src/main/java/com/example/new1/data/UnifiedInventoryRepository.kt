@@ -1,6 +1,7 @@
 package com.example.new1.data
 
 import android.content.Context
+import androidx.room.withTransaction
 import com.example.new1.data.metadata.CategoryOptionEntity
 import com.example.new1.data.metadata.MetadataDao
 import java.util.Locale
@@ -73,7 +74,7 @@ class UnifiedInventoryRepository(
      * Supprime un établissement ainsi que les pièces associées.
      */
     suspend fun deleteEstablishment(establishmentId: String) = withContext(ioDispatcher) {
-        database.runInTransaction {
+        database.withTransaction {
             roomDao.deleteByEstablishment(establishmentId)
             establishmentDao.deleteById(establishmentId)
         }
@@ -90,7 +91,7 @@ class UnifiedInventoryRepository(
      * Supprime une pièce et l'inventaire associé.
      */
     suspend fun deleteRoom(roomId: String) = withContext(ioDispatcher) {
-        database.runInTransaction {
+        database.withTransaction {
             contentItemDao.deleteByRoom(roomId)
             roomDao.deleteById(roomId)
         }
