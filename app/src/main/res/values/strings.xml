@@ -120,6 +120,8 @@
     <string name="room_content_metadata_publication_date">Date de publication : %1$s</string>
     <string name="room_content_metadata_summary">Résumé : %1$s</string>
     <string name="room_content_metadata_tracks">Pistes : %1$s</string>
+    <string name="dialog_track_list_generic">Pistes</string>
+    <string name="dialog_track_list_with_format">Pistes (%1$s)</string>
     <string name="room_content_metadata_barcode">Code-barres : %1$s</string>
     <string name="room_content_metadata_error">Certaines données avancées n’ont pas pu être chargées. Les options supplémentaires sont temporairement désactivées.</string>
     <string name="room_content_filter_containers">Contenants</string>
