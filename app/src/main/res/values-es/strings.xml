@@ -104,6 +104,8 @@
     <string name="dialog_track_list_generic">Pistas</string>
     <string name="dialog_track_list_with_format">Pistas (%1$s)</string>
     <string name="room_content_metadata_barcode">Código de barras: %1$s</string>
+    <string name="room_content_storage_error">No se pudo cargar el contenido seguro de la habitación. Se usarán los datos locales.</string>
+    <string name="room_content_lookup_unavailable">La búsqueda de códigos de barras no está disponible por el momento.</string>
     <string name="room_content_filter_containers">Contenedores</string>
     <string name="room_content_filter_items">Elementos</string>
     <string name="container_popup_children_empty">Ningún elemento coincide con los filtros actuales.</string>
