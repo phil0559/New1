@@ -2,7 +2,6 @@ package com.example.new1;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
@@ -18,16 +17,15 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -52,6 +50,7 @@ final class EstablishmentSearchDialog {
             Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
     private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Handler MAIN_HANDLER = new Handler(Looper.getMainLooper());
+    private static final String TAG = "EstablishmentSearch";
 
     private EstablishmentSearchDialog() {
     }
@@ -77,12 +76,46 @@ final class EstablishmentSearchDialog {
         boolean requiresSelection = TextUtils.isEmpty(normalizedEstablishment);
         final boolean[] hasEstablishments = new boolean[]{true};
 
+        EstablishmentSearchViewModel viewModel;
+        try {
+            viewModel = new ViewModelProvider(
+                    activity,
+                    EstablishmentSearchViewModel.provideFactory(activity.getApplication())
+            ).get(EstablishmentSearchViewModel.class);
+        } catch (RuntimeException | UnsatisfiedLinkError | ExceptionInInitializerError exception) {
+            Log.e(TAG, "Impossible d'initialiser la recherche sécurisée.", exception);
+            Toast.makeText(activity, R.string.search_storage_error, Toast.LENGTH_LONG).show();
+            dialog.dismiss();
+            return;
+        }
+
+        List<Establishment> establishmentRecords = viewModel.loadEstablishmentsSnapshot();
+        Map<String, Establishment> establishmentsByNormalizedName = new HashMap<>();
+        List<String> establishmentNames = new ArrayList<>();
+        for (Establishment establishment : establishmentRecords) {
+            if (establishment == null) {
+                continue;
+            }
+            String name = establishment.getName();
+            if (name == null) {
+                continue;
+            }
+            String trimmed = name.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (!containsIgnoreCase(establishmentNames, trimmed)) {
+                establishmentNames.add(trimmed);
+            }
+            establishmentsByNormalizedName.put(normalize(trimmed), establishment);
+        }
+        Collections.sort(establishmentNames, (left, right) -> left.compareToIgnoreCase(right));
+
         if (requiresSelection) {
             if (establishmentContainer != null) {
                 establishmentContainer.setVisibility(View.VISIBLE);
             }
-            List<String> establishments = loadEstablishmentNames(activity.getApplicationContext());
-            if (establishments.isEmpty()) {
+            if (establishmentNames.isEmpty()) {
                 hasEstablishments[0] = false;
                 updateDialogTitle(titleView, activity, null);
                 if (statusView != null) {
@@ -94,7 +127,7 @@ final class EstablishmentSearchDialog {
                 }
             } else if (establishmentSpinner != null) {
                 ArrayAdapter<String> adapter = new ArrayAdapter<>(activity,
-                        android.R.layout.simple_spinner_item, establishments);
+                        android.R.layout.simple_spinner_item, establishmentNames);
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 establishmentSpinner.setAdapter(adapter);
                 if (statusView != null) {
@@ -120,6 +153,9 @@ final class EstablishmentSearchDialog {
                 });
             }
         } else {
+            if (!establishmentsByNormalizedName.containsKey(normalizedEstablishment)) {
+                hasEstablishments[0] = false;
+            }
             updateDialogTitle(titleView, activity, normalizedEstablishment);
             if (establishmentContainer != null) {
                 establishmentContainer.setVisibility(View.GONE);
@@ -160,14 +196,22 @@ final class EstablishmentSearchDialog {
                 resultTable.removeAllViews();
                 return;
             }
+            final Establishment selectedRecord = establishmentsByNormalizedName.get(
+                    normalize(selectedEstablishment));
+            if (selectedRecord == null || selectedRecord.getId() == null
+                    || selectedRecord.getId().trim().isEmpty()) {
+                statusView.setText(R.string.search_dialog_status_missing_establishment);
+                statusView.setVisibility(View.VISIBLE);
+                resultTable.removeAllViews();
+                return;
+            }
             statusView.setText(R.string.search_dialog_status_loading);
             statusView.setVisibility(View.VISIBLE);
             searchButton.setEnabled(false);
             resultTable.removeAllViews();
-            final String establishmentForSearch = selectedEstablishment;
             EXECUTOR.execute(() -> {
                 List<SearchMatch> matches = performSearch(activity.getApplicationContext(),
-                        establishmentForSearch, rawQuery);
+                        viewModel, selectedRecord, rawQuery);
                 MAIN_HANDLER.post(() -> {
                     if (!activity.isFinishing()) {
                         populateResults(activity, resultTable, statusView, matches);
@@ -239,36 +283,6 @@ final class EstablishmentSearchDialog {
         }
     }
 
-    @NonNull
-    private static List<String> loadEstablishmentNames(@NonNull Context context) {
-        SharedPreferences preferences = context.getSharedPreferences(
-                EstablishmentActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        String storedValue = preferences.getString(EstablishmentActivity.KEY_ESTABLISHMENTS, null);
-        if (storedValue == null || storedValue.trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<String> result = new ArrayList<>();
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject item = array.optJSONObject(i);
-                if (item == null) {
-                    continue;
-                }
-                String name = item.optString("name", "").trim();
-                if (name.isEmpty()) {
-                    continue;
-                }
-                if (!containsIgnoreCase(result, name)) {
-                    result.add(name);
-                }
-            }
-        } catch (JSONException ignored) {
-        }
-        Collections.sort(result, (left, right) -> left.compareToIgnoreCase(right));
-        return result;
-    }
-
     private static boolean containsIgnoreCase(@NonNull List<String> values, @NonNull String target) {
         for (String value : values) {
             if (value != null && value.trim().equalsIgnoreCase(target.trim())) {
@@ -280,20 +294,22 @@ final class EstablishmentSearchDialog {
 
     @NonNull
     private static List<SearchMatch> performSearch(@NonNull Context context,
-            @Nullable String establishmentName,
+            @NonNull EstablishmentSearchViewModel viewModel,
+            @NonNull Establishment establishment,
             @NonNull String query) {
         String normalizedQuery = normalize(query);
         if (normalizedQuery.isEmpty()) {
             return Collections.emptyList();
         }
-        List<RoomRecord> rooms = loadRooms(context, establishmentName);
+        List<RoomRecord> rooms = loadRooms(viewModel, establishment);
         if (rooms.isEmpty()) {
             SearchMatch placeholder = SearchMatch.noData();
             return Collections.singletonList(placeholder);
         }
+        String establishmentName = establishment.getName();
         List<SearchMatch> matches = new ArrayList<>();
         for (RoomRecord room : rooms) {
-            List<RoomContentItem> items = loadRoomContent(context, establishmentName, room.name);
+            List<RoomContentItem> items = loadRoomContent(viewModel, establishment, room.name);
             if (items.isEmpty()) {
                 continue;
             }
@@ -563,63 +579,42 @@ final class EstablishmentSearchDialog {
     }
 
     @NonNull
-    private static List<RoomRecord> loadRooms(@NonNull Context context,
-            @Nullable String establishmentName) {
-        SharedPreferences preferences = context.getSharedPreferences(
-                EstablishmentContentActivity.PREFS_NAME, Context.MODE_PRIVATE);
-        String key = EstablishmentContentActivity.buildRoomsKey(establishmentName);
-        String storedValue = preferences.getString(key, null);
-        if (storedValue == null || storedValue.trim().isEmpty()) {
+    private static List<RoomRecord> loadRooms(@NonNull EstablishmentSearchViewModel viewModel,
+            @NonNull Establishment establishment) {
+        String establishmentId = establishment.getId();
+        if (establishmentId == null || establishmentId.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Room> storedRooms = viewModel.loadRoomsSnapshot(establishmentId);
+        if (storedRooms.isEmpty()) {
             return Collections.emptyList();
         }
         List<RoomRecord> rooms = new ArrayList<>();
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject item = array.optJSONObject(i);
-                if (item == null) {
-                    continue;
-                }
-                String name = item.optString("name", "");
-                if (name.trim().isEmpty()) {
-                    continue;
-                }
-                rooms.add(new RoomRecord(name));
+        for (Room room : storedRooms) {
+            if (room == null) {
+                continue;
             }
-        } catch (JSONException ignored) {
+            String name = room.getName();
+            if (name == null) {
+                continue;
+            }
+            String trimmed = name.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            rooms.add(new RoomRecord(trimmed));
         }
         return rooms;
     }
 
     @NonNull
-    private static List<RoomContentItem> loadRoomContent(@NonNull Context context,
-            @Nullable String establishmentName,
+    private static List<RoomContentItem> loadRoomContent(
+            @NonNull EstablishmentSearchViewModel viewModel,
+            @NonNull Establishment establishment,
             @Nullable String roomName) {
-        SharedPreferences preferences = context.getSharedPreferences(
-                RoomContentStorage.PREFS_NAME, Context.MODE_PRIVATE);
-        String key = RoomContentStorage.resolveKey(preferences, establishmentName, roomName);
-        String storedValue = preferences.getString(key, null);
-        if (storedValue == null || storedValue.trim().isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<RoomContentItem> items = new ArrayList<>();
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject object = array.optJSONObject(i);
-                if (object == null) {
-                    continue;
-                }
-                RoomContentItem parsed = RoomContentItem.fromJson(object);
-                items.add(parsed);
-            }
-            RoomContentStorage.ensureCanonicalKey(preferences, establishmentName, roomName, key);
-        } catch (JSONException exception) {
-            preferences.edit().remove(key).apply();
-            return Collections.emptyList();
-        }
-        RoomContentHierarchyHelper.normalizeHierarchy(items);
-        return items;
+        String establishmentName = establishment.getName();
+        List<RoomContentItem> items = viewModel.loadRoomContentSnapshot(establishmentName, roomName);
+        return items.isEmpty() ? Collections.emptyList() : items;
     }
 
     private static void populateResults(@NonNull Activity activity,

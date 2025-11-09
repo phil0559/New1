@@ -7,16 +7,18 @@ import java.util.UUID;
 
 public class Room {
     private final String id;
+    private final String establishmentId;
     private final String name;
     private final String comment;
     private final List<String> photos;
 
-    public Room(String name, String comment, List<String> photos) {
-        this(generateStableId(), name, comment, photos);
+    public Room(String establishmentId, String name, String comment, List<String> photos) {
+        this(generateStableId(), establishmentId, name, comment, photos);
     }
 
-    public Room(String id, String name, String comment, List<String> photos) {
+    public Room(String id, String establishmentId, String name, String comment, List<String> photos) {
         this.id = (id == null || id.trim().isEmpty()) ? generateStableId() : id;
+        this.establishmentId = establishmentId;
         this.name = name;
         this.comment = comment != null ? comment : "";
         if (photos == null) {
@@ -32,6 +34,10 @@ public class Room {
 
     public String getId() {
         return id;
+    }
+
+    public String getEstablishmentId() {
+        return establishmentId;
     }
 
     public String getName() {

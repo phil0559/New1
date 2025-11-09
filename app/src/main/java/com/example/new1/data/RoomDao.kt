@@ -13,6 +13,11 @@ interface RoomDao {
     )
     fun observeByEstablishment(establishmentId: String): Flow<List<RoomEntity>>
 
+    @Query(
+        "SELECT * FROM rooms WHERE establishment_id = :establishmentId ORDER BY name COLLATE NOCASE ASC",
+    )
+    suspend fun listByEstablishment(establishmentId: String): List<RoomEntity>
+
     @Query("SELECT * FROM rooms WHERE id = :roomId LIMIT 1")
     fun observeById(roomId: String): Flow<RoomEntity?>
 
