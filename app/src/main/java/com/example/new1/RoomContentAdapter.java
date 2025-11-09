@@ -697,6 +697,25 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
         }
     }
 
+    private static final class RankComputationState {
+        @NonNull
+        final String label;
+        int remainingChildren;
+        int nextChildIndex;
+
+        RankComputationState(@NonNull String label, int childCount) {
+            this.label = label;
+            this.remainingChildren = Math.max(0, childCount);
+            this.nextChildIndex = 1;
+        }
+
+        void consumeChild() {
+            if (remainingChildren > 0) {
+                remainingChildren--;
+            }
+        }
+    }
+
     private void addMetadataLine(@NonNull List<CharSequence> metadataLines, int templateRes,
             @Nullable String value) {
         if (value == null) {
@@ -865,6 +884,39 @@ public class RoomContentAdapter extends RecyclerView.Adapter<RoomContentAdapter.
             current = findAttachedContainerPosition(current);
         }
         return false;
+    }
+
+    @NonNull
+    private String buildRankLabel(int position) {
+        if (position < 0 || position >= items.size()) {
+            return "";
+        }
+        Deque<RankComputationState> stack = new ArrayDeque<>();
+        int nextTopLevelIndex = 1;
+        String label = "";
+        for (int index = 0; index <= position; index++) {
+            RoomContentItem current = items.get(index);
+            while (!stack.isEmpty() && stack.peek().remainingChildren <= 0) {
+                stack.pop();
+            }
+            RankComputationState parentState = stack.peek();
+            if (parentState == null) {
+                label = String.valueOf(nextTopLevelIndex);
+                nextTopLevelIndex++;
+            } else {
+                int childIndex = parentState.nextChildIndex;
+                parentState.nextChildIndex++;
+                parentState.consumeChild();
+                label = parentState.label + "." + childIndex;
+            }
+            if (current.isContainer()) {
+                int childCount = current.getAttachedItemCount();
+                if (childCount > 0) {
+                    stack.push(new RankComputationState(label, childCount));
+                }
+            }
+        }
+        return label;
     }
 
     /**
