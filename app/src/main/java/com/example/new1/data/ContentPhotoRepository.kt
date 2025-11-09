@@ -1,17 +1,18 @@
 package com.example.new1.data
 
 import android.content.Context
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 class ContentPhotoRepository(
     context: Context,
     private val contentPhotoDao: ContentPhotoDao,
+    private val dispatcherProvider: CoroutineDispatcherProvider = DefaultCoroutineDispatcherProvider(),
 ) {
     private val appContext = context.applicationContext
+    private val ioDispatcher = dispatcherProvider.io
 
     suspend fun list(ownerType: String, ownerId: String): List<ContentPhotoEntity> =
-        withContext(Dispatchers.IO) {
+        withContext(ioDispatcher) {
             contentPhotoDao.listByOwner(ownerType, ownerId)
         }
 
@@ -19,7 +20,7 @@ class ContentPhotoRepository(
         ownerType: String,
         ownerId: String,
         payloads: List<ContentPhotoPayload>,
-    ) = withContext(Dispatchers.IO) {
+    ) = withContext(ioDispatcher) {
         val existing = contentPhotoDao.listByOwner(ownerType, ownerId)
         val incomingIds = payloads.map { it.photoId }.toSet()
         existing.filter { it.id !in incomingIds }.forEach { obsolete ->
@@ -44,12 +45,12 @@ class ContentPhotoRepository(
         }
     }
 
-    suspend fun readPhoto(photoId: String): ByteArray? = withContext(Dispatchers.IO) {
+    suspend fun readPhoto(photoId: String): ByteArray? = withContext(ioDispatcher) {
         val entity = contentPhotoDao.findById(photoId) ?: return@withContext null
         ContentPhotoStorage.read(appContext, entity.fileName)
     }
 
-    suspend fun deletePhoto(photoId: String) = withContext(Dispatchers.IO) {
+    suspend fun deletePhoto(photoId: String) = withContext(ioDispatcher) {
         val entity = contentPhotoDao.findById(photoId) ?: return@withContext
         ContentPhotoStorage.delete(appContext, entity.fileName)
         contentPhotoDao.deleteById(photoId)
