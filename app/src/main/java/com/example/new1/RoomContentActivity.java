@@ -35,6 +35,8 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -59,6 +61,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.new1.data.metadata.MetadataStorage;
+import com.example.new1.RoomContentViewModel;
+import com.example.new1.BarcodeLookupResult;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.radiobutton.MaterialRadioButton;
@@ -73,16 +77,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.util.ArrayDeque;
@@ -106,7 +101,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-public class RoomContentActivity extends Activity {
+public class RoomContentActivity extends AppCompatActivity {
     private static final String TAG = "RoomContentActivity";
     private static final int REQUEST_TAKE_PHOTO = 2001;
     private static final int MAX_FORM_PHOTOS = 5;
@@ -121,11 +116,6 @@ public class RoomContentActivity extends Activity {
     private static final String DATE_FORMAT_EUROPEAN = "dd/MM/yyyy";
     private static final String DATE_FORMAT_ENGLISH = "MM/dd/yyyy";
     private static final String DATE_FORMAT_ISO = "yyyy-MM-dd";
-
-    private static final String ESTABLISHMENTS_PREFS = "establishments_prefs";
-    private static final String KEY_ESTABLISHMENTS = "establishments";
-    private static final String ROOMS_PREFS = "rooms_prefs";
-    private static final String KEY_ROOMS = "rooms";
 
     private static final int GENERATED_BARCODE_LENGTH = 13;
     private static final SecureRandom BARCODE_RANDOM = new SecureRandom();
@@ -494,34 +484,6 @@ public class RoomContentActivity extends Activity {
         }
     }
 
-    private static class BarcodeLookupResult {
-        boolean found;
-        boolean networkError;
-        @Nullable
-        String typeLabel;
-        @Nullable
-        String title;
-        @Nullable
-        String author;
-        @Nullable
-        String publisher;
-        @Nullable
-        String series;
-        @Nullable
-        String number;
-        @Nullable
-        String edition;
-        @Nullable
-        String publishDate;
-        @Nullable
-        String summary;
-        final List<String> photos = new ArrayList<>();
-        @Nullable
-        String infoMessage;
-        @Nullable
-        String errorMessage;
-    }
-
     @Nullable
     private String establishmentName;
     @Nullable
@@ -566,6 +528,7 @@ public class RoomContentActivity extends Activity {
     private RoomContentAdapter.FurniturePopupRestoreState pendingFurniturePopupState;
     @Nullable
     private RoomContentAdapter.OptionsPopupRestoreState pendingOptionsPopupState;
+    private RoomContentViewModel roomContentViewModel;
     private boolean selectionModeEnabled;
     private boolean suppressFurnitureLevelSelectionCallbacks;
     private boolean suppressFurnitureColumnSelectionCallbacks;
@@ -596,6 +559,11 @@ public class RoomContentActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_room_content);
+
+        roomContentViewModel = new ViewModelProvider(
+                this,
+                RoomContentViewModel.provideFactory(getApplication())
+        ).get(RoomContentViewModel.class);
 
         try {
             metadataStorage = new MetadataStorage(this);
@@ -4012,7 +3980,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     View furnitureColumnContainer = dialogView.findViewById(R.id.container_move_furniture_column);
     Spinner furnitureColumnSpinner = dialogView.findViewById(R.id.spinner_move_furniture_column);
 
-    List<String> establishmentOptions = loadEstablishmentNames();
+    List<String> establishmentOptions = roomContentViewModel.loadEstablishmentNames(establishmentName);
     if (establishmentOptions.isEmpty()) {
         Toast.makeText(this, R.string.dialog_move_room_content_empty_establishments,
                 Toast.LENGTH_SHORT).show();
@@ -4741,7 +4709,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         saveRoomContent();
         updateEmptyState();
 
-        List<RoomContentItem> targetItems = loadRoomContentFor(targetEstablishment, targetRoom);
+        List<RoomContentItem> targetItems = roomContentViewModel.loadRoomContentFor(targetEstablishment, targetRoom);
         RoomContentItem target = null;
         if (targetContainer != null) {
             target = findContainerByRank(targetItems, targetContainer.rank);
@@ -4769,7 +4737,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
         sortRoomContentItems(targetItems);
         RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
-        saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
+        roomContentViewModel.saveRoomContentFor(targetEstablishment, targetRoom, targetItems);
     }
 
     @NonNull
@@ -4900,124 +4868,6 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
         return result;
     }
 
-    @NonNull
-    private List<String> loadEstablishmentNames() {
-        SharedPreferences preferences = getSharedPreferences(ESTABLISHMENTS_PREFS, MODE_PRIVATE);
-        String storedValue = preferences.getString(KEY_ESTABLISHMENTS, null);
-        List<String> result = new ArrayList<>();
-        if (storedValue != null && !storedValue.trim().isEmpty()) {
-            try {
-                JSONArray array = new JSONArray(storedValue);
-                for (int i = 0; i < array.length(); i++) {
-                    JSONObject item = array.optJSONObject(i);
-                    if (item == null) {
-                        continue;
-                    }
-                    String name = item.optString("name", "").trim();
-                    if (name.isEmpty()) {
-                        continue;
-                    }
-                    if (findIndexIgnoreCase(result, name) < 0) {
-                        result.add(name);
-                    }
-                }
-            } catch (JSONException ignored) {
-            }
-        }
-        String current = normalizeName(establishmentName);
-        if (!current.isEmpty() && findIndexIgnoreCase(result, current) < 0) {
-            result.add(0, current);
-        }
-        return result;
-    }
-
-    @NonNull
-    private List<String> loadRoomNames(@Nullable String establishment) {
-        SharedPreferences preferences = getSharedPreferences(ROOMS_PREFS, MODE_PRIVATE);
-        String key = buildRoomsKeyForEstablishment(establishment);
-        String storedValue = preferences.getString(key, null);
-        List<String> result = new ArrayList<>();
-        if (storedValue != null && !storedValue.trim().isEmpty()) {
-            try {
-                JSONArray array = new JSONArray(storedValue);
-                for (int i = 0; i < array.length(); i++) {
-                    JSONObject item = array.optJSONObject(i);
-                    if (item == null) {
-                        continue;
-                    }
-                    String name = item.optString("name", "").trim();
-                    if (name.isEmpty()) {
-                        continue;
-                    }
-                    if (findIndexIgnoreCase(result, name) < 0) {
-                        result.add(name);
-                    }
-                }
-            } catch (JSONException ignored) {
-            }
-        }
-        String normalizedSelected = normalizeName(establishment);
-        String normalizedCurrent = normalizeName(establishmentName);
-        if (!normalizedSelected.isEmpty()
-                && normalizedSelected.equalsIgnoreCase(normalizedCurrent)) {
-            String currentRoomName = normalizeName(roomName);
-            if (!currentRoomName.isEmpty() && findIndexIgnoreCase(result, currentRoomName) < 0) {
-                result.add(0, currentRoomName);
-            }
-        }
-        return result;
-    }
-
-    @NonNull
-    private List<RoomContentItem> loadRoomContentFor(@Nullable String establishment,
-            @Nullable String room) {
-        List<RoomContentItem> result = new ArrayList<>();
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        String key = RoomContentStorage.resolveKey(preferences, establishment, room);
-        String storedValue = preferences.getString(key, null);
-        if (storedValue == null || storedValue.trim().isEmpty()) {
-            return result;
-        }
-        try {
-            JSONArray array = new JSONArray(storedValue);
-            for (int i = 0; i < array.length(); i++) {
-                JSONObject itemObject = array.optJSONObject(i);
-                if (itemObject == null) {
-                    continue;
-                }
-                RoomContentItem parsed = RoomContentItem.fromJson(itemObject);
-                result.add(parsed);
-            }
-            RoomContentStorage.ensureCanonicalKey(preferences, establishment, room, key);
-        } catch (JSONException exception) {
-            preferences.edit().remove(key).apply();
-        }
-        RoomContentHierarchyHelper.normalizeHierarchy(result);
-        return result;
-    }
-
-    private void saveRoomContentFor(@Nullable String establishment,
-            @Nullable String room,
-            @NonNull List<RoomContentItem> items) {
-        RoomContentHierarchyHelper.normalizeHierarchy(items);
-        JSONArray array = new JSONArray();
-        for (RoomContentItem item : items) {
-            array.put(item.toJson());
-        }
-        SharedPreferences preferences = getSharedPreferences(RoomContentStorage.PREFS_NAME, MODE_PRIVATE);
-        preferences.edit()
-                .putString(RoomContentStorage.buildKey(establishment, room), array.toString())
-                .apply();
-    }
-
-    private String buildRoomsKeyForEstablishment(@Nullable String establishment) {
-        String trimmed = establishment != null ? establishment.trim() : "";
-        if (trimmed.isEmpty()) {
-            return KEY_ROOMS + "_default";
-        }
-        return KEY_ROOMS + "_" + trimmed;
-    }
-
     private int findIndexIgnoreCase(@NonNull List<String> values, @Nullable String target) {
         if (target == null) {
             return -1;
@@ -5081,7 +4931,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             @NonNull Spinner roomSpinner,
             @Nullable String establishment,
             @Nullable String preferredRoom) {
-        List<String> roomNames = loadRoomNames(establishment);
+        List<String> roomNames = roomContentViewModel.loadRoomNames(establishment, establishmentName, roomName);
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, roomNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -5716,7 +5566,7 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
                 result.add(new ContainerOption(label, candidate.getRank(), candidate, children));
             }
         } else {
-            List<RoomContentItem> targetItems = loadRoomContentFor(establishment, room);
+            List<RoomContentItem> targetItems = roomContentViewModel.loadRoomContentFor(establishment, room);
             RoomContentHierarchyHelper.normalizeHierarchy(targetItems);
             for (RoomContentItem candidate : targetItems) {
                 if (!candidate.isContainer()) {
@@ -6428,668 +6278,14 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
     private void fetchMetadataForBarcode(@NonNull String barcode,
                                          @NonNull BarcodeScanContext context) {
         barcodeLookupExecutor.execute(() -> {
-            BarcodeLookupResult lookupResult = performLookup(barcode);
+            BarcodeLookupResult lookupResult = roomContentViewModel.performLookup(barcode, MAX_FORM_PHOTOS);
             runOnUiThread(() -> applyBarcodeLookupResult(barcode, context, lookupResult));
         });
-    }
-
-    @NonNull
-    private BarcodeLookupResult performLookup(@NonNull String barcode) {
-        BarcodeLookupResult bookResult = lookupBook(barcode);
-        if (bookResult != null && bookResult.found) {
-            return bookResult;
-        }
-        BarcodeLookupResult musicResult = lookupMusic(barcode);
-        if (musicResult != null && musicResult.found) {
-            return musicResult;
-        }
-        if (bookResult != null) {
-            if (bookResult.errorMessage != null || bookResult.infoMessage != null) {
-                return bookResult;
-            }
-        }
-        if (musicResult != null) {
-            if (musicResult.errorMessage != null || musicResult.infoMessage != null) {
-                return musicResult;
-            }
-        }
-        BarcodeLookupResult fallback = new BarcodeLookupResult();
-        fallback.infoMessage = getString(R.string.dialog_barcode_lookup_not_found, barcode);
-        return fallback;
-    }
-
-    @Nullable
-    private BarcodeLookupResult lookupBook(@NonNull String barcode) {
-        if (!isIsbnCandidate(barcode)) {
-            return null;
-        }
-        HttpURLConnection connection = null;
-        try {
-            String urlValue = "https://www.googleapis.com/books/v1/volumes?q=isbn:" +
-                    URLEncoder.encode(barcode, StandardCharsets.UTF_8.name());
-            URL url = new URL(urlValue);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(15000);
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
-            int responseCode = connection.getResponseCode();
-            InputStream rawStream = responseCode >= 400
-                    ? connection.getErrorStream()
-                    : connection.getInputStream();
-            if (rawStream == null) {
-                BarcodeLookupResult error = new BarcodeLookupResult();
-                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-                error.networkError = true;
-                return error;
-            }
-            String response;
-            try (InputStream stream = rawStream) {
-                response = readStream(stream);
-            }
-            if (responseCode >= 400) {
-                BarcodeLookupResult error = new BarcodeLookupResult();
-                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-                error.networkError = true;
-                return error;
-            }
-            JSONObject root = new JSONObject(response);
-            JSONArray items = root.optJSONArray("items");
-            if (items == null || items.length() == 0) {
-                BarcodeLookupResult fallback = new BarcodeLookupResult();
-                enrichBookWithOpenLibrary(barcode, fallback);
-                return fallback;
-            }
-            JSONObject firstItem = items.getJSONObject(0);
-            JSONObject volumeInfo = firstItem.optJSONObject("volumeInfo");
-            if (volumeInfo == null) {
-                BarcodeLookupResult fallback = new BarcodeLookupResult();
-                enrichBookWithOpenLibrary(barcode, fallback);
-                return fallback;
-            }
-            BarcodeLookupResult result = new BarcodeLookupResult();
-            result.found = true;
-            String title = volumeInfo.optString("title", null);
-            if (!TextUtils.isEmpty(title)) {
-                result.title = title;
-            }
-            JSONArray authorsArray = volumeInfo.optJSONArray("authors");
-            if (authorsArray != null && authorsArray.length() > 0) {
-                List<String> authors = new ArrayList<>();
-                for (int i = 0; i < authorsArray.length(); i++) {
-                    String value = authorsArray.optString(i, null);
-                    if (value != null) {
-                        String trimmed = value.trim();
-                        if (!trimmed.isEmpty()) {
-                            authors.add(trimmed);
-                        }
-                    }
-                }
-                if (!authors.isEmpty()) {
-                    result.author = TextUtils.join(", ", authors);
-                }
-            }
-            String publisher = volumeInfo.optString("publisher", null);
-            if (!TextUtils.isEmpty(publisher)) {
-                result.publisher = publisher;
-            }
-            String publishedDate = volumeInfo.optString("publishedDate", null);
-            if (!TextUtils.isEmpty(publishedDate)) {
-                result.publishDate = publishedDate;
-            }
-            String description = resolveDescription(volumeInfo.opt("description"));
-            if (!TextUtils.isEmpty(description)) {
-                result.summary = description;
-            }
-            String subtitle = volumeInfo.optString("subtitle", null);
-            if (!TextUtils.isEmpty(subtitle)) {
-                String trimmedSubtitle = subtitle.trim();
-                if (TextUtils.isEmpty(result.summary)) {
-                    result.summary = trimmedSubtitle;
-                }
-                String loweredSubtitle = trimmedSubtitle.toLowerCase(Locale.getDefault());
-                if (loweredSubtitle.contains("édition")
-                        || loweredSubtitle.contains("edition")
-                        || loweredSubtitle.contains("éd.")) {
-                    result.edition = trimmedSubtitle;
-                }
-            }
-            JSONObject seriesInfo = volumeInfo.optJSONObject("seriesInfo");
-            if (seriesInfo != null) {
-                String series = seriesInfo.optString("series", null);
-                if (!TextUtils.isEmpty(series)) {
-                    result.series = series;
-                }
-                String number = seriesInfo.optString("bookDisplayNumber", null);
-                if (!TextUtils.isEmpty(number)) {
-                    result.number = number;
-                }
-            }
-            JSONArray categories = volumeInfo.optJSONArray("categories");
-            boolean isComic = false;
-            if (categories != null) {
-                for (int i = 0; i < categories.length(); i++) {
-                    String category = categories.optString(i, "");
-                    String lowered = category.toLowerCase(Locale.getDefault());
-                    if (lowered.contains("comic")
-                            || lowered.contains("bande dessin")
-                            || lowered.contains("manga")) {
-                        isComic = true;
-                        break;
-                    }
-                }
-            }
-            result.typeLabel = getString(isComic
-                    ? R.string.dialog_type_comic
-                    : R.string.dialog_type_book);
-            JSONObject imageLinks = volumeInfo.optJSONObject("imageLinks");
-            if (imageLinks != null) {
-                String[] keys = new String[]{"extraLarge", "large", "medium", "thumbnail", "smallThumbnail"};
-                for (String key : keys) {
-                    String urlCandidate = imageLinks.optString(key, null);
-                    if (urlCandidate == null || urlCandidate.trim().isEmpty()) {
-                        continue;
-                    }
-                    String sanitizedUrl = urlCandidate.replace("http://", "https://");
-                    String photo = downloadImageAsBase64(sanitizedUrl);
-                    if (photo != null && !result.photos.contains(photo)) {
-                        result.photos.add(photo);
-                        if (result.photos.size() >= MAX_FORM_PHOTOS) {
-                            break;
-                        }
-                    }
-                }
-            }
-            enrichBookWithOpenLibrary(barcode, result);
-            return result;
-        } catch (IOException e) {
-            BarcodeLookupResult error = new BarcodeLookupResult();
-            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-            error.networkError = true;
-            return error;
-        } catch (JSONException e) {
-            BarcodeLookupResult error = new BarcodeLookupResult();
-            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-            return error;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    private void enrichBookWithOpenLibrary(@NonNull String isbn,
-                                           @NonNull BarcodeLookupResult result) {
-        HttpURLConnection connection = null;
-        boolean hasData = result.found;
-        try {
-            String urlValue = "https://openlibrary.org/isbn/" +
-                    URLEncoder.encode(isbn, StandardCharsets.UTF_8.name()) + ".json";
-            URL url = new URL(urlValue);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(15000);
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
-            int responseCode = connection.getResponseCode();
-            InputStream rawStream = responseCode >= 400
-                    ? connection.getErrorStream()
-                    : connection.getInputStream();
-            if (rawStream == null || responseCode >= 400) {
-                return;
-            }
-            String response;
-            try (InputStream stream = rawStream) {
-                response = readStream(stream);
-            }
-            JSONObject root = new JSONObject(response);
-
-            if (TextUtils.isEmpty(result.title)) {
-                String title = root.optString("title", null);
-                if (!TextUtils.isEmpty(title)) {
-                    result.title = title;
-                    hasData = true;
-                }
-            }
-
-            if (TextUtils.isEmpty(result.publisher)) {
-                JSONArray publishers = root.optJSONArray("publishers");
-                if (publishers != null && publishers.length() > 0) {
-                    Set<String> publisherSet = new LinkedHashSet<>();
-                    for (int i = 0; i < publishers.length(); i++) {
-                        String value = publishers.optString(i, null);
-                        if (value == null) {
-                            continue;
-                        }
-                        String trimmed = value.trim();
-                        if (!trimmed.isEmpty()) {
-                            publisherSet.add(trimmed);
-                        }
-                    }
-                    if (!publisherSet.isEmpty()) {
-                        result.publisher = TextUtils.join(", ", new ArrayList<>(publisherSet));
-                        hasData = true;
-                    }
-                }
-            }
-
-            if (TextUtils.isEmpty(result.series)) {
-                JSONArray seriesArray = root.optJSONArray("series");
-                if (seriesArray != null && seriesArray.length() > 0) {
-                    Set<String> seriesSet = new LinkedHashSet<>();
-                    for (int i = 0; i < seriesArray.length(); i++) {
-                        String value = seriesArray.optString(i, null);
-                        if (value == null) {
-                            continue;
-                        }
-                        String trimmed = value.trim();
-                        if (!trimmed.isEmpty()) {
-                            seriesSet.add(trimmed);
-                        }
-                    }
-                    if (!seriesSet.isEmpty()) {
-                        result.series = TextUtils.join(", ", new ArrayList<>(seriesSet));
-                        hasData = true;
-                    }
-                }
-            }
-
-            if (TextUtils.isEmpty(result.number)) {
-                String volume = root.optString("series_number", null);
-                if (TextUtils.isEmpty(volume)) {
-                    volume = root.optString("volume", null);
-                }
-                if (TextUtils.isEmpty(volume)) {
-                    volume = root.optString("number", null);
-                }
-                if (!TextUtils.isEmpty(volume)) {
-                    result.number = volume;
-                    hasData = true;
-                }
-            }
-
-            if (TextUtils.isEmpty(result.edition)) {
-                String edition = root.optString("edition_name", null);
-                if (!TextUtils.isEmpty(edition)) {
-                    result.edition = edition;
-                    hasData = true;
-                }
-            }
-
-            if (TextUtils.isEmpty(result.publishDate)) {
-                String publishDate = root.optString("publish_date", null);
-                if (!TextUtils.isEmpty(publishDate)) {
-                    result.publishDate = publishDate;
-                    hasData = true;
-                }
-            }
-
-            if (TextUtils.isEmpty(result.summary)) {
-                String description = resolveDescription(root.opt("description"));
-                if (TextUtils.isEmpty(description)) {
-                    description = resolveDescription(root.opt("notes"));
-                }
-                if (!TextUtils.isEmpty(description)) {
-                    result.summary = description;
-                    hasData = true;
-                }
-            }
-
-            if (TextUtils.isEmpty(result.author)) {
-                JSONArray authors = root.optJSONArray("authors");
-                if (authors != null && authors.length() > 0) {
-                    Set<String> authorNames = new LinkedHashSet<>();
-                    for (int i = 0; i < authors.length(); i++) {
-                        JSONObject authorObject = authors.optJSONObject(i);
-                        if (authorObject == null) {
-                            continue;
-                        }
-                        String key = authorObject.optString("key", null);
-                        String authorName = fetchOpenLibraryAuthorName(key);
-                        if (!TextUtils.isEmpty(authorName)) {
-                            authorNames.add(authorName);
-                        }
-                    }
-                    if (!authorNames.isEmpty()) {
-                        result.author = TextUtils.join(", ", new ArrayList<>(authorNames));
-                        hasData = true;
-                    }
-                }
-            }
-
-            JSONArray covers = root.optJSONArray("covers");
-            if (covers != null) {
-                for (int i = 0; i < covers.length(); i++) {
-                    if (result.photos.size() >= MAX_FORM_PHOTOS) {
-                        break;
-                    }
-                    int coverId = covers.optInt(i, -1);
-                    if (coverId <= 0) {
-                        continue;
-                    }
-                    if (addOpenLibraryCoverPhoto(coverId, result.photos)) {
-                        hasData = true;
-                    }
-                }
-            }
-
-            if (hasData) {
-                result.found = true;
-            }
-        } catch (IOException | JSONException ignored) {
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    @Nullable
-    private String fetchOpenLibraryAuthorName(@Nullable String authorKey) {
-        if (authorKey == null) {
-            return null;
-        }
-        String normalizedKey = authorKey.trim();
-        if (normalizedKey.isEmpty()) {
-            return null;
-        }
-        if (!normalizedKey.startsWith("/")) {
-            normalizedKey = "/" + normalizedKey;
-        }
-        if (!normalizedKey.endsWith(".json")) {
-            normalizedKey = normalizedKey + ".json";
-        }
-        HttpURLConnection connection = null;
-        try {
-            String urlValue = "https://openlibrary.org" + normalizedKey;
-            URL url = new URL(urlValue);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(15000);
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
-            int responseCode = connection.getResponseCode();
-            if (responseCode >= 400) {
-                return null;
-            }
-            InputStream rawStream = connection.getInputStream();
-            if (rawStream == null) {
-                return null;
-            }
-            String response;
-            try (InputStream stream = rawStream) {
-                response = readStream(stream);
-            }
-            JSONObject authorObject = new JSONObject(response);
-            String name = authorObject.optString("name", null);
-            if (TextUtils.isEmpty(name)) {
-                name = authorObject.optString("personal_name", null);
-            }
-            if (TextUtils.isEmpty(name)) {
-                return null;
-            }
-            return name.trim();
-        } catch (IOException | JSONException ignored) {
-            return null;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    private boolean addOpenLibraryCoverPhoto(int coverId, @NonNull List<String> destination) {
-        if (coverId <= 0 || destination.size() >= MAX_FORM_PHOTOS) {
-            return false;
-        }
-        String url = "https://covers.openlibrary.org/b/id/" + coverId + "-L.jpg";
-        String photo = downloadImageAsBase64(url);
-        if (photo == null || destination.contains(photo)) {
-            return false;
-        }
-        destination.add(photo);
-        return true;
-    }
-
-    @Nullable
-    private String resolveDescription(@Nullable Object descriptionValue) {
-        if (descriptionValue instanceof JSONObject) {
-            JSONObject object = (JSONObject) descriptionValue;
-            String value = object.optString("value", null);
-            return sanitizeDescription(value);
-        }
-        if (descriptionValue instanceof String) {
-            return sanitizeDescription((String) descriptionValue);
-        }
-        return null;
-    }
-
-    private void removeKitchenBiblioFurnitureIfNeeded() {
-        if (roomContentItems.isEmpty()) {
-            return;
-        }
-        String normalizedRoomName = normalizeLabel(roomName);
-        if (!"cuisine".equals(normalizedRoomName)
-                && !"cuisines".equals(normalizedRoomName)) {
-            return;
-        }
-        boolean removedAny = false;
-        for (int index = roomContentItems.size() - 1; index >= 0; index--) {
-            RoomContentItem candidate = roomContentItems.get(index);
-            if (candidate == null || !candidate.isFurniture()) {
-                continue;
-            }
-            String normalizedFurnitureName = normalizeLabel(candidate.getName());
-            if (normalizedFurnitureName.isEmpty()) {
-                continue;
-            }
-            if (normalizedFurnitureName.contains("biblio")
-                    || normalizedFurnitureName.contains("bibliotheque")) {
-                RoomContentGroupingManager.removeGroup(roomContentItems, index);
-                removedAny = true;
-            }
-        }
-        if (removedAny) {
-            RoomContentHierarchyHelper.normalizeHierarchy(roomContentItems);
-        }
-    }
-
-    @NonNull
-    private String normalizeLabel(@Nullable String value) {
-        if (value == null) {
-            return "";
-        }
-        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD);
-        normalized = DIACRITICS_PATTERN.matcher(normalized).replaceAll("");
-        return normalized.trim().toLowerCase(Locale.ROOT);
-    }
-
-    @Nullable
-    private String sanitizeDescription(@Nullable String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        if (trimmed.isEmpty()) {
-            return null;
-        }
-        String withoutHtml = trimmed.replaceAll("<[^>]+>", "").replace("\r", "").trim();
-        return withoutHtml.isEmpty() ? null : withoutHtml;
-    }
-
-    private boolean isIsbnCandidate(@NonNull String barcode) {
-        String trimmed = barcode.replaceAll("\\s", "");
-        if (trimmed.length() == 10) {
-            return true;
-        }
-        if (trimmed.length() == 13) {
-            return trimmed.startsWith("978") || trimmed.startsWith("979");
-        }
-        return false;
-    }
-
-    @Nullable
-    private BarcodeLookupResult lookupMusic(@NonNull String barcode) {
-        HttpURLConnection connection = null;
-        try {
-            String urlValue = "https://musicbrainz.org/ws/2/release/?query=barcode:" +
-                    URLEncoder.encode(barcode, StandardCharsets.UTF_8.name()) +
-                    "&fmt=json&limit=1";
-            URL url = new URL(urlValue);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(15000);
-            connection.setRequestProperty("Accept", "application/json");
-            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
-            int responseCode = connection.getResponseCode();
-            InputStream rawStream = responseCode >= 400
-                    ? connection.getErrorStream()
-                    : connection.getInputStream();
-            if (rawStream == null) {
-                BarcodeLookupResult error = new BarcodeLookupResult();
-                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-                error.networkError = true;
-                return error;
-            }
-            String response;
-            try (InputStream stream = rawStream) {
-                response = readStream(stream);
-            }
-            if (responseCode >= 400) {
-                BarcodeLookupResult error = new BarcodeLookupResult();
-                error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-                error.networkError = true;
-                return error;
-            }
-            JSONObject root = new JSONObject(response);
-            JSONArray releases = root.optJSONArray("releases");
-            if (releases == null || releases.length() == 0) {
-                return new BarcodeLookupResult();
-            }
-            JSONObject release = releases.getJSONObject(0);
-            BarcodeLookupResult result = new BarcodeLookupResult();
-            result.found = true;
-            String title = release.optString("title", null);
-            if (!TextUtils.isEmpty(title)) {
-                result.title = title;
-            }
-            JSONArray artistCredit = release.optJSONArray("artist-credit");
-            if (artistCredit != null && artistCredit.length() > 0) {
-                List<String> artists = new ArrayList<>();
-                for (int i = 0; i < artistCredit.length(); i++) {
-                    JSONObject credit = artistCredit.optJSONObject(i);
-                    if (credit == null) {
-                        continue;
-                    }
-                    String name = credit.optString("name", null);
-                    if (!TextUtils.isEmpty(name)) {
-                        artists.add(name.trim());
-                        continue;
-                    }
-                    JSONObject artistObject = credit.optJSONObject("artist");
-                    if (artistObject != null) {
-                        String artistName = artistObject.optString("name", null);
-                        if (!TextUtils.isEmpty(artistName)) {
-                            artists.add(artistName.trim());
-                        }
-                    }
-                }
-                if (!artists.isEmpty()) {
-                    result.author = TextUtils.join(", ", artists);
-                }
-            }
-            JSONArray mediaArray = release.optJSONArray("media");
-            boolean hasDiscFormat = false;
-            boolean hasCdFormat = false;
-            if (mediaArray != null) {
-                for (int i = 0; i < mediaArray.length(); i++) {
-                    JSONObject media = mediaArray.optJSONObject(i);
-                    if (media == null) {
-                        continue;
-                    }
-                    String format = media.optString("format", "");
-                    String lowered = format.toLowerCase(Locale.getDefault());
-                    if (lowered.contains("dvd") || lowered.contains("blu-ray") || lowered.contains("video")) {
-                        hasDiscFormat = true;
-                    }
-                    if (lowered.contains("cd") || lowered.contains("sacd") || lowered.contains("audio")) {
-                        hasCdFormat = true;
-                    }
-                }
-            }
-            if (hasDiscFormat && !hasCdFormat) {
-                result.typeLabel = getString(R.string.dialog_type_disc);
-            } else {
-                result.typeLabel = getString(R.string.dialog_type_cd);
-            }
-            JSONArray labelInfo = release.optJSONArray("label-info");
-            if (labelInfo != null) {
-                for (int i = 0; i < labelInfo.length(); i++) {
-                    JSONObject info = labelInfo.optJSONObject(i);
-                    if (info == null) {
-                        continue;
-                    }
-                    JSONObject label = info.optJSONObject("label");
-                    if (label == null) {
-                        continue;
-                    }
-                    String labelName = label.optString("name", null);
-                    if (!TextUtils.isEmpty(labelName)) {
-                        result.publisher = labelName;
-                        break;
-                    }
-                }
-            }
-            String releaseId = release.optString("id", null);
-            if (!TextUtils.isEmpty(releaseId)) {
-                addCoverArtFromMusicBrainz(releaseId, result.photos);
-            }
-            return result;
-        } catch (IOException e) {
-            BarcodeLookupResult error = new BarcodeLookupResult();
-            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-            error.networkError = true;
-            return error;
-        } catch (JSONException e) {
-            BarcodeLookupResult error = new BarcodeLookupResult();
-            error.errorMessage = getString(R.string.dialog_barcode_lookup_error);
-            return error;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    private void addCoverArtFromMusicBrainz(@NonNull String releaseId,
-                                            @NonNull List<String> destination) {
-        if (destination.size() >= MAX_FORM_PHOTOS) {
-            return;
-        }
-        String base = "https://coverartarchive.org/release/" + releaseId + "/";
-        String[] paths = new String[]{"front-500", "front"};
-        for (String path : paths) {
-            if (destination.size() >= MAX_FORM_PHOTOS) {
-                break;
-            }
-            String photo = downloadImageAsBase64(base + path);
-            if (photo != null && !destination.contains(photo)) {
-                destination.add(photo);
-            }
-        }
     }
 
     private void applyBarcodeLookupResult(@NonNull String barcode,
                                           @NonNull BarcodeScanContext context,
                                           @NonNull BarcodeLookupResult result) {
-        if (currentFormState == null || currentFormState != context.formState) {
-            barcodeScanContext = null;
-            pendingBarcodeResult = null;
-            return;
-        }
-        if (context.barcodeValueView != null) {
-            context.barcodeValueView.setText(barcode);
-        }
         updateBarcodePreview(context.barcodePreviewView, barcode, false);
         updateBarcodeClearButton(context.clearBarcodeButton, true);
         if (result.errorMessage != null) {
@@ -7388,55 +6584,6 @@ private void showMoveRoomContentDialogInternal(@NonNull List<RoomContentItem> it
             refreshPhotoSection(formState);
         }
         return added;
-    }
-
-    @NonNull
-    private String readStream(@NonNull InputStream inputStream) throws IOException {
-        StringBuilder builder = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream,
-                StandardCharsets.UTF_8))) {
-            char[] buffer = new char[4096];
-            int read;
-            while ((read = reader.read(buffer)) != -1) {
-                builder.append(buffer, 0, read);
-            }
-        }
-        return builder.toString();
-    }
-
-    @Nullable
-    private Bitmap downloadBitmap(@NonNull String urlString) {
-        HttpURLConnection connection = null;
-        try {
-            URL url = new URL(urlString);
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(10000);
-            connection.setReadTimeout(15000);
-            connection.setInstanceFollowRedirects(true);
-            connection.setRequestProperty("User-Agent", "New1App/1.0 (Barcode lookup)");
-            int responseCode = connection.getResponseCode();
-            if (responseCode >= 400) {
-                return null;
-            }
-            try (InputStream stream = new BufferedInputStream(connection.getInputStream())) {
-                return BitmapFactory.decodeStream(stream);
-            }
-        } catch (IOException ignored) {
-            return null;
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
-        }
-    }
-
-    @Nullable
-    private String downloadImageAsBase64(@NonNull String urlString) {
-        Bitmap bitmap = downloadBitmap(urlString);
-        if (bitmap == null) {
-            return null;
-        }
-        return encodePhoto(bitmap);
     }
 
     private void showEditCategoryDialog(List<String> categoryOptions,
