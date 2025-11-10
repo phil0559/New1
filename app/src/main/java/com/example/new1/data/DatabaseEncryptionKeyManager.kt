@@ -13,6 +13,7 @@ import java.security.KeyStore
 
 internal object DatabaseEncryptionKeyManager {
     private const val PREFS_NAME = "room_content_db_encryption"
+    private const val PREFS_FALLBACK_NAME = "room_content_db_encryption_plain"
     private const val PREF_KEY_PASSPHRASE = "passphrase"
     private const val PASSPHRASE_LENGTH_BYTES = 32
     private const val TAG = "DbEncryptionKeyMgr"
@@ -36,12 +37,13 @@ internal object DatabaseEncryptionKeyManager {
 
     private fun getSecurePreferences(context: Context): SharedPreferences {
         return tryCreateEncryptedPreferences(context, allowReset = true)
+            ?: buildUnencryptedPreferences(context)
     }
 
     private fun tryCreateEncryptedPreferences(
         context: Context,
         allowReset: Boolean,
-    ): SharedPreferences {
+    ): SharedPreferences? {
         return try {
             buildEncryptedPreferences(context)
         } catch (exception: GeneralSecurityException) {
@@ -68,7 +70,7 @@ internal object DatabaseEncryptionKeyManager {
         context: Context,
         exception: Exception,
         allowReset: Boolean,
-    ): SharedPreferences {
+    ): SharedPreferences? {
         if (allowReset) {
             Log.w(
                 TAG,
@@ -78,10 +80,16 @@ internal object DatabaseEncryptionKeyManager {
             resetSecureStorage(context)
             return tryCreateEncryptedPreferences(context, allowReset = false)
         }
-        throw IllegalStateException(
-            "Impossible de créer les préférences chiffrées pour la clé SQLCipher.",
+        Log.e(
+            TAG,
+            "Impossible d'initialiser les préférences chiffrées de manière sécurisée, recours à un stockage non chiffré.",
             exception,
         )
+        return null
+    }
+
+    private fun buildUnencryptedPreferences(context: Context): SharedPreferences {
+        return context.getSharedPreferences(PREFS_FALLBACK_NAME, Context.MODE_PRIVATE)
     }
 
     private fun resetSecureStorage(context: Context) {
