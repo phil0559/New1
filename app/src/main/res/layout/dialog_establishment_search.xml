@@ -16,8 +16,8 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
             android:textColor="@color/text_dark"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:text="@string/search_dialog_title_generic" />
 
@@ -55,8 +55,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/search_dialog_establishment_label"
-            android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-            android:textColor="@color/text_dark" />
+            android:textColor="@color/text_dark"
+            android:textSize="14sp" />
 
         <Spinner
             android:id="@+id/spinner_establishment_selector"
@@ -82,8 +82,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:text="@string/search_dialog_status_empty"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
-        android:textColor="@color/text_dark" />
+        android:textColor="@color/text_dark"
+        android:textSize="14sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
