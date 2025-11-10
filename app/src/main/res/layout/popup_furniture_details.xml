@@ -82,9 +82,7 @@
                 app:icon="@drawable/ic_move"
                 app:iconGravity="start"
                 app:iconPadding="8dp"
-                app:iconTint="@color/icon_brown"
-                app:insetLeft="0dp"
-                app:insetRight="0dp" />
+                app:iconTint="@color/icon_brown" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/button_furniture_popup_selection_delete"
@@ -101,9 +99,7 @@
                 app:icon="@drawable/ic_delete_outline"
                 app:iconGravity="start"
                 app:iconPadding="8dp"
-                app:iconTint="@color/icon_brown"
-                app:insetLeft="0dp"
-                app:insetRight="0dp" />
+                app:iconTint="@color/icon_brown" />
 
         </LinearLayout>
 
