@@ -10,9 +10,9 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.example.new1.data.New1DatabaseFactory
 import com.example.new1.data.RoomContentEntity
 import com.example.new1.data.RoomContentRepository
+import com.example.new1.data.UnifiedInventoryRepository
 import java.io.BufferedInputStream
 import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
@@ -24,7 +24,8 @@ import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.util.ArrayList
-import java.util.LinkedHashSet
+import java.util.HashMap
+import java.util.LinkedHashMap
 import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
@@ -34,6 +35,7 @@ import org.json.JSONObject
 class RoomContentViewModel(
     application: Application,
     private val repository: RoomContentRepository,
+    private val inventoryRepository: UnifiedInventoryRepository,
 ) : AndroidViewModel(application) {
 
     private val establishmentPrefs: SharedPreferences =
@@ -43,30 +45,30 @@ class RoomContentViewModel(
     private val roomContentPrefs: SharedPreferences =
         application.getSharedPreferences(RoomContentStorage.PREFS_NAME, Context.MODE_PRIVATE)
 
+    private val establishmentIdsByName = HashMap<String, String>()
+
     fun loadEstablishmentNames(currentEstablishment: String?): List<String> {
-        val storedValue = establishmentPrefs.getString(KEY_ESTABLISHMENTS, null)
-        val result = ArrayList<String>()
-        if (!storedValue.isNullOrBlank()) {
-            try {
-                val array = JSONArray(storedValue)
-                for (index in 0 until array.length()) {
-                    val item = array.optJSONObject(index) ?: continue
-                    val name = item.optString("name", "").trim()
-                    if (name.isEmpty()) {
-                        continue
-                    }
-                    if (findIndexIgnoreCase(result, name) < 0) {
-                        result.add(name)
-                    }
-                }
-            } catch (_: JSONException) {
-            }
-        }
+        val locale = Locale.getDefault()
         val current = normalizeName(currentEstablishment)
-        if (current.isNotEmpty() && findIndexIgnoreCase(result, current) < 0) {
-            result.add(0, current)
+        val fromDatabase = try {
+            val establishments = runBlocking { inventoryRepository.listEstablishments() }
+            establishmentIdsByName.clear()
+            establishments.forEach { entity ->
+                val normalized = normalizeName(entity.name)
+                if (normalized.isNotEmpty()) {
+                    establishmentIdsByName[normalized.lowercase(locale)] = entity.id
+                }
+            }
+            deduplicateAndSort(establishments.map { normalizeName(it.name) }, locale)
+        } catch (error: Exception) {
+            Log.w(TAG, "Impossible de charger les établissements depuis la base.", error)
+            null
         }
-        return result
+        val base = fromDatabase ?: deduplicateAndSort(loadEstablishmentsFromPreferences(), locale)
+        if (current.isNotEmpty() && findIndexIgnoreCase(base, current) < 0) {
+            return deduplicateAndSort(base + current, locale)
+        }
+        return base
     }
 
     fun loadRoomNames(
@@ -74,36 +76,41 @@ class RoomContentViewModel(
         currentEstablishment: String?,
         currentRoom: String?,
     ): List<String> {
-        val key = buildRoomsKeyForEstablishment(selectedEstablishment)
-        val storedValue = roomsPrefs.getString(key, null)
-        val result = ArrayList<String>()
-        if (!storedValue.isNullOrBlank()) {
-            try {
-                val array = JSONArray(storedValue)
-                for (index in 0 until array.length()) {
-                    val item = array.optJSONObject(index) ?: continue
-                    val name = item.optString("name", "").trim()
-                    if (name.isEmpty()) {
-                        continue
-                    }
-                    if (findIndexIgnoreCase(result, name) < 0) {
-                        result.add(name)
-                    }
-                }
-            } catch (_: JSONException) {
-            }
-        }
+        val locale = Locale.getDefault()
         val normalizedSelected = normalizeName(selectedEstablishment)
-        val normalizedCurrent = normalizeName(currentEstablishment)
-        if (normalizedSelected.isNotEmpty() &&
-            normalizedSelected.equals(normalizedCurrent, ignoreCase = true)
-        ) {
-            val currentRoomName = normalizeName(currentRoom)
-            if (currentRoomName.isNotEmpty() && findIndexIgnoreCase(result, currentRoomName) < 0) {
-                result.add(0, currentRoomName)
+        val normalizedCurrentEstablishment = normalizeName(currentEstablishment)
+        val normalizedCurrentRoom = normalizeName(currentRoom)
+        val establishmentId = if (normalizedSelected.isEmpty()) {
+            null
+        } else {
+            resolveEstablishmentId(normalizedSelected, locale)
+        }
+        val roomsFromDatabase = if (establishmentId.isNullOrEmpty()) {
+            null
+        } else {
+            try {
+                val rooms = runBlocking { inventoryRepository.listRooms(establishmentId) }
+                deduplicateAndSort(rooms.map { normalizeName(it.name) }, locale)
+            } catch (error: Exception) {
+                Log.w(
+                    TAG,
+                    "Impossible de charger les pièces depuis la base pour l'établissement $normalizedSelected.",
+                    error,
+                )
+                null
             }
         }
-        return result
+        val key = buildRoomsKeyForEstablishment(selectedEstablishment)
+        val base = roomsFromDatabase
+            ?: deduplicateAndSort(loadRoomsFromPreferences(key), locale)
+        val needsCurrentRoom = normalizedSelected.isNotEmpty() &&
+            normalizedSelected.equals(normalizedCurrentEstablishment, ignoreCase = true) &&
+            normalizedCurrentRoom.isNotEmpty() &&
+            findIndexIgnoreCase(base, normalizedCurrentRoom) < 0
+        if (needsCurrentRoom) {
+            return deduplicateAndSort(base + normalizedCurrentRoom, locale)
+        }
+        return base
     }
 
     fun loadRoomContentFor(establishment: String?, room: String?): List<RoomContentItem> {
@@ -864,13 +871,93 @@ class RoomContentViewModel(
         return if (trimmed.isNullOrEmpty()) null else trimmed
     }
 
+    private fun loadEstablishmentsFromPreferences(): List<String> {
+        val storedValue = establishmentPrefs.getString(KEY_ESTABLISHMENTS, null)
+        val result = ArrayList<String>()
+        if (!storedValue.isNullOrBlank()) {
+            try {
+                val array = JSONArray(storedValue)
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    val name = normalizeName(item.optString("name", ""))
+                    if (name.isNotEmpty() && findIndexIgnoreCase(result, name) < 0) {
+                        result.add(name)
+                    }
+                }
+            } catch (exception: JSONException) {
+                Log.w(TAG, "Impossible de lire les établissements depuis les préférences.", exception)
+            }
+        }
+        return result
+    }
+
+    private fun loadRoomsFromPreferences(key: String): List<String> {
+        val storedValue = roomsPrefs.getString(key, null)
+        val result = ArrayList<String>()
+        if (!storedValue.isNullOrBlank()) {
+            try {
+                val array = JSONArray(storedValue)
+                for (index in 0 until array.length()) {
+                    val item = array.optJSONObject(index) ?: continue
+                    val name = normalizeName(item.optString("name", ""))
+                    if (name.isNotEmpty() && findIndexIgnoreCase(result, name) < 0) {
+                        result.add(name)
+                    }
+                }
+            } catch (exception: JSONException) {
+                Log.w(TAG, "Impossible de lire les pièces depuis les préférences.", exception)
+            }
+        }
+        return result
+    }
+
+    private fun deduplicateAndSort(values: List<String>, locale: Locale): MutableList<String> {
+        val map = LinkedHashMap<String, String>()
+        for (value in values) {
+            val normalized = normalizeName(value)
+            if (normalized.isEmpty()) {
+                continue
+            }
+            val key = normalized.lowercase(locale)
+            if (!map.containsKey(key)) {
+                map[key] = normalized
+            }
+        }
+        return map.values
+            .sortedWith(compareBy<String> { it.lowercase(locale) }.thenBy { it })
+            .toMutableList()
+    }
+
+    private fun resolveEstablishmentId(name: String, locale: Locale): String? {
+        val key = name.lowercase(locale)
+        establishmentIdsByName[key]?.let { return it }
+        return try {
+            val establishments = runBlocking { inventoryRepository.listEstablishments() }
+            for (entity in establishments) {
+                val normalized = normalizeName(entity.name)
+                if (normalized.isEmpty()) {
+                    continue
+                }
+                val entityKey = normalized.lowercase(locale)
+                establishmentIdsByName[entityKey] = entity.id
+                if (entityKey == key) {
+                    return entity.id
+                }
+            }
+            null
+        } catch (error: Exception) {
+            Log.w(TAG, "Impossible de résoudre l'établissement $name dans la base.", error)
+            null
+        }
+    }
+
     class Factory(private val application: Application) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(RoomContentViewModel::class.java)) {
-                val database = New1DatabaseFactory.create(application)
-                val repository = RoomContentRepository(database.roomContentDao())
+                val repository = ViewModelDependencies.roomContentRepository(application)
+                val inventory = ViewModelDependencies.inventoryRepository(application)
                 @Suppress("UNCHECKED_CAST")
-                return RoomContentViewModel(application, repository) as T
+                return RoomContentViewModel(application, repository, inventory) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: " + modelClass.name)
         }
