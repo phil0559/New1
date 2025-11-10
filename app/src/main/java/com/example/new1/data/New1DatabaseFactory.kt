@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import net.sqlcipher.database.SQLiteDatabase
 import net.sqlcipher.database.SupportFactory
 import java.util.Arrays
+import java.util.Locale
 
 object New1DatabaseFactory {
     private const val TAG = "New1DatabaseFactory"
@@ -22,7 +23,20 @@ object New1DatabaseFactory {
                 "Échec du chargement de la base de données sécurisée, utilisation d'une base non chiffrée.",
                 exception,
             )
-            createUnencryptedDatabase(appContext)
+            createUnencryptedWithRecovery(appContext)
+        }
+    }
+
+    private fun createUnencryptedWithRecovery(context: Context): New1Database {
+        return try {
+            createUnencryptedDatabase(context)
+        } catch (fallbackException: Throwable) {
+            if (isEncryptedDatabaseError(fallbackException)) {
+                deleteEncryptedDatabase(context)
+                createUnencryptedDatabase(context)
+            } else {
+                throw fallbackException
+            }
         }
     }
 
@@ -58,6 +72,19 @@ object New1DatabaseFactory {
             .also { database ->
                 DatabaseInitializer.initialize(context, database)
             }
+    }
+
+    private fun deleteEncryptedDatabase(context: Context) {
+        if (context.deleteDatabase(New1Database.DATABASE_NAME)) {
+            Log.i(TAG, "Base de données chiffrée supprimée avant repli vers une version non chiffrée.")
+        } else {
+            Log.w(TAG, "Aucune base chiffrée à supprimer ou suppression impossible.")
+        }
+    }
+
+    private fun isEncryptedDatabaseError(exception: Throwable): Boolean {
+        val message = exception.message?.lowercase(Locale.ROOT) ?: return false
+        return message.contains("file is encrypted") || message.contains("file is not a database")
     }
 
     private fun <T : RoomDatabase> RoomDatabase.Builder<T>.fallbackToDestructiveMigration(
