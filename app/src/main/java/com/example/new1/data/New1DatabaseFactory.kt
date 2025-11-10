@@ -31,11 +31,21 @@ object New1DatabaseFactory {
         return try {
             createUnencryptedDatabase(context)
         } catch (fallbackException: Throwable) {
-            if (isEncryptedDatabaseError(fallbackException)) {
-                deleteEncryptedDatabase(context)
-                createUnencryptedDatabase(context)
-            } else {
-                throw fallbackException
+            when {
+                isEncryptedDatabaseError(fallbackException) -> {
+                    deleteDatabaseFile(context)
+                    createUnencryptedDatabase(context)
+                }
+                isMigrationError(fallbackException) -> {
+                    Log.w(
+                        TAG,
+                        "Schéma incompatible détecté, suppression de la base non chiffrée.",
+                        fallbackException,
+                    )
+                    deleteDatabaseFile(context)
+                    createUnencryptedDatabase(context)
+                }
+                else -> throw fallbackException
             }
         }
     }
@@ -74,17 +84,39 @@ object New1DatabaseFactory {
             }
     }
 
-    private fun deleteEncryptedDatabase(context: Context) {
+    private fun deleteDatabaseFile(context: Context) {
         if (context.deleteDatabase(New1Database.DATABASE_NAME)) {
-            Log.i(TAG, "Base de données chiffrée supprimée avant repli vers une version non chiffrée.")
+            Log.i(TAG, "Base de données locale supprimée avant recréation.")
         } else {
-            Log.w(TAG, "Aucune base chiffrée à supprimer ou suppression impossible.")
+            Log.w(TAG, "Aucune base locale à supprimer ou suppression impossible.")
         }
     }
 
     private fun isEncryptedDatabaseError(exception: Throwable): Boolean {
-        val message = exception.message?.lowercase(Locale.ROOT) ?: return false
-        return message.contains("file is encrypted") || message.contains("file is not a database")
+        return hasMessage(exception) { message ->
+            message.contains("file is encrypted") || message.contains("file is not a database")
+        }
+    }
+
+    private fun isMigrationError(exception: Throwable): Boolean {
+        return hasMessage(exception) { message ->
+            message.contains("requires a migration") ||
+                    message.contains("require a migration") ||
+                    message.contains("migration didn't properly handle") ||
+                    message.contains("cannot verify the data integrity")
+        }
+    }
+
+    private fun hasMessage(exception: Throwable, predicate: (String) -> Boolean): Boolean {
+        var current: Throwable? = exception
+        while (current != null) {
+            val message = current.message?.lowercase(Locale.ROOT)
+            if (message != null && predicate(message)) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 
     private fun <T : RoomDatabase> RoomDatabase.Builder<T>.fallbackToDestructiveMigration(
