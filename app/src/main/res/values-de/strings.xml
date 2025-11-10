@@ -48,6 +48,7 @@
     <string name="content_description_room_content_popup_filter_all">Alle Elemente zu %1$s anzeigen</string>
     <string name="content_description_room_content_popup_filter_containers">Nur Behälter zu %1$s anzeigen</string>
     <string name="content_description_room_content_popup_filter_items">Nur eigenständige Elemente zu %1$s anzeigen</string>
+    <string name="content_description_room_content_popup_filter_group">Anzeige-Filter für %1$s auswählen</string>
     <string name="popup_establishment_title">Einrichtung</string>
     <string name="popup_establishment_edit">Bearbeiten</string>
     <string name="popup_establishment_delete">Löschen</string>
@@ -101,10 +102,14 @@
     <string name="room_content_metadata_publication_date">Veröffentlichungsdatum: %1$s</string>
     <string name="room_content_metadata_summary">Zusammenfassung: %1$s</string>
     <string name="room_content_metadata_tracks">Titel: %1$s</string>
+    <string name="room_content_metadata_error">Einige erweiterte Daten konnten nicht geladen werden. Zusätzliche Optionen sind vorübergehend deaktiviert.</string>
     <string name="dialog_track_list_generic">Titel</string>
     <string name="dialog_track_list_with_format">Titel (%1$s)</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
     <string name="room_content_storage_error">Der gesicherte Rauminhalt konnte nicht geladen werden. Stattdessen werden lokale Daten verwendet.</string>
+    <string name="establishment_storage_error">Die gesicherten Einrichtungen konnten nicht geladen werden.</string>
+    <string name="room_storage_error">Die gesicherten Räume konnten nicht geladen werden.</string>
+    <string name="search_storage_error">Auf die gesicherten Suchdaten kann nicht zugegriffen werden.</string>
     <string name="room_content_lookup_unavailable">Die Barcode-Suche ist derzeit nicht verfügbar.</string>
     <string name="room_content_filter_containers">Behälter</string>
     <string name="room_content_filter_items">Elemente</string>
@@ -198,6 +203,7 @@
     <string name="dialog_error_generate_barcode_empty">Geben Sie einen Barcode-Wert ein.</string>
     <string name="dialog_error_generate_barcode_failed">Der Barcode konnte nicht erzeugt werden.</string>
     <string name="dialog_barcode_preview_placeholder_description">Kein Barcode-Vorschaubild</string>
+    <string name="dialog_content_description_clear_barcode">Barcode löschen</string>
     <string name="dialog_barcode_preview_content_description">Generierter Barcode: %1$s</string>
     <string name="dialog_label_type">Typ</string>
     <string name="dialog_type_other">Andere</string>
@@ -240,12 +246,15 @@
     <string name="search_dialog_title_generic">Suche in der Einrichtung</string>
     <string name="search_dialog_title_with_name">Suche – %1$s</string>
     <string name="search_dialog_input_hint">Suchbegriff eingeben</string>
+    <string name="search_dialog_establishment_label">Einrichtung auswählen</string>
     <string name="search_dialog_button">Suchen</string>
     <string name="search_dialog_status_empty">Geben Sie einen Suchbegriff ein.</string>
     <string name="search_dialog_status_empty_query">Bitte geben Sie vor der Suche einen Begriff ein.</string>
     <string name="search_dialog_status_loading">Suche läuft …</string>
     <string name="search_dialog_status_no_results">Keine Ergebnisse entsprechen Ihrer Suche.</string>
     <string name="search_dialog_status_no_data">Für diese Einrichtung sind keine Daten vorhanden.</string>
+    <string name="search_dialog_status_no_establishments">Keine Einrichtung ist für eine Suche verfügbar.</string>
+    <string name="search_dialog_status_missing_establishment">Bitte wählen Sie vor dem Start der Suche eine Einrichtung aus.</string>
     <string name="search_dialog_header_room">Raum</string>
     <string name="search_dialog_header_furniture">Möbel</string>
     <string name="search_dialog_header_furniture_column">Spalte</string>
@@ -288,6 +297,8 @@
     <string name="room_storage_tower_updated_confirmation">Aufbewahrungsturm aktualisiert.</string>
     <string name="storage_tower_popup_drawer_title">Schublade %1$d</string>
     <string name="storage_tower_popup_section_empty">Keine Elemente in dieser Schublade.</string>
+    <string name="storage_tower_placement_column">S%1$d</string>
+    <string name="storage_tower_placement_drawer">F%1$d</string>
     <string name="content_description_add_type">Typ hinzufügen</string>
     <string name="content_description_edit_type">Typ bearbeiten</string>
     <string name="content_description_delete_type">Typ löschen</string>
@@ -363,6 +374,7 @@
     <string name="furniture_popup_bottom_title">Unterseite</string>
     <string name="furniture_popup_level_title">Ebene %1$d</string>
     <string name="furniture_popup_section_empty">Keine Elemente auf dieser Ebene.</string>
+    <string name="furniture_section_barcode_content_description">Ein Buch per Barcode hinzufügen</string>
     <string name="furniture_popup_photos_menu_manage">Foto-Menü</string>
     <string name="furniture_popup_photos_menu_view">Fotoanzeige</string>
     <string name="furniture_popup_photos_empty">Keine Fotos verfügbar.</string>
