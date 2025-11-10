@@ -23,6 +23,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringRes;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.android.material.bottomsheet.BottomSheetDialog;
@@ -55,7 +56,7 @@ final class EstablishmentSearchDialog {
     private EstablishmentSearchDialog() {
     }
 
-    static void show(@NonNull Activity activity, @Nullable String establishmentName) {
+    static void show(@NonNull FragmentActivity activity, @Nullable String establishmentName) {
         if (activity.isFinishing()) {
             return;
         }
