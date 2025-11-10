@@ -48,6 +48,7 @@
     <string name="content_description_room_content_popup_filter_all">Mostrar todos los elementos vinculados a %1$s</string>
     <string name="content_description_room_content_popup_filter_containers">Mostrar solo los contenedores vinculados a %1$s</string>
     <string name="content_description_room_content_popup_filter_items">Mostrar solo los elementos independientes vinculados a %1$s</string>
+    <string name="content_description_room_content_popup_filter_group">Elegir el filtro de visualización para %1$s</string>
     <string name="popup_establishment_title">Establecimiento</string>
     <string name="popup_establishment_edit">Editar</string>
     <string name="popup_establishment_delete">Eliminar</string>
@@ -101,10 +102,14 @@
     <string name="room_content_metadata_publication_date">Fecha de publicación: %1$s</string>
     <string name="room_content_metadata_summary">Resumen: %1$s</string>
     <string name="room_content_metadata_tracks">Pistas: %1$s</string>
+    <string name="room_content_metadata_error">No se pudieron cargar algunos datos avanzados. Las opciones adicionales están temporalmente deshabilitadas.</string>
     <string name="dialog_track_list_generic">Pistas</string>
     <string name="dialog_track_list_with_format">Pistas (%1$s)</string>
     <string name="room_content_metadata_barcode">Código de barras: %1$s</string>
     <string name="room_content_storage_error">No se pudo cargar el contenido seguro de la habitación. Se usarán los datos locales.</string>
+    <string name="establishment_storage_error">No se pudieron cargar los establecimientos seguros.</string>
+    <string name="room_storage_error">No se pudieron cargar las habitaciones seguras.</string>
+    <string name="search_storage_error">No se puede acceder a los datos seguros para la búsqueda.</string>
     <string name="room_content_lookup_unavailable">La búsqueda de códigos de barras no está disponible por el momento.</string>
     <string name="room_content_filter_containers">Contenedores</string>
     <string name="room_content_filter_items">Elementos</string>
@@ -197,6 +202,7 @@
     <string name="dialog_error_generate_barcode_empty">Introduce un valor de código de barras.</string>
     <string name="dialog_error_generate_barcode_failed">No se pudo generar el código de barras.</string>
     <string name="dialog_barcode_preview_placeholder_description">Sin vista previa del código de barras</string>
+    <string name="dialog_content_description_clear_barcode">Borrar el código de barras</string>
     <string name="dialog_barcode_preview_content_description">Código de barras generado: %1$s</string>
     <string name="dialog_label_type">Tipo</string>
     <string name="dialog_type_other">Otro</string>
@@ -239,12 +245,15 @@
     <string name="search_dialog_title_generic">Búsqueda en el establecimiento</string>
     <string name="search_dialog_title_with_name">Búsqueda – %1$s</string>
     <string name="search_dialog_input_hint">Introduzca una palabra clave</string>
+    <string name="search_dialog_establishment_label">Elige un establecimiento</string>
     <string name="search_dialog_button">Buscar</string>
     <string name="search_dialog_status_empty">Introduzca un término para buscar.</string>
     <string name="search_dialog_status_empty_query">Escriba un término antes de iniciar la búsqueda.</string>
     <string name="search_dialog_status_loading">Buscando…</string>
     <string name="search_dialog_status_no_results">Ningún resultado coincide con su búsqueda.</string>
     <string name="search_dialog_status_no_data">No hay datos disponibles para este establecimiento.</string>
+    <string name="search_dialog_status_no_establishments">No hay ningún establecimiento disponible para realizar una búsqueda.</string>
+    <string name="search_dialog_status_missing_establishment">Selecciona un establecimiento antes de iniciar la búsqueda.</string>
     <string name="search_dialog_header_room">Sala</string>
     <string name="search_dialog_header_furniture">Mueble</string>
     <string name="search_dialog_header_furniture_column">Columna</string>
@@ -287,6 +296,8 @@
     <string name="room_storage_tower_updated_confirmation">Torre de almacenamiento actualizada.</string>
     <string name="storage_tower_popup_drawer_title">Cajón %1$d</string>
     <string name="storage_tower_popup_section_empty">No hay elementos en este cajón.</string>
+    <string name="storage_tower_placement_column">C%1$d</string>
+    <string name="storage_tower_placement_drawer">Cj%1$d</string>
     <string name="content_description_add_type">Añadir un tipo</string>
     <string name="content_description_edit_type">Editar tipo</string>
     <string name="content_description_delete_type">Eliminar tipo</string>
@@ -362,6 +373,7 @@
     <string name="furniture_popup_bottom_title">Inferior</string>
     <string name="furniture_popup_level_title">Nivel %1$d</string>
     <string name="furniture_popup_section_empty">No hay elementos en este nivel.</string>
+    <string name="furniture_section_barcode_content_description">Agregar un libro mediante código de barras</string>
     <string name="furniture_popup_photos_menu_manage">Menú de fotos</string>
     <string name="furniture_popup_photos_menu_view">Visualización de fotos</string>
     <string name="furniture_popup_photos_empty">No hay fotos disponibles.</string>

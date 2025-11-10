@@ -48,6 +48,7 @@
     <string name="content_description_room_content_popup_filter_all">Show all items linked to %1$s</string>
     <string name="content_description_room_content_popup_filter_containers">Show only containers linked to %1$s</string>
     <string name="content_description_room_content_popup_filter_items">Show only standalone items linked to %1$s</string>
+    <string name="content_description_room_content_popup_filter_group">Choose the display filter for %1$s</string>
     <string name="popup_establishment_title">Establishment</string>
     <string name="popup_establishment_edit">Edit</string>
     <string name="popup_establishment_delete">Delete</string>
@@ -101,10 +102,14 @@
     <string name="room_content_metadata_publication_date">Publication date: %1$s</string>
     <string name="room_content_metadata_summary">Summary: %1$s</string>
     <string name="room_content_metadata_tracks">Tracks: %1$s</string>
+    <string name="room_content_metadata_error">Some advanced data could not be loaded. Additional options are temporarily disabled.</string>
     <string name="dialog_track_list_generic">Tracks</string>
     <string name="dialog_track_list_with_format">Tracks (%1$s)</string>
     <string name="room_content_metadata_barcode">Barcode: %1$s</string>
     <string name="room_content_storage_error">Unable to load the secured room content. Local data will be used instead.</string>
+    <string name="establishment_storage_error">Unable to load the secured establishments.</string>
+    <string name="room_storage_error">Unable to load the secured rooms.</string>
+    <string name="search_storage_error">Unable to access the secured data for search.</string>
     <string name="room_content_lookup_unavailable">Barcode lookup is currently unavailable.</string>
     <string name="room_content_filter_containers">Containers</string>
     <string name="room_content_filter_items">Items</string>
@@ -185,6 +190,7 @@
     <string name="furniture_popup_bottom_title">Bottom</string>
     <string name="furniture_popup_level_title">Level %1$d</string>
     <string name="furniture_popup_section_empty">No item on this level.</string>
+    <string name="furniture_section_barcode_content_description">Add a book using a barcode</string>
     <string name="furniture_popup_photos_menu_manage">Photo menu</string>
     <string name="furniture_popup_photos_menu_view">Photo viewer</string>
     <string name="furniture_popup_photos_empty">No photos available.</string>
@@ -208,6 +214,8 @@
     <string name="room_storage_tower_updated_confirmation">Storage tower updated.</string>
     <string name="storage_tower_popup_drawer_title">Drawer %1$d</string>
     <string name="storage_tower_popup_section_empty">No item in this drawer.</string>
+    <string name="storage_tower_placement_column">C%1$d</string>
+    <string name="storage_tower_placement_drawer">D%1$d</string>
     <string name="error_furniture_name_required">The furniture name is required</string>
     <string name="error_furniture_levels_required">Number of drawers is required</string>
     <string name="error_furniture_columns_required">Number of columns is required</string>
@@ -230,6 +238,7 @@
     <string name="dialog_error_generate_barcode_empty">Enter a barcode value.</string>
     <string name="dialog_error_generate_barcode_failed">Unable to generate the barcode.</string>
     <string name="dialog_barcode_preview_placeholder_description">No barcode preview</string>
+    <string name="dialog_content_description_clear_barcode">Clear the barcode</string>
     <string name="dialog_barcode_preview_content_description">Generated barcode: %1$s</string>
     <string name="dialog_label_type">Type</string>
     <string name="dialog_type_other">Other</string>
@@ -272,12 +281,15 @@
     <string name="search_dialog_title_generic">Search in the establishment</string>
     <string name="search_dialog_title_with_name">Search – %1$s</string>
     <string name="search_dialog_input_hint">Enter a keyword</string>
+    <string name="search_dialog_establishment_label">Choose an establishment</string>
     <string name="search_dialog_button">Search</string>
     <string name="search_dialog_status_empty">Enter a term to search for.</string>
     <string name="search_dialog_status_empty_query">Please enter a term before searching.</string>
     <string name="search_dialog_status_loading">Searching…</string>
     <string name="search_dialog_status_no_results">No results match your query.</string>
     <string name="search_dialog_status_no_data">No data is available for this establishment.</string>
+    <string name="search_dialog_status_no_establishments">No establishment is available to perform a search.</string>
+    <string name="search_dialog_status_missing_establishment">Please select an establishment before starting the search.</string>
     <string name="search_dialog_header_room">Room</string>
     <string name="search_dialog_header_furniture">Furniture</string>
     <string name="search_dialog_header_furniture_column">Column</string>
