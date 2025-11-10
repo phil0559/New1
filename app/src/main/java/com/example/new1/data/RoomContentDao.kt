@@ -20,6 +20,9 @@ interface RoomContentDao {
     suspend fun upsert(entity: RoomContentEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(entities: List<RoomContentEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun upsertAllSync(entities: List<RoomContentEntity>)
 
     @Query("DELETE FROM room_content WHERE storage_key = :storageKey")
