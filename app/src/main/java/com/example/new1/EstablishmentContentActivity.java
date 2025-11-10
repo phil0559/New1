@@ -383,6 +383,14 @@ public class EstablishmentContentActivity extends AppCompatActivity {
         return establishmentName != null ? establishmentName.trim() : "";
     }
 
+    private void applySubtitle() {
+        if (rooms.isEmpty()) {
+            applyEmptySubtitle();
+        } else {
+            applyRoomsSubtitle();
+        }
+    }
+
     private void applyEmptySubtitle() {
         if (subtitleView == null) {
             return;
