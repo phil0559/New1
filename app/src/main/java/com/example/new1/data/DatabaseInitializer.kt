@@ -6,6 +6,7 @@ import com.example.new1.EstablishmentActivity
 import com.example.new1.EstablishmentContentActivity
 import com.example.new1.Room
 import com.example.new1.RoomContentStorage
+import androidx.room.withTransaction
 import kotlinx.coroutines.runBlocking
 import org.json.JSONArray
 import org.json.JSONException
@@ -43,15 +44,17 @@ internal object DatabaseInitializer {
         val establishments = migrationState.establishments.values.toList()
         val rooms = migrationState.rooms.values.toList()
 
-        database.runInTransaction {
-            if (establishments.isNotEmpty()) {
-                database.establishmentDao().upsertAllSync(establishments)
-            }
-            if (rooms.isNotEmpty()) {
-                database.roomDao().upsertAllSync(rooms)
-            }
-            if (roomContentEntities.isNotEmpty()) {
-                database.roomContentDao().upsertAllSync(roomContentEntities)
+        runBlocking {
+            database.withTransaction {
+                if (establishments.isNotEmpty()) {
+                    database.establishmentDao().upsertAll(establishments)
+                }
+                if (rooms.isNotEmpty()) {
+                    database.roomDao().upsertAll(rooms)
+                }
+                if (roomContentEntities.isNotEmpty()) {
+                    database.roomContentDao().upsertAll(roomContentEntities)
+                }
             }
         }
 
