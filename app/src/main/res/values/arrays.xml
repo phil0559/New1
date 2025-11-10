@@ -11,6 +11,8 @@
     </string-array>
 
     <string-array name="room_content_category_options">
+        <item>@string/dialog_category_placeholder_one</item>
+        <item>@string/dialog_category_placeholder_two</item>
     </string-array>
 
     <string-array name="room_container_type_defaults">
