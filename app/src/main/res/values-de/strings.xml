@@ -140,7 +140,7 @@
     <string name="dialog_move_room_content_container_label">Wählen Sie den übergeordneten Behälter oder das Möbelstück zum Ablegen des Elements.</string>
     <string name="dialog_move_room_content_no_container">Kein Behälter</string>
     <string name="dialog_move_room_content_move_button">Verschieben</string>
-    <string name="dialog_move_room_content_empty_establishments"><![CDATA[Keine Einrichtung verfügbar, um dieses Element zu verschieben.]]></string>
+    <string name="dialog_move_room_content_empty_establishments">Keine Einrichtung verfügbar, um dieses Element zu verschieben.</string>
     <string name="dialog_move_room_content_missing_items">Verschieben nicht möglich: Element wurde nicht gefunden.</string>
     <string name="dialog_move_room_content_empty_rooms">In dieser Einrichtung ist kein Raum verfügbar.</string>
     <string name="dialog_move_room_content_success">Element erfolgreich verschoben.</string>

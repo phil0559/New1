@@ -160,7 +160,7 @@
     <string name="dialog_move_room_content_container_label">Choisissez le contenant parent ou le mobilier où placer l’élément.</string>
     <string name="dialog_move_room_content_no_container">Aucun contenant</string>
     <string name="dialog_move_room_content_move_button">Déplacer</string>
-    <string name="dialog_move_room_content_empty_establishments"><![CDATA[Aucun établissement disponible pour déplacer cet élément.]]></string>
+    <string name="dialog_move_room_content_empty_establishments">Aucun établissement disponible pour déplacer cet élément.</string>
     <string name="dialog_move_room_content_missing_items">Impossible de préparer le déplacement : élément introuvable.</string>
     <string name="dialog_move_room_content_empty_rooms">Aucune pièce disponible dans cet établissement.</string>
     <string name="dialog_move_room_content_success">Élément déplacé avec succès.</string>
